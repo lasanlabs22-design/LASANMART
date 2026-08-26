@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "Lasan Mart",
+    "slug": "LasanMart",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/lasan-icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lasanmart.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Lasan Mart uses your location to set your business address for local campaigns.",
+        "NSPhotoLibraryUsageDescription": "Lasan Mart needs access to your photos so you can set a profile picture and company logo."
+      }
+    },
+    "android": {
+      "package": "com.lasanmart.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0D1A",
+        "foregroundImage": "./assets/lasan-icon.png"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "READ_MEDIA_IMAGES"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-video",
+      "expo-font",
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/lasan-logo-full.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Lasan Mart needs access to your photos so you can set a profile picture and company logo."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Lasan Mart uses your location to set your business address for local campaigns."
+        }
+      ]
+    ]
+  }
+}
