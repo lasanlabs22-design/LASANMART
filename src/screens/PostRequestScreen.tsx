@@ -10,6 +10,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,16 +18,21 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { onlineMarketing, offlineMarketing, CategoryItem } from '../data/homeCategories';
 import { businessSectors, BusinessSector } from '../data/businessSectors';
-import { useRequests } from '../context/RequestsContext';
 import { useAuth } from '../context/AuthContext';
+import { useSubmitRequest } from '../hooks/useSubmitRequest';
+import ContactDetailsSheet from '../components/ContactDetailsSheet';
 
 const BUDGETS = ['Under ₹25K', '₹25K–50K', '₹50K–1L', '₹1L+', 'Not sure'];
 const TIMELINES = ['ASAP', 'This month', 'Next month', 'Flexible'];
 
 export default function PostRequestScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { addRequest } = useRequests();
   const { profile } = useAuth();
+
+  // Handles the contact-details gate, the API call, and the busy state
+  const { submit, busy, sheetProps } = useSubmitRequest(() =>
+    navigation.goBack()
+  );
 
   // A service can be pre-selected when arriving from a Home category tap
   const preset: CategoryItem | undefined = route?.params?.service;
@@ -65,26 +71,20 @@ export default function PostRequestScreen({ route, navigation }: any) {
       return;
     }
 
-    addRequest({
-      serviceId: service.id,
-      serviceLabel: service.label,
-      category: tab,
-      sector: resolvedSector,
+    // Send to the backend — stored in the database and emailed to the team
+    submit({
+      type: 'service',
       title: title.trim(),
       description: description.trim(),
-      budget,
-      timeline,
-      city: city.trim() || 'Not specified',
+      sector: resolvedSector,
+      city: city.trim() || undefined,
+      details: {
+        service: service.label,
+        category: tab === 'online' ? 'Online Marketing' : 'Offline Marketing',
+        budget,
+        timeline,
+      },
     });
-
-    // POC stub — replace with real API call once backend is ready:
-    // await api.post('/requests', { ... });
-
-    Alert.alert(
-      'Request Posted',
-      'Our team will review it and get back to you shortly. You can track it under My Requests.',
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
-    );
   };
 
   return (
@@ -203,10 +203,7 @@ export default function PostRequestScreen({ route, navigation }: any) {
                     color={active ? colors.white : colors.textLight}
                   />
                   <Text
-                    style={[
-                      styles.sectorText,
-                      active && styles.sectorTextActive,
-                    ]}
+                    style={[styles.sectorText, active && styles.sectorTextActive]}
                   >
                     {s.label}
                   </Text>
@@ -356,18 +353,31 @@ export default function PostRequestScreen({ route, navigation }: any) {
         {/* Sticky footer */}
         <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
           <TouchableOpacity
-            style={[styles.submitButton, !isReady && styles.submitDisabled]}
+            style={[
+              styles.submitButton,
+              (!isReady || busy) && styles.submitDisabled,
+            ]}
             activeOpacity={0.9}
             onPress={handleSubmit}
+            disabled={busy}
           >
-            <Text style={styles.submitText}>Post Request</Text>
-            <MaterialCommunityIcons
-              name="send-outline"
-              size={17}
-              color={colors.white}
-            />
+            {busy ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <>
+                <Text style={styles.submitText}>Post Request</Text>
+                <MaterialCommunityIcons
+                  name="send-outline"
+                  size={17}
+                  color={colors.white}
+                />
+              </>
+            )}
           </TouchableOpacity>
         </View>
+
+        {/* Asks for name / phone / email the first time only */}
+        <ContactDetailsSheet {...sheetProps} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -486,7 +496,6 @@ const styles = StyleSheet.create({
   },
   serviceLabelActive: { fontFamily: fonts.bodyBold },
 
-  /* Business sector */
   sectorWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   sectorChip: {
     flexDirection: 'row',
@@ -594,6 +603,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 17,
     borderRadius: 14,
+    minHeight: 56,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.28,
