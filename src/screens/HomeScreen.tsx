@@ -52,7 +52,6 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <HomeHeader
         onSearchPress={() => console.log('Search tapped — screen not built yet')}
-        onWishlistPress={() => console.log('Wishlist tapped — screen not built yet')}
         onNotificationsPress={() =>
           console.log('Notifications tapped — screen not built yet')
         }
