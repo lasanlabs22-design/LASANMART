@@ -9,45 +9,44 @@ import {
   Platform,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
+import { useSubmitRequest } from '../hooks/useSubmitRequest';
+import ContactDetailsSheet from '../components/ContactDetailsSheet';
 
 const MIN_DESCRIPTION = 20;
 
 export default function CustomRequirementScreen({ navigation }: any) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const insets = useSafeAreaInsets();
+  const { submit, busy, sheetProps } = useSubmitRequest(() =>
+    navigation.goBack()
+  );
+
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [focused, setFocused] = useState<string | null>(null);
-  const insets = useSafeAreaInsets();
 
-  const isPhoneValid = phone.length === 10;
   const isReady =
-    name.trim().length > 1 &&
-    isPhoneValid &&
-    description.trim().length >= MIN_DESCRIPTION;
+    title.trim().length > 3 && description.trim().length >= MIN_DESCRIPTION;
 
   const handleSubmit = () => {
     if (!isReady) {
       Alert.alert(
         'Almost there',
-        'Please add your name, a 10-digit phone number, and a bit more detail about what you need.'
+        'Give it a short title and tell us a bit more about what you need.'
       );
       return;
     }
 
-    // POC stub — replace with real API call once backend is ready:
-    // await api.post('/custom-requirements', { name, phone, description });
-    console.log('Custom requirement submitted:', { name, phone, description });
-
-    Alert.alert(
-      'Request Submitted',
-      'Thanks! Our team will reach out to you shortly.',
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
-    );
+    submit({
+      type: 'custom',
+      title: title.trim(),
+      description: description.trim(),
+    });
   };
 
   return (
@@ -94,52 +93,18 @@ export default function CustomRequirementScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Name */}
-          <Text style={styles.label}>Your Name</Text>
-          <View
-            style={[styles.field, focused === 'name' && styles.fieldFocused]}
-          >
-            <MaterialCommunityIcons
-              name="account-outline"
-              size={19}
-              color={focused === 'name' ? colors.primary : colors.textLight}
-            />
+          {/* Title */}
+          <Text style={styles.label}>What do you need?</Text>
+          <View style={[styles.field, focused === 'title' && styles.fieldActive]}>
             <TextInput
               style={styles.input}
-              placeholder="Ravi Kumar"
+              placeholder="e.g. Custom CRM for my dealership"
               placeholderTextColor={colors.textLight}
-              value={name}
-              onChangeText={setName}
-              onFocus={() => setFocused('name')}
+              value={title}
+              onChangeText={setTitle}
+              onFocus={() => setFocused('title')}
               onBlur={() => setFocused(null)}
             />
-          </View>
-
-          {/* Phone */}
-          <Text style={styles.label}>Phone Number</Text>
-          <View
-            style={[styles.field, focused === 'phone' && styles.fieldFocused]}
-          >
-            <Text style={styles.countryCode}>+91</Text>
-            <View style={styles.fieldDivider} />
-            <TextInput
-              style={[styles.input, styles.inputPhone]}
-              placeholder="9876543210"
-              placeholderTextColor={colors.textLight}
-              keyboardType="number-pad"
-              maxLength={10}
-              value={phone}
-              onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, ''))}
-              onFocus={() => setFocused('phone')}
-              onBlur={() => setFocused(null)}
-            />
-            {isPhoneValid && (
-              <MaterialCommunityIcons
-                name="check-circle"
-                size={19}
-                color="#12B3A0"
-              />
-            )}
           </View>
 
           {/* Description */}
@@ -148,8 +113,7 @@ export default function CustomRequirementScreen({ navigation }: any) {
             <Text
               style={[
                 styles.counter,
-                description.trim().length >= MIN_DESCRIPTION &&
-                  styles.counterOk,
+                description.trim().length >= MIN_DESCRIPTION && styles.counterOk,
               ]}
             >
               {description.trim().length}/{MIN_DESCRIPTION}
@@ -159,12 +123,12 @@ export default function CustomRequirementScreen({ navigation }: any) {
             style={[
               styles.field,
               styles.textAreaField,
-              focused === 'desc' && styles.fieldFocused,
+              focused === 'desc' && styles.fieldActive,
             ]}
           >
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="e.g. a custom CRM for my dealership, a booking app feature, a WhatsApp integration…"
+              placeholder="Tell us what you're looking for — features, who will use it, any systems it should connect to…"
               placeholderTextColor={colors.textLight}
               multiline
               textAlignVertical="top"
@@ -175,7 +139,6 @@ export default function CustomRequirementScreen({ navigation }: any) {
             />
           </View>
 
-          {/* Reassurance */}
           <View style={styles.assureRow}>
             <MaterialCommunityIcons
               name="shield-check-outline"
@@ -188,23 +151,32 @@ export default function CustomRequirementScreen({ navigation }: any) {
           </View>
         </ScrollView>
 
-        {/* Sticky footer */}
-        <View
-          style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}
-        >
+        <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
           <TouchableOpacity
-            style={[styles.submitButton, !isReady && styles.submitDisabled]}
+            style={[
+              styles.submitButton,
+              (!isReady || busy) && styles.submitDisabled,
+            ]}
             activeOpacity={0.9}
             onPress={handleSubmit}
+            disabled={busy}
           >
-            <Text style={styles.submitButtonText}>Submit Request</Text>
-            <MaterialCommunityIcons
-              name="arrow-right"
-              size={18}
-              color={colors.white}
-            />
+            {busy ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <>
+                <Text style={styles.submitButtonText}>Submit Request</Text>
+                <MaterialCommunityIcons
+                  name="arrow-right"
+                  size={18}
+                  color={colors.white}
+                />
+              </>
+            )}
           </TouchableOpacity>
         </View>
+
+        <ContactDetailsSheet {...sheetProps} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -245,7 +217,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
     borderRadius: 16,
     padding: 14,
-    marginBottom: 22,
+    marginBottom: 12,
   },
   introIcon: {
     width: 38,
@@ -299,10 +271,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 54,
   },
-  fieldFocused: {
-    borderColor: colors.primary,
-    backgroundColor: colors.white,
-  },
+  fieldActive: { borderColor: colors.primary, backgroundColor: colors.white },
   input: {
     flex: 1,
     fontFamily: fonts.body,
@@ -310,15 +279,7 @@ const styles = StyleSheet.create({
     color: colors.textDark,
     padding: 0,
   },
-  inputPhone: { letterSpacing: 0.8 },
-  countryCode: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 15,
-    color: colors.textDark,
-  },
-  fieldDivider: { width: 1, height: 20, backgroundColor: colors.border },
-
-  textAreaField: { height: 150, alignItems: 'flex-start', paddingVertical: 14 },
+  textAreaField: { height: 170, alignItems: 'flex-start', paddingVertical: 14 },
   textArea: { height: '100%', lineHeight: 20 },
 
   assureRow: {
@@ -350,6 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 17,
     borderRadius: 14,
+    minHeight: 56,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.28,

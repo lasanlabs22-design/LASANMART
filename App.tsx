@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View } from 'react-native';
+import { View, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
@@ -11,12 +11,11 @@ import {
   PlusJakartaSans_500Medium,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { AuthProvider } from './src/context/AuthContext';
-import AppNavigator from './src/navigation/AppNavigator';
-import { RequestsProvider } from './src/context/RequestsContext';
-import { LogBox } from 'react-native';
-LogBox.ignoreLogs(['Method moveAsync', 'Method copyAsync']);
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 
+import AppNavigator from './src/navigation/AppNavigator';
+
+LogBox.ignoreLogs(['Method moveAsync', 'Method copyAsync']);
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,21 +27,30 @@ export default function App() {
     PlusJakartaSans_700Bold,
   });
 
-  const onLayout = useCallback(async () => {
-    if (fontsLoaded) await SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+  return (
+    <SafeAreaProvider>
+      <AuthProvider>
+          <AppGate fontsLoaded={fontsLoaded} />
+      </AuthProvider>
+    </SafeAreaProvider>
+  );
+}
 
-  if (!fontsLoaded) return null;
+/** Waits for both the fonts and the stored profile before showing anything */
+function AppGate({ fontsLoaded }: { fontsLoaded: boolean }) {
+  const { isReady } = useAuth();
+
+  const onLayout = useCallback(async () => {
+    if (fontsLoaded && isReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, isReady]);
+
+  if (!fontsLoaded || !isReady) return null;
 
   return (
     <View style={{ flex: 1 }} onLayout={onLayout}>
-      <SafeAreaProvider>
-                <AuthProvider>
-          <RequestsProvider>
-            <AppNavigator />
-          </RequestsProvider>
-        </AuthProvider>
-      </SafeAreaProvider>
+      <AppNavigator />
     </View>
   );
 }

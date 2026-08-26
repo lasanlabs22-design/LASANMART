@@ -1,133 +1,240 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
-import { useRequests, ServiceRequest } from '../context/RequestsContext';
+import { useAuth } from '../context/AuthContext';
+import { fetchRequests, SavedRequest, ApiError } from '../api/client';
+
+const TYPE_META: Record<string, { label: string; icon: string }> = {
+  service: { label: 'Service Request', icon: 'monitor-dashboard' },
+  custom: { label: 'Custom Requirement', icon: 'hammer-wrench' },
+  plan: { label: 'Plan Enquiry', icon: 'package-variant-closed' },
+  influencer: { label: 'Influencer Request', icon: 'account-star' },
+};
+
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  new: { label: 'Received', color: '#3A86FF' },
+  contacted: { label: 'Contacted', color: '#E8AE00' },
+  in_progress: { label: 'In Progress', color: '#12B3A0' },
+  closed: { label: 'Completed', color: '#767676' },
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
 
 export default function MyRequestsScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { requests, removeRequest } = useRequests();
+  const { profile, hasContactDetails } = useAuth();
+
+  const [requests, setRequests] = useState<SavedRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(
+    async (isRefresh = false) => {
+      // No phone number means nothing to look up yet
+      if (!hasContactDetails) {
+        setRequests([]);
+        setLoading(false);
+        return;
+      }
+
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+
+      setError(null);
+
+      try {
+        const data = await fetchRequests(profile.phone);
+        setRequests(data);
+      } catch (err) {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : 'Could not load your requests.'
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [profile.phone, hasContactDetails]
+  );
+
+  // Reload every time the tab comes into view, so a new request appears
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   const openPost = () => navigation.getParent()?.navigate('PostRequest');
 
-  const confirmDelete = (r: ServiceRequest) => {
-    Alert.alert('Delete Request', `Remove "${r.title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => removeRequest(r.id),
-      },
-    ]);
-  };
+  const renderItem = ({ item }: { item: SavedRequest }) => {
+    const type = TYPE_META[item.type] || { label: item.type, icon: 'file-outline' };
+    const status = STATUS_META[item.status] || STATUS_META.new;
 
-  const renderItem = ({ item }: { item: ServiceRequest }) => (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.85}
-      onLongPress={() => confirmDelete(item)}
-    >
-      <View style={styles.cardTop}>
-        <View style={styles.serviceTag}>
-          <MaterialCommunityIcons
-            name={item.category === 'online' ? 'monitor-dashboard' : 'billboard'}
-            size={12}
-            color={colors.textLight}
-          />
-          <Text style={styles.serviceTagText}>{item.serviceLabel}</Text>
+    const detailEntries = item.details
+      ? Object.entries(item.details).filter(
+          ([, v]) => v !== null && v !== undefined && v !== ''
+        )
+      : [];
+
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardTop}>
+          <View style={styles.typeTag}>
+            <MaterialCommunityIcons
+              name={type.icon as any}
+              size={12}
+              color={colors.textLight}
+            />
+            <Text style={styles.typeTagText}>{type.label}</Text>
+          </View>
+
+          <View
+            style={[styles.statusPill, { backgroundColor: `${status.color}1A` }]}
+          >
+            <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+            <Text style={[styles.statusText, { color: status.color }]}>
+              {status.label}
+            </Text>
+          </View>
         </View>
 
-        <Text style={styles.postedOn}>{item.postedOn}</Text>
-      </View>
+        {item.title && (
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+        )}
 
-      <Text style={styles.cardTitle} numberOfLines={2}>
-        {item.title}
-      </Text>
-      <Text style={styles.cardDesc} numberOfLines={3}>
-        {item.description}
-      </Text>
+        {item.description && (
+          <Text style={styles.cardDesc} numberOfLines={3}>
+            {item.description}
+          </Text>
+        )}
 
-      <View style={styles.metaRow}>
-        <Meta icon="briefcase-outline" text={item.sector} />
-        <Meta icon="wallet-outline" text={item.budget} />
-        <Meta icon="calendar-clock" text={item.timeline} />
-        <Meta icon="map-marker-outline" text={item.city} />
+        {detailEntries.length > 0 && (
+          <View style={styles.metaRow}>
+            {detailEntries.slice(0, 4).map(([key, value]) => (
+              <View key={key} style={styles.meta}>
+                <Text style={styles.metaText} numberOfLines={1}>
+                  {String(Array.isArray(value) ? value.join(', ') : value)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Text style={styles.postedOn}>Posted {formatDate(item.created_at)}</Text>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  };
+
+  /* ---------- States ---------- */
+
+  const showEmpty = !loading && !error && requests.length === 0;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Requests</Text>
         <Text style={styles.headerSub}>
-          {requests.length === 0
+          {loading
+            ? 'Loading…'
+            : requests.length === 0
             ? 'Nothing posted yet'
-            : `${requests.length} request${requests.length > 1 ? 's' : ''} raised`}
+            : `${requests.length} request${requests.length > 1 ? 's' : ''}`}
         </Text>
       </View>
 
-      <FlatList
-        data={requests}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: 100 + insets.bottom },
-        ]}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          requests.length > 0 ? (
-            <View style={styles.hintRow}>
-              <MaterialCommunityIcons
-                name="gesture-tap-hold"
-                size={13}
-                color={colors.textLight}
-              />
-              <Text style={styles.hintText}>
-                Long-press a request to remove it
-              </Text>
-            </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <View style={styles.emptyIcon}>
-              <MaterialCommunityIcons
-                name="clipboard-text-outline"
-                size={30}
-                color={colors.textLight}
-              />
-            </View>
-            <Text style={styles.emptyTitle}>Post your first request</Text>
-            <Text style={styles.emptyText}>
-              Tell us what marketing help you need — online or offline — and our
-              team takes it from there.
-            </Text>
-            <TouchableOpacity
-              style={styles.emptyButton}
-              activeOpacity={0.9}
-              onPress={openPost}
-            >
-              <MaterialCommunityIcons name="plus" size={17} color={colors.white} />
-              <Text style={styles.emptyButtonText}>Post a Request</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.centre}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={requests}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: 100 + insets.bottom },
+          ]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => load(true)}
+              tintColor={colors.primary}
+            />
+          }
+          ListHeaderComponent={
+            error ? (
+              <View style={styles.errorBox}>
+                <MaterialCommunityIcons
+                  name="wifi-off"
+                  size={16}
+                  color="#D93025"
+                />
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity onPress={() => load(true)}>
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            showEmpty ? (
+              <View style={styles.empty}>
+                <View style={styles.emptyIcon}>
+                  <MaterialCommunityIcons
+                    name="clipboard-text-outline"
+                    size={30}
+                    color={colors.textLight}
+                  />
+                </View>
+                <Text style={styles.emptyTitle}>Post your first request</Text>
+                <Text style={styles.emptyText}>
+                  Tell us what marketing help you need — online or offline — and
+                  our team takes it from there.
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyButton}
+                  activeOpacity={0.9}
+                  onPress={openPost}
+                >
+                  <MaterialCommunityIcons
+                    name="plus"
+                    size={17}
+                    color={colors.white}
+                  />
+                  <Text style={styles.emptyButtonText}>Post a Request</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null
+          }
+        />
+      )}
 
-      {/* Floating action button */}
       {requests.length > 0 && (
         <TouchableOpacity
           style={[styles.fab, { bottom: 20 + insets.bottom }]}
@@ -139,21 +246,6 @@ export default function MyRequestsScreen() {
         </TouchableOpacity>
       )}
     </SafeAreaView>
-  );
-}
-
-function Meta({ icon, text }: { icon: string; text: string }) {
-  return (
-    <View style={styles.meta}>
-      <MaterialCommunityIcons
-        name={icon as any}
-        size={13}
-        color={colors.textLight}
-      />
-      <Text style={styles.metaText} numberOfLines={1}>
-        {text}
-      </Text>
-    </View>
   );
 }
 
@@ -174,18 +266,29 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
+  centre: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
   listContent: { paddingHorizontal: 16, paddingTop: 4, gap: 12 },
 
-  hintRow: {
+  errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingBottom: 2,
+    gap: 8,
+    backgroundColor: 'rgba(217,48,37,0.08)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 4,
   },
-  hintText: {
+  errorText: {
+    flex: 1,
     fontFamily: fonts.body,
-    fontSize: 11,
-    color: colors.textLight,
+    fontSize: 12,
+    color: '#D93025',
+  },
+  retryText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    color: '#D93025',
   },
 
   card: {
@@ -201,7 +304,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  serviceTag: {
+  typeTag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -210,16 +313,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  serviceTagText: {
+  typeTagText: {
     fontFamily: fonts.bodyBold,
     fontSize: 10.5,
     color: colors.textLight,
   },
-  postedOn: {
-    fontFamily: fonts.body,
-    fontSize: 11,
-    color: colors.textLight,
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: 20,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
   },
+  statusDot: { width: 5, height: 5, borderRadius: 3 },
+  statusText: { fontFamily: fonts.bodyBold, fontSize: 10 },
 
   cardTitle: {
     fontFamily: fonts.displayMedium,
@@ -238,18 +346,29 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    rowGap: 8,
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    gap: 6,
+    marginTop: 12,
   },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
+  meta: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
   metaText: {
     fontFamily: fonts.bodyBold,
+    fontSize: 10.5,
+    color: colors.textLight,
+  },
+
+  postedOn: {
+    fontFamily: fonts.body,
     fontSize: 11,
     color: colors.textLight,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
 
   empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 36 },
