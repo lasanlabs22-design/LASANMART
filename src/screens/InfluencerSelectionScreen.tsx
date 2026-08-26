@@ -7,17 +7,24 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { influencers, InfluencerProfile } from '../data/influencers';
+import { useSubmitRequest } from '../hooks/useSubmitRequest';
+import ContactDetailsSheet from '../components/ContactDetailsSheet';
 
 export default function InfluencerSelectionScreen({ navigation }: any) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState('All');
   const insets = useSafeAreaInsets();
+
+  const { submit, busy, sheetProps } = useSubmitRequest(() =>
+    navigation.goBack()
+  );
 
   const categories = useMemo(
     () => ['All', ...Array.from(new Set(influencers.map((i) => i.category)))],
@@ -44,19 +51,18 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
       return;
     }
 
-    const selectedNames = influencers
-      .filter((inf) => selectedIds.includes(inf.id))
-      .map((inf) => inf.name);
+    const chosen = influencers.filter((inf) => selectedIds.includes(inf.id));
 
-    // POC stub — replace with real API call later:
-    // await api.post('/influencer-requests', { influencerIds: selectedIds });
-    console.log('Influencer request submitted:', selectedNames);
-
-    Alert.alert(
-      'Request Submitted',
-      `Your request for ${selectedIds.length} influencer(s) has been sent. Our team will follow up shortly.`,
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
-    );
+    submit({
+      type: 'influencer',
+      title: `${chosen.length} influencer${chosen.length > 1 ? 's' : ''} selected`,
+      details: {
+        influencers: chosen.map(
+          (i) => `${i.name} (${i.handle}, ${i.followers}, ${i.category})`
+        ),
+        count: chosen.length,
+      },
+    });
   };
 
   const renderItem = ({ item }: { item: InfluencerProfile }) => {
@@ -170,9 +176,7 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
       {/* Sticky footer */}
       <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
         <View>
-          <Text style={styles.selectedCount}>
-            {selectedIds.length} selected
-          </Text>
+          <Text style={styles.selectedCount}>{selectedIds.length} selected</Text>
           <Text style={styles.selectedHint}>
             {selectedIds.length === 0
               ? 'Pick one or more creators'
@@ -183,19 +187,28 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
         <TouchableOpacity
           style={[
             styles.submitButton,
-            selectedIds.length === 0 && styles.submitDisabled,
+            (selectedIds.length === 0 || busy) && styles.submitDisabled,
           ]}
           activeOpacity={0.9}
           onPress={handleSubmit}
+          disabled={busy}
         >
-          <Text style={styles.submitButtonText}>Submit Request</Text>
-          <MaterialCommunityIcons
-            name="arrow-right"
-            size={17}
-            color={colors.white}
-          />
+          {busy ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <>
+              <Text style={styles.submitButtonText}>Submit Request</Text>
+              <MaterialCommunityIcons
+                name="arrow-right"
+                size={17}
+                color={colors.white}
+              />
+            </>
+          )}
         </TouchableOpacity>
       </View>
+
+      <ContactDetailsSheet {...sheetProps} />
     </SafeAreaView>
   );
 }
@@ -363,11 +376,14 @@ const styles = StyleSheet.create({
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 7,
     backgroundColor: colors.primary,
     paddingHorizontal: 22,
     paddingVertical: 14,
     borderRadius: 14,
+    minWidth: 168,
+    minHeight: 50,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.28,

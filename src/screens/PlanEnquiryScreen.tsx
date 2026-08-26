@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,24 +19,31 @@ import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { businessSectors, BusinessSector } from '../data/businessSectors';
 import { Plan } from '../data/plans';
+import { useSubmitRequest } from '../hooks/useSubmitRequest';
+import ContactDetailsSheet from '../components/ContactDetailsSheet';
 
 const START_WHEN = ['Right away', 'Within a week', 'This month', 'Just exploring'];
 
 export default function PlanEnquiryScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { profile } = useAuth();
+  const { profile, updateProfile } = useAuth();
   const plan: Plan = route.params.plan;
 
+  const { submit, busy, sheetProps } = useSubmitRequest(() =>
+    navigation.goBack()
+  );
+
   const [name, setName] = useState(profile.name);
-  const [phone, setPhone] = useState(profile.phone);
+  const [phone, setPhone] = useState(
+    profile.phone.replace(/\D/g, '').slice(-10)
+  );
   const [company, setCompany] = useState(profile.companyName);
   const [sector, setSector] = useState<BusinessSector | null>(null);
   const [startWhen, setStartWhen] = useState('');
   const [message, setMessage] = useState('');
   const [focused, setFocused] = useState<string | null>(null);
 
-  const isReady =
-    name.trim().length > 1 && phone.length === 10 && !!startWhen;
+  const isReady = name.trim().length > 1 && phone.length === 10 && !!startWhen;
 
   const handleSubmit = () => {
     if (!isReady) {
@@ -46,24 +54,27 @@ export default function PlanEnquiryScreen({ route, navigation }: any) {
       return;
     }
 
-    // POC stub — replace with real API call once backend is ready:
-    // await api.post('/plan-enquiries', { planId: plan.id, ... });
-    console.log('Plan enquiry submitted:', {
-      plan: plan.title,
-      price: plan.price,
-      name,
+    // Save what they typed here into the profile, so the details
+    // sheet only appears if we're still missing an email
+    updateProfile({
+      name: name.trim(),
       phone,
-      company,
-      sector: sector?.label,
-      startWhen,
-      message,
+      companyName: company.trim(),
     });
 
-    Alert.alert(
-      'Enquiry Sent',
-      `Thanks! Our team will call you about the ${plan.title} plan shortly.`,
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
-    );
+    submit({
+      type: 'plan',
+      title: `${plan.title} Plan — ${plan.price}`,
+      description: message.trim() || undefined,
+      sector: sector?.label,
+      details: {
+        plan: plan.title,
+        price: plan.price,
+        duration: plan.duration,
+        tier: plan.tier,
+        startWhen,
+      },
+    });
   };
 
   return (
@@ -147,9 +158,7 @@ export default function PlanEnquiryScreen({ route, navigation }: any) {
           />
 
           <Text style={styles.fieldLabel}>Phone Number</Text>
-          <View
-            style={[styles.field, focused === 'phone' && styles.fieldActive]}
-          >
+          <View style={[styles.field, focused === 'phone' && styles.fieldActive]}>
             <Text style={styles.countryCode}>+91</Text>
             <View style={styles.fieldDivider} />
             <TextInput
@@ -274,18 +283,30 @@ export default function PlanEnquiryScreen({ route, navigation }: any) {
 
         <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
           <TouchableOpacity
-            style={[styles.submitButton, !isReady && styles.submitDisabled]}
+            style={[
+              styles.submitButton,
+              (!isReady || busy) && styles.submitDisabled,
+            ]}
             activeOpacity={0.9}
             onPress={handleSubmit}
+            disabled={busy}
           >
-            <Text style={styles.submitText}>Send Enquiry</Text>
-            <MaterialCommunityIcons
-              name="send-outline"
-              size={17}
-              color={colors.white}
-            />
+            {busy ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <>
+                <Text style={styles.submitText}>Send Enquiry</Text>
+                <MaterialCommunityIcons
+                  name="send-outline"
+                  size={17}
+                  color={colors.white}
+                />
+              </>
+            )}
           </TouchableOpacity>
         </View>
+
+        <ContactDetailsSheet {...sheetProps} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -534,6 +555,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 17,
     borderRadius: 14,
+    minHeight: 56,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.28,
