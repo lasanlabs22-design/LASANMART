@@ -168,3 +168,80 @@ export async function pingApi(): Promise<boolean> {
     return false;
   }
 }
+export type AppNotification = {
+  id: string;
+  request_id: string | null;
+  type: string;
+  title: string;
+  body: string;
+  read_at: string | null;
+  created_at: string;
+};
+
+/** Everything this person has been told, newest first */
+export async function fetchNotifications(
+  phone: string
+): Promise<{ notifications: AppNotification[]; unread: number }> {
+  const digits = phone.replace(/\D/g, '').slice(-10);
+
+  let response: Response;
+
+  try {
+    response = await fetchWithTimeout(
+      `${API_URL}/notifications?phone=${digits}`
+    );
+  } catch (err: any) {
+    console.log('Network error fetching notifications:', err?.message);
+    throw new ApiError("Couldn't reach our servers.", true);
+  }
+
+  let data: any = null;
+  try {
+    data = await response.json();
+  } catch {
+    // ignore
+  }
+
+  if (!response.ok) {
+    throw new ApiError(data?.error || 'Could not load notifications.');
+  }
+
+  return {
+    notifications: data?.notifications || [],
+    unread: data?.unread || 0,
+  };
+}
+
+/** Just the badge number — cheap enough to call whenever Home appears */
+export async function fetchUnreadCount(phone: string): Promise<number> {
+  const digits = phone.replace(/\D/g, '').slice(-10);
+
+  try {
+    const res = await fetchWithTimeout(
+      `${API_URL}/notifications/count?phone=${digits}`
+    );
+    const data = await res.json();
+    return data?.unread || 0;
+  } catch {
+    // A failed badge check is not worth surfacing
+    return 0;
+  }
+}
+
+/** Mark one as read, or all of them if no id is given */
+export async function markNotificationsRead(
+  phone: string,
+  id?: string
+): Promise<void> {
+  const digits = phone.replace(/\D/g, '').slice(-10);
+
+  try {
+    await fetchWithTimeout(`${API_URL}/notifications/read`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: digits, id }),
+    });
+  } catch (err: any) {
+    console.log('Could not mark notifications read:', err?.message);
+  }
+}

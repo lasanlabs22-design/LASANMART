@@ -16,6 +16,8 @@ import { colors } from '../theme/colors';
 type Props = {
   onSearchPress?: () => void;
   onNotificationsPress?: () => void;
+  /** Number of unread notifications — 0 hides the badge */
+  unreadCount?: number;
 };
 
 const cities = [
@@ -25,7 +27,11 @@ const cities = [
   'Tirupati',
 ];
 
-export default function HomeHeader({ onSearchPress, onNotificationsPress }: Props) {
+export default function HomeHeader({
+  onSearchPress,
+  onNotificationsPress,
+  unreadCount = 0,
+}: Props) {
   const [selectedCity, setSelectedCity] = useState('Detecting...');
   const [modalVisible, setModalVisible] = useState(false);
   const [isDetecting, setIsDetecting] = useState(true);
@@ -111,7 +117,14 @@ export default function HomeHeader({ onSearchPress, onNotificationsPress }: Prop
 
       <TouchableOpacity style={styles.iconButton} onPress={onNotificationsPress}>
         <Ionicons name="notifications-outline" size={24} color={colors.textDark} />
-        <View style={styles.badge} />
+
+        {unreadCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
 
       <Modal visible={modalVisible} transparent animationType="slide">
@@ -212,12 +225,22 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: 8,
-    right: 9,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 5,
+    right: 5,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 9,
+    paddingHorizontal: 4,
     backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#F5F5F5',
+  },
+  badgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: colors.white,
   },
   modalOverlay: {
     flex: 1,

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import HomeHeader from '../components/HomeHeader';
 import PlansCarousel from '../components/PlansCarousal';
@@ -10,6 +10,8 @@ import ReelsRow from '../components/ReelsRow';
 import CustomRequirementBanner from '../screens/CustomRequirementBanner';
 import InfluencerBanner from '../components/InfluencerBanner';
 import BusinessIdeasBanner from '../components/BusinessIdeasBanner';
+import { useAuth } from '../context/AuthContext';
+import { fetchUnreadCount } from '../api/client';
 import {
   onlineMarketing,
   offlineMarketing,
@@ -20,9 +22,28 @@ import { plans } from '../data/plans';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
+  const { profile, hasContactDetails } = useAuth();
+
+  const [unread, setUnread] = useState(0);
+
+  // Refresh the bell badge every time Home comes into view —
+  // so a status change made by the team shows up without a restart
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasContactDetails) {
+        setUnread(0);
+        return;
+      }
+      fetchUnreadCount(profile.phone).then(setUnread);
+    }, [profile.phone, hasContactDetails])
+  );
 
   const openReel = () => {
     navigation.navigate('Lasan Vibes');
+  };
+
+  const openNotifications = () => {
+    navigation.getParent()?.navigate('Notifications');
   };
 
   const openCustomRequirement = () => {
@@ -37,7 +58,7 @@ export default function HomeScreen() {
     navigation.getParent()?.navigate('BusinessIdeas');
   };
 
-    const openPlanEnquiry = (plan: any) => {
+  const openPlanEnquiry = (plan: any) => {
     navigation.getParent()?.navigate('PlanEnquiry', { plan });
   };
 
@@ -51,17 +72,13 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <HomeHeader
+        unreadCount={unread}
         onSearchPress={() => console.log('Search tapped — screen not built yet')}
-        onNotificationsPress={() =>
-          console.log('Notifications tapped — screen not built yet')
-        }
+        onNotificationsPress={openNotifications}
       />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-               <PlansCarousel
-          data={plans}
-          onPlanPress={openPlanEnquiry}
-        />
+        <PlansCarousel data={plans} onPlanPress={openPlanEnquiry} />
 
         <BusinessIdeasBanner onPress={openBusinessIdeas} />
 

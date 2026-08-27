@@ -16,6 +16,7 @@ import PlanEnquiryScreen from '../screens/PlanEnquiryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import ToolEnquiryScreen from '../screens/ToolEnquiryScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -85,7 +86,7 @@ export default function AppNavigator() {
           component={ToolEnquiryScreen}
           options={{ presentation: 'modal' }}
         />
-        
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
         {/* Account flows */}
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
