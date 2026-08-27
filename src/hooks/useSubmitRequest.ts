@@ -13,6 +13,7 @@ type RequestBody = {
   type: RequestType;
   title?: string;
   description?: string;
+  descriptionLabel?: string;
   sector?: string;
   city?: string;
   details?: Record<string, any>;
@@ -69,6 +70,7 @@ export function useSubmitRequest(onSuccess?: () => void) {
       city: body.city || profile.address || undefined,
       title: body.title,
       description: body.description,
+      descriptionLabel: body.descriptionLabel,
       details: body.details,
     };
 
