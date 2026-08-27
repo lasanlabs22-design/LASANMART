@@ -46,6 +46,10 @@ export default function HomeScreen() {
     navigation.getParent()?.navigate('Notifications');
   };
 
+    const openSearch = () => {
+    navigation.getParent()?.navigate('Search');
+  };
+
   const openCustomRequirement = () => {
     navigation.getParent()?.navigate('CustomRequirement');
   };
@@ -73,7 +77,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <HomeHeader
         unreadCount={unread}
-        onSearchPress={() => console.log('Search tapped — screen not built yet')}
+               onSearchPress={openSearch}
         onNotificationsPress={openNotifications}
       />
 
