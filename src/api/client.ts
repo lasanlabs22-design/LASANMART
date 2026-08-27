@@ -33,6 +33,7 @@ export type SubmitRequestPayload = {
   city?: string;
   title?: string;
   description?: string;
+  descriptionLabel?: string;
   details?: Record<string, any>;
 };
 
