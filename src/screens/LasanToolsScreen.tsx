@@ -59,26 +59,15 @@ const TOOLS: Tool[] = [
 export default function LasanToolsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
 
-  const handleToolPress = (tool: Tool) => {
+   const handleToolPress = (tool: Tool) => {
     if (tool.id === 'quotation') {
       navigation.navigate('Quotation');
       return;
     }
 
-    Alert.alert(
-      tool.title,
-      'Our team will set this up for you. Post a request and we will get in touch.',
-      [
-        { text: 'Not now', style: 'cancel' },
-        {
-          text: 'Post a request',
-          onPress: () => {
-            navigation.goBack();
-            navigation.navigate('PostRequest');
-          },
-        },
-      ]
-    );
+    // Attendance and CRM open a dedicated enquiry form,
+    // carrying the chosen tool with them
+    navigation.navigate('ToolEnquiry', { tool });
   };
 
   return (
