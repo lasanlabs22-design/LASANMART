@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,60 +7,146 @@ import {
   Dimensions,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
-import { reels, Reel } from '../data/reels';
+import { fetchReels, markReelViewed, ApiReel } from '../api/client';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export default function LasanVibesScreen() {
+export default function LasanVibesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
+
+  const [reels, setReels] = useState<ApiReel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Tab bar height must be subtracted so each reel fills exactly one page
-  const TAB_BAR = 60 + insets.bottom;
-  const ITEM_HEIGHT = SCREEN_HEIGHT - TAB_BAR;
+  /**
+   * Measure the real available height rather than calculating it.
+   * The tab bar and the system nav bar vary between devices, so any
+   * arithmetic here ends up slightly wrong somewhere — onLayout gives
+   * us exactly what React Navigation handed this screen.
+   */
+  const [pageHeight, setPageHeight] = useState(SCREEN_HEIGHT);
+
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    setError(null);
+
+    try {
+      const data = await fetchReels();
+      setReels(data);
+    } catch (err: any) {
+      setError(err?.message || 'Could not load reels.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // Reload whenever the tab is opened, so new reels appear
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 }).current;
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems?.length > 0) {
-      setActiveIndex(viewableItems[0].index ?? 0);
+      const index = viewableItems[0].index ?? 0;
+      setActiveIndex(index);
+
+      const reel = viewableItems[0].item as ApiReel;
+      if (reel?.id) markReelViewed(reel.id);
     }
   }).current;
 
   const renderItem = useCallback(
-    ({ item, index }: { item: Reel; index: number }) => (
+    ({ item, index }: { item: ApiReel; index: number }) => (
       <ReelItem
         reel={item}
-        height={ITEM_HEIGHT}
+        height={pageHeight}
         isActive={isFocused && index === activeIndex}
-        topInset={insets.top}
       />
     ),
-    [activeIndex, isFocused, ITEM_HEIGHT, insets.top]
+    [activeIndex, isFocused, pageHeight]
   );
 
+  /* ---------- States ---------- */
+
+  if (loading) {
+    return (
+      <View style={styles.centre}>
+        <ActivityIndicator color={colors.white} />
+      </View>
+    );
+  }
+
+  if (error || reels.length === 0) {
+    return (
+      <View style={[styles.centre, { paddingHorizontal: 40 }]}>
+        <View style={styles.emptyIcon}>
+          <MaterialCommunityIcons
+            name={error ? 'wifi-off' : 'video-off-outline'}
+            size={28}
+            color="rgba(255,255,255,0.65)"
+          />
+        </View>
+
+        <Text style={styles.emptyTitle}>
+          {error ? "Can't load Vibes right now" : 'No vibes yet'}
+        </Text>
+        <Text style={styles.emptyText}>
+          {error
+            ? 'Check your connection and try again.'
+            : 'Check back soon — new reels are posted regularly.'}
+        </Text>
+
+        <TouchableOpacity
+          style={styles.retryButton}
+          activeOpacity={0.9}
+          onPress={() => load(true)}
+        >
+          <MaterialCommunityIcons
+            name="refresh"
+            size={16}
+            color={colors.white}
+          />
+          <Text style={styles.retryText}>Try again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      onLayout={(e) => setPageHeight(e.nativeEvent.layout.height)}
+    >
       <FlatList
         data={reels}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         pagingEnabled
         showsVerticalScrollIndicator={false}
-        snapToInterval={ITEM_HEIGHT}
+        snapToInterval={pageHeight}
         decelerationRate="fast"
         getItemLayout={(_, index) => ({
-          length: ITEM_HEIGHT,
-          offset: ITEM_HEIGHT * index,
+          length: pageHeight,
+          offset: pageHeight * index,
           index,
         })}
         viewabilityConfig={viewabilityConfig}
@@ -69,7 +155,23 @@ export default function LasanVibesScreen() {
         initialNumToRender={2}
         maxToRenderPerBatch={2}
         removeClippedSubviews
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => load(true)}
+            tintColor={colors.white}
+          />
+        }
       />
+
+      {/* One pill for the whole screen, not one per reel */}
+      <View
+        style={[styles.brandPill, { top: insets.top + 12 }]}
+        pointerEvents="none"
+      >
+        <View style={styles.brandDot} />
+        <Text style={styles.brandText}>Lasan Vibes</Text>
+      </View>
     </View>
   );
 }
@@ -80,24 +182,24 @@ function ReelItem({
   reel,
   height,
   isActive,
-  topInset,
 }: {
-  reel: Reel;
+  reel: ApiReel;
   height: number;
   isActive: boolean;
-  topInset: number;
 }) {
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
+    'loading'
+  );
   const [isPaused, setIsPaused] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
-  const player = useVideoPlayer(reel.videoUrl, (p) => {
+  const player = useVideoPlayer(reel.video_url, (p) => {
     p.loop = true;
     p.muted = false;
   });
 
-  // Play only while this reel is the visible one
-  React.useEffect(() => {
+  // Only the visible reel plays — otherwise every player runs at once
+  useEffect(() => {
     if (isActive && !isPaused) {
       player.play();
     } else {
@@ -105,7 +207,7 @@ function ReelItem({
     }
   }, [isActive, isPaused, player]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const sub = player.addListener('statusChange', (payload: any) => {
       if (payload.status === 'readyToPlay') setStatus('ready');
       if (payload.status === 'error') setStatus('error');
@@ -113,13 +215,11 @@ function ReelItem({
     return () => sub.remove();
   }, [player]);
 
-  const togglePlayback = () => setIsPaused((v) => !v);
-
   return (
     <View style={[styles.page, { height }]}>
       <TouchableOpacity
         activeOpacity={1}
-        onPress={togglePlayback}
+        onPress={() => setIsPaused((v) => !v)}
         style={StyleSheet.absoluteFillObject}
       >
         <VideoView
@@ -130,7 +230,7 @@ function ReelItem({
         />
       </TouchableOpacity>
 
-      {/* Scrims */}
+      {/* Scrims so text stays readable */}
       <LinearGradient
         pointerEvents="none"
         colors={['rgba(0,0,0,0.5)', 'transparent']}
@@ -142,7 +242,6 @@ function ReelItem({
         style={styles.scrimBottom}
       />
 
-      {/* States */}
       {status === 'loading' && (
         <View style={styles.center} pointerEvents="none">
           <ActivityIndicator size="large" color={colors.white} />
@@ -166,16 +265,14 @@ function ReelItem({
       {isPaused && status !== 'error' && (
         <View style={styles.center} pointerEvents="none">
           <View style={styles.playBadge}>
-            <MaterialCommunityIcons name="play" size={32} color={colors.white} />
+            <MaterialCommunityIcons
+              name="play"
+              size={32}
+              color={colors.white}
+            />
           </View>
         </View>
       )}
-
-      {/* Brand pill */}
-      <View style={[styles.brandPill, { top: topInset + 12 }]}>
-        <View style={styles.brandDot} />
-        <Text style={styles.brandText}>Lasan Vibes</Text>
-      </View>
 
       {/* Bottom content */}
       <View style={styles.bottomRow}>
@@ -190,15 +287,23 @@ function ReelItem({
                 />
               </View>
             </View>
+
             <Text style={styles.username}>{reel.username}</Text>
-            <TouchableOpacity style={styles.followBtn}>
-              <Text style={styles.followText}>Follow</Text>
-            </TouchableOpacity>
+
+            {reel.source === 'team' && (
+              <MaterialCommunityIcons
+                name="check-decagram"
+                size={14}
+                color="#3A86FF"
+              />
+            )}
           </View>
 
-          <Text style={styles.caption} numberOfLines={3}>
-            {reel.caption}
-          </Text>
+          {reel.caption && (
+            <Text style={styles.caption} numberOfLines={3}>
+              {reel.caption}
+            </Text>
+          )}
         </View>
 
         {/* Action rail */}
@@ -217,15 +322,6 @@ function ReelItem({
 
           <TouchableOpacity style={styles.action}>
             <MaterialCommunityIcons
-              name="comment-outline"
-              size={27}
-              color={colors.white}
-            />
-            <Text style={styles.actionLabel}>Reply</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.action}>
-            <MaterialCommunityIcons
               name="share-outline"
               size={30}
               color={colors.white}
@@ -233,13 +329,14 @@ function ReelItem({
             <Text style={styles.actionLabel}>Share</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.action}>
+          <View style={styles.action}>
             <MaterialCommunityIcons
-              name="dots-horizontal"
+              name="eye-outline"
               size={24}
-              color={colors.white}
+              color="rgba(255,255,255,0.8)"
             />
-          </TouchableOpacity>
+            <Text style={styles.actionLabel}>{reel.view_count}</Text>
+          </View>
         </View>
       </View>
     </View>
@@ -248,17 +345,17 @@ function ReelItem({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
+  centre: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
   page: { width: SCREEN_WIDTH, backgroundColor: '#000' },
-  video: { flex: 1 },
+  video: { width: '100%', height: '100%' },
 
-  scrimTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 130,
-  },
+  scrimTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 130 },
   scrimBottom: {
     position: 'absolute',
     bottom: 0,
@@ -301,9 +398,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.09)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  emptyTitle: {
+    fontFamily: fonts.display,
+    fontSize: 19,
+    color: colors.white,
+    letterSpacing: -0.4,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontFamily: fonts.body,
+    fontSize: 13.5,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,0.5)',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  retryText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    color: colors.white,
+  },
+
   brandPill: {
     position: 'absolute',
     alignSelf: 'center',
+    zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -363,18 +501,6 @@ const styles = StyleSheet.create({
   username: {
     fontFamily: fonts.displayMedium,
     fontSize: 14,
-    color: colors.white,
-  },
-  followBtn: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 7,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  followText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
     color: colors.white,
   },
   caption: {

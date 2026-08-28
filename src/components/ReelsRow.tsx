@@ -12,11 +12,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import SectionHeading from './SectionHeading';
-import { Reel } from '../data/reels';
+import { ApiReel } from '../api/client';
 
 type Props = {
-  data: Reel[];
-  onReelPress: (reel: Reel) => void;
+  data: ApiReel[];
+  onReelPress: (reel: ApiReel) => void;
   onAddPress?: () => void;
   onSeeAllPress?: () => void;
 };
@@ -58,7 +58,7 @@ export default function ReelsRow({
                 color={colors.primary}
               />
             </View>
-            <Text style={styles.addLabel}>Add{'\n'}Vibe</Text>
+            <Text style={styles.addLabel}>Post a{'\n'}Vibe</Text>
           </TouchableOpacity>
         }
         renderItem={({ item }) => (
@@ -67,19 +67,28 @@ export default function ReelsRow({
             activeOpacity={0.85}
             onPress={() => onReelPress(item)}
           >
-            <Image
-              source={{ uri: item.thumbnailUrl }}
-              style={styles.thumbImage}
-            />
+            {item.thumbnail_url ? (
+              <Image
+                source={{ uri: item.thumbnail_url }}
+                style={styles.thumbImage}
+              />
+            ) : (
+              <View style={[styles.thumbImage, styles.thumbFallback]}>
+                <MaterialCommunityIcons
+                  name="play-circle-outline"
+                  size={28}
+                  color="rgba(255,255,255,0.5)"
+                />
+              </View>
+            )}
 
-            {/* Scrim so text stays readable over any thumbnail */}
+            {/* Scrim so the text stays readable over any thumbnail */}
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.85)']}
               style={styles.scrim}
               pointerEvents="none"
             />
 
-            {/* Play chip, top-left */}
             <View style={styles.playChip}>
               <MaterialCommunityIcons
                 name="play"
@@ -93,9 +102,11 @@ export default function ReelsRow({
               <Text style={styles.username} numberOfLines={1}>
                 {item.username}
               </Text>
-              <Text style={styles.caption} numberOfLines={2}>
-                {item.caption}
-              </Text>
+              {item.caption && (
+                <Text style={styles.caption} numberOfLines={2}>
+                  {item.caption}
+                </Text>
+              )}
             </View>
           </TouchableOpacity>
         )}
@@ -146,14 +157,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   thumbImage: { width: '100%', height: '100%' },
-
-  scrim: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 110,
+  thumbFallback: {
+    backgroundColor: '#1A1A1A',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+
+  scrim: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 110 },
 
   playChip: {
     position: 'absolute',
