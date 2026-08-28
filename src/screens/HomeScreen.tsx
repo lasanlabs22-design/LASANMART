@@ -11,13 +11,12 @@ import CustomRequirementBanner from '../screens/CustomRequirementBanner';
 import InfluencerBanner from '../components/InfluencerBanner';
 import BusinessIdeasBanner from '../components/BusinessIdeasBanner';
 import { useAuth } from '../context/AuthContext';
-import { fetchUnreadCount } from '../api/client';
+import { fetchUnreadCount, fetchReels, ApiReel } from '../api/client';
 import {
   onlineMarketing,
   offlineMarketing,
   CategoryItem,
 } from '../data/homeCategories';
-import { reels } from '../data/reels';
 import { plans } from '../data/plans';
 
 export default function HomeScreen() {
@@ -25,16 +24,22 @@ export default function HomeScreen() {
   const { profile, hasContactDetails } = useAuth();
 
   const [unread, setUnread] = useState(0);
+  const [reels, setReels] = useState<ApiReel[]>([]);
 
-  // Refresh the bell badge every time Home comes into view —
-  // so a status change made by the team shows up without a restart
+  // Refresh whenever Home comes into view — so a status change made by
+  // the team, or a newly posted reel, shows up without restarting the app
   useFocusEffect(
     useCallback(() => {
-      if (!hasContactDetails) {
+      if (hasContactDetails) {
+        fetchUnreadCount(profile.phone).then(setUnread);
+      } else {
         setUnread(0);
-        return;
       }
-      fetchUnreadCount(profile.phone).then(setUnread);
+
+      // A failure here just leaves whatever was already on screen
+      fetchReels()
+        .then(setReels)
+        .catch(() => {});
     }, [profile.phone, hasContactDetails])
   );
 
@@ -42,11 +47,15 @@ export default function HomeScreen() {
     navigation.navigate('Lasan Vibes');
   };
 
+  const openAddReel = () => {
+    navigation.getParent()?.navigate('AddReel');
+  };
+
   const openNotifications = () => {
     navigation.getParent()?.navigate('Notifications');
   };
 
-    const openSearch = () => {
+  const openSearch = () => {
     navigation.getParent()?.navigate('Search');
   };
 
@@ -77,7 +86,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <HomeHeader
         unreadCount={unread}
-               onSearchPress={openSearch}
+        onSearchPress={openSearch}
         onNotificationsPress={openNotifications}
       />
 
@@ -100,12 +109,16 @@ export default function HomeScreen() {
 
         <InfluencerBanner onPress={openInfluencerSelection} />
 
-        <ReelsRow
-          data={reels}
-          onReelPress={openReel}
-          onSeeAllPress={openReel}
-          onAddPress={openReel}
-        />
+        {/* Hidden entirely when there's nothing to show, rather than
+            an empty row with just the Add tile */}
+        {reels.length > 0 && (
+          <ReelsRow
+            data={reels}
+            onReelPress={openReel}
+            onSeeAllPress={openReel}
+            onAddPress={openAddReel}
+          />
+        )}
 
         <CustomRequirementBanner onPress={openCustomRequirement} />
       </ScrollView>
