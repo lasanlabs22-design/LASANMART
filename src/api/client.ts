@@ -13,7 +13,7 @@
    PRODUCTION:
      Replace with the Railway URL once deployed.
 ------------------------------------------------------------------- */
-const API_URL = 'http://10.0.2.2:3000';
+const API_URL = 'https://lasanmartapihono-production-a721.up.railway.app';
 
 /** How long to wait before giving up on a request */
 const TIMEOUT_MS = 15000;
