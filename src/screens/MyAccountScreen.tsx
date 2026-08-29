@@ -344,6 +344,35 @@ export default function MyAccountScreen() {
             )}
           </TouchableOpacity>
 
+          {/* My Vibes */}
+          <Text style={styles.groupTitle}>My Vibes</Text>
+          <TouchableOpacity
+            style={styles.mapCard}
+            activeOpacity={0.9}
+            onPress={() => navigation.getParent()?.navigate('MyReels')}
+          >
+            <View style={styles.mapEmpty}>
+              <View style={styles.mapEmptyIcon}>
+                <MaterialCommunityIcons
+                  name="play-box-multiple-outline"
+                  size={22}
+                  color={colors.primary}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.mapEmptyTitle}>My uploads</Text>
+                <Text style={styles.mapEmptyText}>
+                  See the reels you've posted and how many views they've had
+                </Text>
+              </View>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={20}
+                color={colors.textLight}
+              />
+            </View>
+          </TouchableOpacity>
+
           {!isEditing ? (
             /* ---------- View mode ---------- */
             <View style={styles.viewCard}>
