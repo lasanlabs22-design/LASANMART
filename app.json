@@ -11,11 +11,12 @@
       "bundleIdentifier": "com.lasanmart.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Lasan Mart uses your location to set your business address for local campaigns.",
-        "NSPhotoLibraryUsageDescription": "Lasan Mart needs access to your photos so you can set a profile picture and company logo."
+        "NSPhotoLibraryUsageDescription": "Lasan Mart needs access to your photos so you can set a profile picture, company logo and post reels."
       }
     },
     "android": {
       "package": "com.lasanmart.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0B0D1A",
         "foregroundImage": "./assets/lasan-icon.png"
@@ -23,7 +24,8 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "READ_MEDIA_IMAGES"
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO"
       ],
       "predictiveBackGestureEnabled": false
     },
@@ -46,13 +48,13 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Lasan Mart needs access to your photos so you can set a profile picture and company logo."
+          "photosPermission": "Lasan Mart needs access to your photos and videos so you can set a profile picture, company logo and post reels."
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Lasan Mart uses your location to set your business address for local campaigns."
+          "locationWhenInUsePermission": "Lasan Mart uses your location to set your business address for local campaigns."
         }
       ]
     ]
