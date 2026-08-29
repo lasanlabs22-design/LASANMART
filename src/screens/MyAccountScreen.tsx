@@ -11,7 +11,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -130,8 +133,7 @@ export default function MyAccountScreen() {
   const missing = PROFILE_FIELDS.filter((f) => !filledKeys.includes(f.key));
   const nextUp = missing[0];
 
-  const hasLocation =
-    profile.latitude != null && profile.longitude != null;
+  const hasLocation = profile.latitude != null && profile.longitude != null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -227,7 +229,9 @@ export default function MyAccountScreen() {
             <TouchableOpacity
               style={styles.logoStrip}
               activeOpacity={0.85}
-              onPress={() => pickImage((uri) => setImage('companyLogoUri', uri))}
+              onPress={() =>
+                pickImage((uri) => setImage('companyLogoUri', uri))
+              }
             >
               {form.companyLogoUri ? (
                 <Image
@@ -859,7 +863,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: 14,
   },
-  fieldBoxActive: { borderColor: colors.primary, backgroundColor: colors.white },
+  fieldBoxActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.white,
+  },
   fieldInput: {
     flex: 1,
     fontFamily: fonts.body,
