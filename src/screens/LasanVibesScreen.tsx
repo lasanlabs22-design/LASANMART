@@ -172,6 +172,19 @@ export default function LasanVibesScreen({ navigation }: any) {
         <View style={styles.brandDot} />
         <Text style={styles.brandText}>Lasan Vibes</Text>
       </View>
+
+      {/* My Vibes entry point */}
+      <TouchableOpacity
+        style={[styles.myVibesButton, { top: insets.top + 12 }]}
+        activeOpacity={0.85}
+        onPress={() => navigation.getParent()?.navigate('MyReels')}
+      >
+        <MaterialCommunityIcons
+          name="account-box-outline"
+          size={20}
+          color={colors.white}
+        />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -461,6 +474,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.white,
     letterSpacing: -0.2,
+  },
+
+  myVibesButton: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   bottomRow: {

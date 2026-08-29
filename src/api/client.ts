@@ -399,3 +399,37 @@ export async function postReel(payload: {
     throw new ApiError(data?.error || 'Could not post your reel.');
   }
 }
+export type MyReel = ApiReel & { status: 'live' | 'pending' | 'hidden' };
+
+/** Everything this person has posted */
+export async function fetchMyReels(
+  phone: string
+): Promise<{ reels: MyReel[]; total: number; totalViews: number }> {
+  const digits = phone.replace(/\D/g, '').slice(-10);
+
+  let response: Response;
+
+  try {
+    response = await fetchWithTimeout(`${API_URL}/reels/mine?phone=${digits}`);
+  } catch (err: any) {
+    console.log('Network error fetching your reels:', err?.message);
+    throw new ApiError("Couldn't reach our servers.", true);
+  }
+
+  let data: any = null;
+  try {
+    data = await response.json();
+  } catch {
+    // ignore
+  }
+
+  if (!response.ok) {
+    throw new ApiError(data?.error || 'Could not load your reels.');
+  }
+
+  return {
+    reels: data?.reels || [],
+    total: data?.total || 0,
+    totalViews: data?.totalViews || 0,
+  };
+}

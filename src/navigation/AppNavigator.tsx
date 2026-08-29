@@ -20,6 +20,7 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import SearchScreen from '../screens/SearchScreen';
 import AddReelScreen from '../screens/AddReelScreen';
 import HelpScreen from '../screens/HelpScreen';
+import MyReelsScreen from '../screens/MyReelsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -64,6 +65,7 @@ export default function AppNavigator() {
           component={BusinessIdeasScreen}
           options={{ presentation: 'modal' }}
         />
+        <Stack.Screen name="MyReels" component={MyReelsScreen} />
         <Stack.Screen
           name="LasanTools"
           component={LasanToolsScreen}
