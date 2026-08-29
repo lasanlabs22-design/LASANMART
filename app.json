@@ -37,7 +37,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/lasan-logo-full.png",
+          "image": "./assets/lasan-icon.png",
           "imageWidth": 220,
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
