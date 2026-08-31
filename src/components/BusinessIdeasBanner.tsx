@@ -1,12 +1,23 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
+import Shimmer from './Shimmer';
 
 type Props = {
   onPress: () => void;
 };
+
+const CARD_WIDTH = Dimensions.get('window').width - 32;
+const CARD_HEIGHT = 92;
 
 export default function BusinessIdeasBanner({ onPress }: Props) {
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -43,8 +54,13 @@ export default function BusinessIdeasBanner({ onPress }: Props) {
           pointerEvents="none"
         />
 
-        <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={onPress}>
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.9}
+          onPress={onPress}
+        >
           <View pointerEvents="none" style={styles.orb} />
+          <Shimmer width={CARD_WIDTH} opacity={0.2} delay={2800} />
 
           <View style={styles.iconTile}>
             <MaterialCommunityIcons
@@ -101,7 +117,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#0B7A66',
     borderRadius: 18,
-    padding: 16,
+    height: CARD_HEIGHT,
+    paddingHorizontal: 16,
     overflow: 'hidden',
   },
   orb: {

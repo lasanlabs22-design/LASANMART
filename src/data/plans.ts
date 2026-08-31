@@ -6,7 +6,7 @@ export type Plan = {
   strikePrice: string;
   duration: string;
   savings: string;
-  tier: number;          // 1-3, drives the tier meter
+  tier: number; // 1-3, drives the tier meter
   badge?: string;
   features: string[];
   gradient: [string, string];
@@ -36,7 +36,7 @@ export const plans: Plan[] = [
     tier: 2,
     badge: 'MOST POPULAR',
     features: ['Everything in Starter', 'Paid Ads', 'Landing Pages'],
-    gradient: ['#12B3A0', '#0B6E63'],
+    gradient: ['#2E6BE8', '#1A3F94'],
   },
   {
     id: 'plan3',

@@ -1,13 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
+import Shimmer from '../components/Shimmer';
 
 type Props = {
   onPress: () => void;
 };
+
+const CARD_WIDTH = Dimensions.get('window').width - 32;
+const CARD_HEIGHT = 84;
 
 export default function CustomRequirementBanner({ onPress }: Props) {
   return (
@@ -22,6 +32,7 @@ export default function CustomRequirementBanner({ onPress }: Props) {
           {/* Decorative shapes */}
           <View pointerEvents="none" style={styles.orb} />
           <View pointerEvents="none" style={styles.sheen} />
+          <Shimmer width={CARD_WIDTH} opacity={0.2} delay={2800} />
 
           <View style={styles.iconTile}>
             <MaterialCommunityIcons
@@ -66,7 +77,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 20,
-    padding: 16,
+    height: CARD_HEIGHT,
+    paddingHorizontal: 16,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
