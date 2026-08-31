@@ -11,6 +11,8 @@ import {
   Animated,
   Easing,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +22,7 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import LasanLogo from '../components/LasanLogo';
+import { signInWithGoogle } from '../lib/googleAuth';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -38,6 +41,7 @@ export default function LoginScreen({ navigation }: Props) {
   const { setLoginMethod, updateProfile } = useAuth();
   const [showPhoneInput, setShowPhoneInput] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   const isPhoneValid = phoneNumber.length === 10;
 
@@ -117,14 +121,29 @@ export default function LoginScreen({ navigation }: Props) {
   });
 
   /* ---------------- Auth ---------------- */
-  const handleGoogleSignIn = () => {
-    updateProfile({
-      name: 'Rahul Sharma',
-      email: 'rahul.sharma@gmail.com',
-      profilePictureUri: 'https://i.pravatar.cc/300?img=12',
-    });
-    setLoginMethod('google');
-    navigation.replace('Main');
+  const handleGoogleSignIn = async () => {
+    if (googleBusy) return;
+    setGoogleBusy(true);
+
+    try {
+      const user = await signInWithGoogle();
+
+      updateProfile({
+        name: user.name,
+        email: user.email,
+        profilePictureUri: user.photo,
+      });
+
+      setLoginMethod('google');
+      navigation.replace('Main');
+    } catch (err: any) {
+      // Backing out isn't an error worth interrupting them for
+      if (!err?.cancelled) {
+        Alert.alert('Sign-in failed', err?.message || 'Please try again.');
+      }
+    } finally {
+      setGoogleBusy(false);
+    }
   };
 
   const handleAppleSignIn = () => {
@@ -310,8 +329,14 @@ export default function LoginScreen({ navigation }: Props) {
             {/* Glass social row */}
             <View style={styles.socialRow}>
               <GlassButton onPress={handleGoogleSignIn}>
-                <Ionicons name="logo-google" size={19} color="#fff" />
-                <Text style={styles.glassText}>Google</Text>
+                {googleBusy ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="logo-google" size={19} color="#fff" />
+                    <Text style={styles.glassText}>Google</Text>
+                  </>
+                )}
               </GlassButton>
 
               {Platform.OS === 'ios' && (
@@ -384,7 +409,10 @@ export default function LoginScreen({ navigation }: Props) {
             </Text>
 
             <View
-              style={[styles.phoneField, isPhoneValid && styles.phoneFieldValid]}
+              style={[
+                styles.phoneField,
+                isPhoneValid && styles.phoneFieldValid,
+              ]}
             >
               <Text style={styles.countryCode}>+91</Text>
               <View style={styles.fieldDivider} />
