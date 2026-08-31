@@ -433,3 +433,22 @@ export async function fetchMyReels(
     totalViews: data?.totalViews || 0,
   };
 }
+
+/** Tells the backend which device belongs to this person */
+export async function registerPushToken(
+  phone: string,
+  token: string
+): Promise<void> {
+  const digits = phone.replace(/\D/g, '').slice(-10);
+
+  try {
+    await fetchWithTimeout(`${API_URL}/notifications/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: digits, token }),
+    });
+  } catch (err: any) {
+    // Not worth surfacing — the in-app bell still works
+    console.log('Could not register push token:', err?.message);
+  }
+}

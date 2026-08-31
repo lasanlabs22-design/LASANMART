@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import LoginScreen from '../screens/LoginScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import ReelPlayerScreen from '../screens/ReelPlayerScreen';
@@ -29,80 +30,89 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={loginMethod ? 'Main' : 'Login'}
-        screenOptions={{ headerShown: false }}
-      >
-        {/* Entry */}
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Main" component={BottomTabNavigator} />
-
-        {/* Full-screen takeover */}
-        <Stack.Screen
-          name="ReelPlayer"
-          component={ReelPlayerScreen}
-          options={{ presentation: 'fullScreenModal' }}
-        />
-
-        {/* Modals */}
-        <Stack.Screen
-          name="CustomRequirement"
-          component={CustomRequirementScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="InfluencerSelection"
-          component={InfluencerSelectionScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="PostRequest"
-          component={PostRequestScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="BusinessIdeas"
-          component={BusinessIdeasScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen name="MyReels" component={MyReelsScreen} />
-        <Stack.Screen
-          name="LasanTools"
-          component={LasanToolsScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="Quotation"
-          component={QuotationScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="LocationPicker"
-          component={LocationPickerScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="PlanEnquiry"
-          component={PlanEnquiryScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="ToolEnquiry"
-          component={ToolEnquiryScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="AddReel"
-          component={AddReelScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen name="Search" component={SearchScreen} />
-        <Stack.Screen name="Notifications" component={NotificationsScreen} />
-        {/* Account flows */}
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="Help" component={HelpScreen} />
-        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-      </Stack.Navigator>
+      <RootStack initialRoute={loginMethod ? 'Main' : 'Login'} />
     </NavigationContainer>
+  );
+}
+
+/** Separate component so the push hook can use navigation */
+function RootStack({ initialRoute }: { initialRoute: string }) {
+  usePushNotifications();
+
+  return (
+    <Stack.Navigator
+      initialRouteName={initialRoute}
+      screenOptions={{ headerShown: false }}
+    >
+      {/* Entry */}
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Main" component={BottomTabNavigator} />
+
+      {/* Full-screen takeover */}
+      <Stack.Screen
+        name="ReelPlayer"
+        component={ReelPlayerScreen}
+        options={{ presentation: 'fullScreenModal' }}
+      />
+
+      {/* Modals */}
+      <Stack.Screen
+        name="CustomRequirement"
+        component={CustomRequirementScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="InfluencerSelection"
+        component={InfluencerSelectionScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="PostRequest"
+        component={PostRequestScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="BusinessIdeas"
+        component={BusinessIdeasScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen name="MyReels" component={MyReelsScreen} />
+      <Stack.Screen
+        name="LasanTools"
+        component={LasanToolsScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="Quotation"
+        component={QuotationScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="LocationPicker"
+        component={LocationPickerScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="PlanEnquiry"
+        component={PlanEnquiryScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="ToolEnquiry"
+        component={ToolEnquiryScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="AddReel"
+        component={AddReelScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      {/* Account flows */}
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="Help" component={HelpScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+    </Stack.Navigator>
   );
 }
