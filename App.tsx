@@ -14,6 +14,11 @@ import {
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 
 import AppNavigator from './src/navigation/AppNavigator';
+import { configureGoogleSignIn } from './src/lib/googleAuth';
+
+configureGoogleSignIn();
+
+SplashScreen.preventAutoHideAsync();
 
 LogBox.ignoreLogs(['Method moveAsync', 'Method copyAsync']);
 
@@ -30,7 +35,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-          <AppGate fontsLoaded={fontsLoaded} />
+        <AppGate fontsLoaded={fontsLoaded} />
       </AuthProvider>
     </SafeAreaProvider>
   );
