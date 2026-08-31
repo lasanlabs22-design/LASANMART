@@ -1,11 +1,22 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import Shimmer from './Shimmer';
 
 type Props = {
   onPress: () => void;
 };
+
+const CARD_WIDTH = Dimensions.get('window').width - 32;
+const CARD_HEIGHT = 76;
 
 export default function InfluencerBanner({ onPress }: Props) {
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -41,14 +52,22 @@ export default function InfluencerBanner({ onPress }: Props) {
           style={[styles.glowLayer, { opacity: glowOpacity }]}
           pointerEvents="none"
         />
-        <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.85}
+          onPress={onPress}
+        >
+          <Shimmer width={CARD_WIDTH} opacity={0.2} delay={2800} />
+
           <View style={styles.iconCircle}>
             <Ionicons name="star" size={24} color={colors.white} />
           </View>
 
           <View style={styles.textArea}>
             <Text style={styles.title}>Influencer Marketing</Text>
-            <Text style={styles.subtitle}>Choose from top creators to promote your brand</Text>
+            <Text style={styles.subtitle}>
+              Choose from top creators to promote your brand
+            </Text>
           </View>
 
           <Ionicons name="chevron-forward" size={22} color={colors.white} />
@@ -85,7 +104,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#7B2FF7',
     borderRadius: 14,
-    padding: 14,
+    height: CARD_HEIGHT,
+    paddingHorizontal: 14,
+    overflow: 'hidden',
   },
   iconCircle: {
     width: 48,
