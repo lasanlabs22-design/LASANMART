@@ -19,11 +19,11 @@ import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth, UserProfile } from '../context/AuthContext';
 import ProfileCompletionCard from '../components/ProfileCompletionCard';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const pickImage = async (onPicked: (uri: string) => void) => {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();

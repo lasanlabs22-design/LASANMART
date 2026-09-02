@@ -18,6 +18,11 @@
       "package": "com.lasanmart.app",
       "googleServicesFile": "./google-services.json",
       "versionCode": 1,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBWGPWHVNyIF3zbj_g4JGCIYKmyhQeiDkQ"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#0B0D1A",
         "foregroundImage": "./assets/lasan-icon.png"
