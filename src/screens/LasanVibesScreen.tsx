@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
@@ -16,7 +17,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
-import { fetchReels, markReelViewed, ApiReel } from '../api/client';
+import {
+  fetchReels,
+  markReelViewed,
+  toggleReelLike,
+  deleteReel,
+  ApiReel,
+} from '../api/client';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -62,6 +69,11 @@ export default function LasanVibesScreen({ navigation }: any) {
     }, [load])
   );
 
+  /** Drop a deleted reel out of the feed without a full reload */
+  const handleDeleted = useCallback((id: string) => {
+    setReels((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 }).current;
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -80,9 +92,10 @@ export default function LasanVibesScreen({ navigation }: any) {
         reel={item}
         height={pageHeight}
         isActive={isFocused && index === activeIndex}
+        onDeleted={handleDeleted}
       />
     ),
-    [activeIndex, isFocused, pageHeight]
+    [activeIndex, isFocused, pageHeight, handleDeleted]
   );
 
   /* ---------- States ---------- */
@@ -172,19 +185,6 @@ export default function LasanVibesScreen({ navigation }: any) {
         <View style={styles.brandDot} />
         <Text style={styles.brandText}>Lasan Vibes</Text>
       </View>
-
-      {/* My Vibes entry point */}
-      <TouchableOpacity
-        style={[styles.myVibesButton, { top: insets.top + 12 }]}
-        activeOpacity={0.85}
-        onPress={() => navigation.getParent()?.navigate('MyReels')}
-      >
-        <MaterialCommunityIcons
-          name="account-box-outline"
-          size={20}
-          color={colors.white}
-        />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -195,16 +195,22 @@ function ReelItem({
   reel,
   height,
   isActive,
+  onDeleted,
 }: {
   reel: ApiReel;
   height: number;
   isActive: boolean;
+  onDeleted: (id: string) => void;
 }) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
   );
   const [isPaused, setIsPaused] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+
+  // Kept locally so the heart responds instantly, before the server replies
+  const [liked, setLiked] = useState(reel.liked_by_me);
+  const [likeCount, setLikeCount] = useState(reel.like_count || 0);
+  const [likeBusy, setLikeBusy] = useState(false);
 
   const player = useVideoPlayer(reel.video_url, (p) => {
     p.loop = true;
@@ -227,6 +233,53 @@ function ReelItem({
     });
     return () => sub.remove();
   }, [player]);
+
+  const handleLike = async () => {
+    if (likeBusy) return;
+
+    // Flip immediately — a like that waits for the network feels broken
+    const next = !liked;
+    setLiked(next);
+    setLikeCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    setLikeBusy(true);
+
+    try {
+      const result = await toggleReelLike(reel.id);
+      setLiked(result.liked);
+      setLikeCount(result.likeCount);
+    } catch {
+      // Put it back the way it was
+      setLiked(!next);
+      setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
+    } finally {
+      setLikeBusy(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    Alert.alert(
+      'Delete this vibe?',
+      'It will be removed for everyone. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteReel(reel.id);
+              onDeleted(reel.id);
+            } catch (err: any) {
+              Alert.alert(
+                'Could not delete',
+                err?.message || 'Please try again.'
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <View style={[styles.page, { height }]}>
@@ -287,7 +340,51 @@ function ReelItem({
         </View>
       )}
 
-      {/* Bottom content */}
+      {/* Action rail — raised so it falls under the thumb */}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.action}
+          onPress={handleLike}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons
+            name={liked ? 'heart' : 'heart-outline'}
+            size={32}
+            color={liked ? colors.primary : colors.white}
+          />
+          <Text style={styles.actionLabel}>
+            {likeCount > 0 ? likeCount : 'Like'}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.action}>
+          <MaterialCommunityIcons
+            name="eye-outline"
+            size={26}
+            color="rgba(255,255,255,0.85)"
+          />
+          <Text style={styles.actionLabel}>{reel.view_count}</Text>
+        </View>
+
+        {reel.is_mine && (
+          <TouchableOpacity
+            style={styles.action}
+            onPress={confirmDelete}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons
+              name="trash-can-outline"
+              size={27}
+              color="#FF6B6B"
+            />
+            <Text style={[styles.actionLabel, { color: '#FF9B9B' }]}>
+              Delete
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Caption */}
       <View style={styles.bottomRow}>
         <View style={styles.captionArea}>
           <View style={styles.userRow}>
@@ -310,6 +407,12 @@ function ReelItem({
                 color="#3A86FF"
               />
             )}
+
+            {reel.is_mine && (
+              <View style={styles.youBadge}>
+                <Text style={styles.youText}>You</Text>
+              </View>
+            )}
           </View>
 
           {reel.caption && (
@@ -317,39 +420,6 @@ function ReelItem({
               {reel.caption}
             </Text>
           )}
-        </View>
-
-        {/* Action rail */}
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.action}
-            onPress={() => setIsLiked((v) => !v)}
-          >
-            <MaterialCommunityIcons
-              name={isLiked ? 'heart' : 'heart-outline'}
-              size={30}
-              color={isLiked ? colors.primary : colors.white}
-            />
-            <Text style={styles.actionLabel}>{isLiked ? '1' : 'Like'}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.action}>
-            <MaterialCommunityIcons
-              name="share-outline"
-              size={30}
-              color={colors.white}
-            />
-            <Text style={styles.actionLabel}>Share</Text>
-          </TouchableOpacity>
-
-          <View style={styles.action}>
-            <MaterialCommunityIcons
-              name="eye-outline"
-              size={24}
-              color="rgba(255,255,255,0.8)"
-            />
-            <Text style={styles.actionLabel}>{reel.view_count}</Text>
-          </View>
         </View>
       </View>
     </View>
@@ -374,7 +444,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 240,
+    height: 260,
   },
 
   center: {
@@ -476,16 +546,19 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  myVibesButton: {
+  /* Raised well clear of the bottom edge, so it falls under the thumb */
+  actions: {
     position: 'absolute',
-    right: 16,
-    zIndex: 10,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'center',
+    right: 12,
+    bottom: 190,
     alignItems: 'center',
+    gap: 22,
+  },
+  action: { alignItems: 'center', gap: 4, minWidth: 46 },
+  actionLabel: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.9)',
   },
 
   bottomRow: {
@@ -493,11 +566,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     paddingHorizontal: 16,
-    paddingBottom: 20,
-    gap: 12,
+    paddingBottom: 24,
+    paddingRight: 76,
   },
   captionArea: { flex: 1 },
   userRow: {
@@ -528,18 +599,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.white,
   },
+  youBadge: {
+    backgroundColor: 'rgba(255,107,53,0.9)',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  youText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 9.5,
+    color: colors.white,
+  },
   caption: {
     fontFamily: fonts.body,
     fontSize: 13,
     lineHeight: 19,
     color: 'rgba(255,255,255,0.92)',
-  },
-
-  actions: { alignItems: 'center', gap: 20, paddingBottom: 4 },
-  action: { alignItems: 'center', gap: 3 },
-  actionLabel: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.85)',
   },
 });
