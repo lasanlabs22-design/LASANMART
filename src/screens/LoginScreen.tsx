@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
   Platform,
   Animated,
   Easing,
@@ -39,11 +36,7 @@ type Props = { navigation: any };
 
 export default function LoginScreen({ navigation }: Props) {
   const { setLoginMethod, updateProfile } = useAuth();
-  const [showPhoneInput, setShowPhoneInput] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [googleBusy, setGoogleBusy] = useState(false);
-
-  const isPhoneValid = phoneNumber.length === 10;
 
   /* ---------------- Animations ---------------- */
   const aurora1 = useRef(new Animated.Value(0)).current;
@@ -149,14 +142,6 @@ export default function LoginScreen({ navigation }: Props) {
   const handleAppleSignIn = () => {
     updateProfile({ name: 'Rahul Sharma', email: 'rahul.sharma@icloud.com' });
     setLoginMethod('apple');
-    navigation.replace('Main');
-  };
-
-  const handlePhoneContinue = () => {
-    if (!isPhoneValid) return;
-    updateProfile({ phone: phoneNumber });
-    setLoginMethod('phone');
-    setShowPhoneInput(false);
     navigation.replace('Main');
   };
 
@@ -295,7 +280,7 @@ export default function LoginScreen({ navigation }: Props) {
             {/* Primary with shimmer */}
             <TouchableOpacity
               activeOpacity={0.92}
-              onPress={() => setShowPhoneInput(true)}
+              onPress={() => navigation.navigate('PhoneAuth')}
               style={styles.primaryWrap}
             >
               <LinearGradient
@@ -382,94 +367,6 @@ export default function LoginScreen({ navigation }: Props) {
           By continuing you agree to our Terms & Privacy Policy
         </Animated.Text>
       </SafeAreaView>
-
-      {/* ---------- Phone sheet ---------- */}
-      <Modal visible={showPhoneInput} transparent animationType="fade">
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <BlurView intensity={40} tint="dark" style={styles.modalCard}>
-            <LinearGradient
-              colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.03)']}
-              style={StyleSheet.absoluteFill}
-            />
-
-            <View style={styles.modalIcon}>
-              <MaterialCommunityIcons
-                name="cellphone-check"
-                size={22}
-                color="#FF8A3D"
-              />
-            </View>
-
-            <Text style={styles.modalTitle}>What's your number?</Text>
-            <Text style={styles.modalSubtitle}>
-              We'll use this to keep your requests together
-            </Text>
-
-            <View
-              style={[
-                styles.phoneField,
-                isPhoneValid && styles.phoneFieldValid,
-              ]}
-            >
-              <Text style={styles.countryCode}>+91</Text>
-              <View style={styles.fieldDivider} />
-              <TextInput
-                style={styles.modalInput}
-                placeholder="9876543210"
-                placeholderTextColor="rgba(255,255,255,0.35)"
-                keyboardType="number-pad"
-                maxLength={10}
-                value={phoneNumber}
-                onChangeText={(t) => setPhoneNumber(t.replace(/[^0-9]/g, ''))}
-                autoFocus
-              />
-              {isPhoneValid && (
-                <MaterialCommunityIcons
-                  name="check-circle"
-                  size={20}
-                  color="#12B3A0"
-                />
-              )}
-            </View>
-
-            <TouchableOpacity
-              onPress={handlePhoneContinue}
-              disabled={!isPhoneValid}
-              activeOpacity={0.9}
-            >
-              <LinearGradient
-                colors={
-                  isPhoneValid
-                    ? ['#FF8A3D', '#F2542D']
-                    : ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)']
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.modalContinue}
-              >
-                <Text
-                  style={[
-                    styles.modalContinueText,
-                    !isPhoneValid && { color: 'rgba(255,255,255,0.4)' },
-                  ]}
-                >
-                  Continue
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setShowPhoneInput(false)}
-              style={styles.modalCancel}
-            >
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </BlurView>
-        </KeyboardAvoidingView>
-      </Modal>
     </View>
   );
 }
@@ -714,90 +611,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 40,
     paddingBottom: 14,
-  },
-
-  /* Modal */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(5,6,14,0.75)',
-    justifyContent: 'center',
-    paddingHorizontal: 26,
-  },
-  modalCard: {
-    borderRadius: 26,
-    padding: 26,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
-  },
-  modalIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,107,53,0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontFamily: fonts.display,
-    fontSize: 22,
-    color: '#fff',
-    letterSpacing: -0.4,
-    marginBottom: 6,
-  },
-  modalSubtitle: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    lineHeight: 19,
-    color: 'rgba(255,255,255,0.5)',
-    marginBottom: 22,
-  },
-  phoneField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 11,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingHorizontal: 15,
-    height: 56,
-    marginBottom: 18,
-  },
-  phoneFieldValid: { borderColor: 'rgba(18,179,160,0.7)' },
-  countryCode: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 16,
-    color: '#fff',
-  },
-  fieldDivider: {
-    width: 1,
-    height: 22,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-  },
-  modalInput: {
-    flex: 1,
-    fontFamily: fonts.body,
-    fontSize: 17,
-    color: '#fff',
-    letterSpacing: 1.5,
-    padding: 0,
-  },
-  modalContinue: {
-    paddingVertical: 17,
-    borderRadius: 15,
-    alignItems: 'center',
-  },
-  modalContinueText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 16,
-    color: '#fff',
-  },
-  modalCancel: { alignItems: 'center', paddingVertical: 15, marginTop: 2 },
-  modalCancelText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.45)',
   },
 });

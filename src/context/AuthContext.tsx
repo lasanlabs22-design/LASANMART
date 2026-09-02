@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signOutGoogle } from '../lib/googleAuth';
+import { signOutPhone } from '../lib/phoneAuth';
 
 export type LoginMethod = 'google' | 'apple' | 'phone' | 'skip' | null;
 
@@ -128,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     signOutGoogle();
+    signOutPhone();
 
     setLoginMethodState(null);
     setProfile(emptyProfile);
