@@ -5,39 +5,83 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
+  TextInput,
+  Linking,
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
-import { influencers, InfluencerProfile } from '../data/influencers';
+import {
+  influencers,
+  priceBands,
+  formatPrice,
+  InfluencerProfile,
+} from '../data/influencers';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
 
+/** A consistent colour per person, from their name */
+const AVATAR_COLOURS = [
+  '#FF6B35',
+  '#7B2FF7',
+  '#12B3A0',
+  '#C13584',
+  '#3A86FF',
+  '#E8AE00',
+  '#0B8457',
+  '#E63946',
+];
+
+function colourFor(name: string) {
+  let sum = 0;
+  for (const ch of name) sum += ch.charCodeAt(0);
+  return AVATAR_COLOURS[sum % AVATAR_COLOURS.length];
+}
+
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+}
+
 export default function InfluencerSelectionScreen({ navigation }: any) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [activeCategory, setActiveCategory] = useState('All');
   const insets = useSafeAreaInsets();
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [band, setBand] = useState('all');
+  const [query, setQuery] = useState('');
 
   const { submit, busy, sheetProps } = useSubmitRequest(() =>
     navigation.goBack()
   );
 
-  const categories = useMemo(
-    () => ['All', ...Array.from(new Set(influencers.map((i) => i.category)))],
-    []
-  );
+  const visible = useMemo(() => {
+    const activeBand = priceBands.find((b) => b.key === band)!;
+    const q = query.trim().toLowerCase();
 
-  const visible = useMemo(
-    () =>
-      activeCategory === 'All'
-        ? influencers
-        : influencers.filter((i) => i.category === activeCategory),
-    [activeCategory]
-  );
+    return influencers
+      .filter((i) => i.price >= activeBand.min && i.price <= activeBand.max)
+      .filter(
+        (i) =>
+          !q ||
+          i.name.toLowerCase().includes(q) ||
+          i.handle.toLowerCase().includes(q)
+      )
+      .sort((a, b) => a.price - b.price);
+  }, [band, query]);
+
+  const selected = influencers.filter((i) => selectedIds.includes(i.id));
+  const total = selected.reduce((sum, i) => sum + i.price, 0);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -46,27 +90,27 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
   };
 
   const handleSubmit = () => {
-    if (selectedIds.length === 0) {
-      Alert.alert('No Selection', 'Please select at least one influencer.');
+    if (selected.length === 0) {
+      Alert.alert('No Selection', 'Please select at least one creator.');
       return;
     }
 
-    const chosen = influencers.filter((inf) => selectedIds.includes(inf.id));
-
     submit({
       type: 'influencer',
-      title: `${chosen.length} influencer${chosen.length > 1 ? 's' : ''} selected`,
+      title: `${selected.length} creator${selected.length > 1 ? 's' : ''} — ${formatPrice(total)}`,
       details: {
-        influencers: chosen.map(
-          (i) => `${i.name} (${i.handle}, ${i.followers}, ${i.category})`
+        creators: selected.map(
+          (i) => `${i.name} (${i.handle}) — ${formatPrice(i.price)}`
         ),
-        count: chosen.length,
+        count: selected.length,
+        estimatedTotal: formatPrice(total),
       },
     });
   };
 
   const renderItem = ({ item }: { item: InfluencerProfile }) => {
     const isSelected = selectedIds.includes(item.id);
+    const colour = colourFor(item.name);
 
     return (
       <TouchableOpacity
@@ -74,44 +118,45 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
         activeOpacity={0.8}
         onPress={() => toggleSelect(item.id)}
       >
-        <View style={[styles.avatarRing, isSelected && styles.avatarRingActive]}>
-          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+        <View
+          style={[
+            styles.avatar,
+            {
+              backgroundColor: `${colour}1A`,
+              borderColor: isSelected ? colors.primary : `${colour}44`,
+            },
+          ]}
+        >
+          <Text style={[styles.avatarText, { color: colour }]}>
+            {initials(item.name)}
+          </Text>
         </View>
 
         <View style={styles.info}>
-          <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1}>
-              {item.name}
-            </Text>
-            <MaterialCommunityIcons
-              name="check-decagram"
-              size={13}
-              color="#3A86FF"
-            />
-          </View>
-
-          <Text style={styles.handle} numberOfLines={1}>
-            {item.handle}
+          <Text style={styles.name} numberOfLines={1}>
+            {item.name}
           </Text>
 
-          <View style={styles.metaRow}>
-            <View style={styles.categoryTag}>
-              <Text style={styles.categoryText}>{item.category}</Text>
-            </View>
-            <View style={styles.followRow}>
-              <MaterialCommunityIcons
-                name="account-group"
-                size={12}
-                color={colors.textLight}
-              />
-              <Text style={styles.followText}>{item.followers}</Text>
-            </View>
-          </View>
+          <TouchableOpacity
+            onPress={() => Linking.openURL(item.profileUrl)}
+            hitSlop={6}
+          >
+            <Text style={styles.handle} numberOfLines={1}>
+              {item.handle}{' '}
+              <MaterialCommunityIcons name="open-in-new" size={10} />
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.price}>{formatPrice(item.price)} per post</Text>
         </View>
 
         <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
           {isSelected && (
-            <MaterialCommunityIcons name="check" size={15} color={colors.white} />
+            <MaterialCommunityIcons
+              name="check"
+              size={15}
+              color={colors.white}
+            />
           )}
         </View>
       </TouchableOpacity>
@@ -132,32 +177,60 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
           />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Select Influencers</Text>
-          <Text style={styles.headerSub}>
-            {influencers.length} creators available
-          </Text>
+          <Text style={styles.headerTitle}>Select Creators</Text>
+          <Text style={styles.headerSub}>{influencers.length} available</Text>
         </View>
         <View style={{ width: 38 }} />
       </View>
 
-      {/* Category filter */}
+      {/* Search */}
+      <View style={styles.searchWrap}>
+        <View style={styles.searchBar}>
+          <MaterialCommunityIcons
+            name="magnify"
+            size={18}
+            color={colors.textLight}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name or handle"
+            placeholderTextColor={colors.textLight}
+            value={query}
+            onChangeText={setQuery}
+            autoCapitalize="none"
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery('')}>
+              <MaterialCommunityIcons
+                name="close-circle"
+                size={17}
+                color={colors.textLight}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Budget filter */}
       <View style={styles.filterWrap}>
         <FlatList
-          data={categories}
-          keyExtractor={(c) => c}
+          data={priceBands}
+          keyExtractor={(b) => b.key}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterContent}
           renderItem={({ item }) => {
-            const active = item === activeCategory;
+            const active = item.key === band;
             return (
               <TouchableOpacity
                 style={[styles.chip, active && styles.chipActive]}
                 activeOpacity={0.8}
-                onPress={() => setActiveCategory(item)}
+                onPress={() => setBand(item.key)}
               >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                  {item}
+                <Text
+                  style={[styles.chipText, active && styles.chipTextActive]}
+                >
+                  {item.label}
                 </Text>
               </TouchableOpacity>
             );
@@ -171,23 +244,35 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <MaterialCommunityIcons
+              name="account-search-outline"
+              size={26}
+              color={colors.textLight}
+            />
+            <Text style={styles.emptyText}>No creators match that</Text>
+          </View>
+        }
       />
 
       {/* Sticky footer */}
       <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
         <View>
-          <Text style={styles.selectedCount}>{selectedIds.length} selected</Text>
-          <Text style={styles.selectedHint}>
-            {selectedIds.length === 0
-              ? 'Pick one or more creators'
-              : 'Tap a card to remove'}
+          <Text style={styles.totalValue}>
+            {selected.length > 0 ? formatPrice(total) : '—'}
+          </Text>
+          <Text style={styles.totalLabel}>
+            {selected.length === 0
+              ? 'Nothing selected'
+              : `${selected.length} selected · estimate`}
           </Text>
         </View>
 
         <TouchableOpacity
           style={[
             styles.submitButton,
-            (selectedIds.length === 0 || busy) && styles.submitDisabled,
+            (selected.length === 0 || busy) && styles.submitDisabled,
           ]}
           activeOpacity={0.9}
           onPress={handleSubmit}
@@ -197,7 +282,7 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
             <ActivityIndicator color={colors.white} />
           ) : (
             <>
-              <Text style={styles.submitButtonText}>Submit Request</Text>
+              <Text style={styles.submitButtonText}>Send Request</Text>
               <MaterialCommunityIcons
                 name="arrow-right"
                 size={17}
@@ -247,17 +332,31 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  filterWrap: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingVertical: 12,
+  searchWrap: { paddingHorizontal: 16, paddingTop: 12 },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    height: 44,
   },
+  searchInput: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: colors.textDark,
+    padding: 0,
+  },
+
+  filterWrap: { paddingVertical: 12 },
   filterContent: { paddingHorizontal: 16, gap: 8 },
   chip: {
     borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.white,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
@@ -272,38 +371,39 @@ const styles = StyleSheet.create({
   },
   chipTextActive: { color: colors.white },
 
-  listContent: { padding: 16, paddingBottom: 8 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 8 },
 
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.white,
-    marginBottom: 10,
+    marginBottom: 9,
   },
   rowSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primarySoft,
   },
 
-  avatarRing: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 2,
-    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  avatarRingActive: { borderColor: colors.primary },
-  avatar: { width: 52, height: 52, borderRadius: 26 },
+  avatarText: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    letterSpacing: -0.3,
+  },
 
   info: { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   name: {
     fontFamily: fonts.displayMedium,
     fontSize: 15,
@@ -313,27 +413,14 @@ const styles = StyleSheet.create({
   handle: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: colors.textLight,
+    color: '#C13584',
     marginTop: 1,
-    marginBottom: 7,
   },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  categoryTag: {
-    backgroundColor: colors.surface,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  categoryText: {
+  price: {
     fontFamily: fonts.bodyBold,
-    fontSize: 10,
-    color: colors.textLight,
-  },
-  followRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  followText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    color: colors.textLight,
+    fontSize: 12.5,
+    color: colors.textDark,
+    marginTop: 5,
   },
 
   checkbox: {
@@ -351,6 +438,13 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
 
+  empty: { alignItems: 'center', paddingTop: 50, gap: 10 },
+  emptyText: {
+    fontFamily: fonts.body,
+    fontSize: 13.5,
+    color: colors.textLight,
+  },
+
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -361,13 +455,13 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.background,
   },
-  selectedCount: {
+  totalValue: {
     fontFamily: fonts.display,
-    fontSize: 17,
+    fontSize: 20,
     color: colors.textDark,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
-  selectedHint: {
+  totalLabel: {
     fontFamily: fonts.body,
     fontSize: 11,
     color: colors.textLight,
@@ -379,10 +473,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 7,
     backgroundColor: colors.primary,
-    paddingHorizontal: 22,
+    paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 14,
-    minWidth: 168,
+    minWidth: 160,
     minHeight: 50,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 5 },
