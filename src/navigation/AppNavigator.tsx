@@ -22,6 +22,7 @@ import SearchScreen from '../screens/SearchScreen';
 import AddReelScreen from '../screens/AddReelScreen';
 import HelpScreen from '../screens/HelpScreen';
 import MyReelsScreen from '../screens/MyReelsScreen';
+import PhoneAuthScreen from '../screens/PhoneAuthScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -109,6 +110,7 @@ function RootStack({ initialRoute }: { initialRoute: string }) {
       />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="PhoneAuth" component={PhoneAuthScreen} />
       {/* Account flows */}
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Help" component={HelpScreen} />
