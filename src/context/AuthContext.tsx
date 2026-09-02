@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signOutGoogle } from '../lib/googleAuth';
-import { signOutPhone } from '../lib/phoneAuth';
+import { signOutPhone, hasVerifiedPhone } from '../lib/phoneAuth';
 
 export type LoginMethod = 'google' | 'apple' | 'phone' | 'skip' | null;
 
@@ -141,10 +141,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]).catch(() => {});
   };
 
-  /* The three fields the backend requires on every request */
+  /* The three fields the backend requires, plus a verified number */
   const hasContactDetails =
     profile.name.trim().length > 1 &&
-    profile.phone.replace(/\D/g, '').length === 10 &&
+    hasVerifiedPhone() &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim());
 
   return (

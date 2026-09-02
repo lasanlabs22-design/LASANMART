@@ -1,3 +1,5 @@
+import { getAuthToken } from '../lib/phoneAuth';
+
 /**
  * Everything that talks to the Lasan Mart backend lives here.
  * Screens call these functions and never touch fetch directly.
@@ -105,15 +107,26 @@ export class ApiError extends Error {
 }
 
 /**
- * fetch with a timeout — without this, a request to an unreachable
- * server can hang for over a minute with the user staring at a spinner.
+ * fetch with a timeout, and the user's Firebase token attached.
+ *
+ * Without this, the backend has no way to know who is asking —
+ * and it now refuses anything that touches personal data.
  */
 async function fetchWithTimeout(url: string, options: RequestInit = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+  const token = await getAuthToken();
+
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
+    return await fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      signal: controller.signal,
+    });
   } finally {
     clearTimeout(timer);
   }
@@ -163,14 +176,15 @@ export async function submitRequest(
 /**
  * Fetch everything this person has submitted, newest first.
  * Powers the My Requests tab.
+ *
+ * Who "this person" is comes from the Firebase token attached by
+ * fetchWithTimeout — the backend no longer accepts a phone here.
  */
-export async function fetchRequests(phone: string): Promise<SavedRequest[]> {
-  const digits = phone.replace(/\D/g, '').slice(-10);
-
+export async function fetchRequests(): Promise<SavedRequest[]> {
   let response: Response;
 
   try {
-    response = await fetchWithTimeout(`${API_URL}/requests?phone=${digits}`);
+    response = await fetchWithTimeout(`${API_URL}/requests`);
   } catch (err: any) {
     console.log('Network error fetching requests:', err?.message);
     throw new ApiError(
@@ -196,17 +210,14 @@ export async function fetchRequests(phone: string): Promise<SavedRequest[]> {
 /* ---------------- Notifications ---------------- */
 
 /** Everything this person has been told, newest first */
-export async function fetchNotifications(
-  phone: string
-): Promise<{ notifications: AppNotification[]; unread: number }> {
-  const digits = phone.replace(/\D/g, '').slice(-10);
-
+export async function fetchNotifications(): Promise<{
+  notifications: AppNotification[];
+  unread: number;
+}> {
   let response: Response;
 
   try {
-    response = await fetchWithTimeout(
-      `${API_URL}/notifications?phone=${digits}`
-    );
+    response = await fetchWithTimeout(`${API_URL}/notifications`);
   } catch (err: any) {
     console.log('Network error fetching notifications:', err?.message);
     throw new ApiError("Couldn't reach our servers.", true);
@@ -230,13 +241,9 @@ export async function fetchNotifications(
 }
 
 /** Just the badge number — cheap enough to call whenever Home appears */
-export async function fetchUnreadCount(phone: string): Promise<number> {
-  const digits = phone.replace(/\D/g, '').slice(-10);
-
+export async function fetchUnreadCount(): Promise<number> {
   try {
-    const res = await fetchWithTimeout(
-      `${API_URL}/notifications/count?phone=${digits}`
-    );
+    const res = await fetchWithTimeout(`${API_URL}/notifications/count`);
     const data = await res.json();
     return data?.unread || 0;
   } catch {
@@ -246,17 +253,12 @@ export async function fetchUnreadCount(phone: string): Promise<number> {
 }
 
 /** Mark one as read, or all of them if no id is given */
-export async function markNotificationsRead(
-  phone: string,
-  id?: string
-): Promise<void> {
-  const digits = phone.replace(/\D/g, '').slice(-10);
-
+export async function markNotificationsRead(id?: string): Promise<void> {
   try {
     await fetchWithTimeout(`${API_URL}/notifications/read`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: digits, id }),
+      body: JSON.stringify({ id }),
     });
   } catch (err: any) {
     console.log('Could not mark notifications read:', err?.message);
@@ -371,7 +373,6 @@ export async function postReel(payload: {
   publicId?: string;
   duration?: number;
   caption?: string;
-  phone: string;
 }): Promise<void> {
   let response: Response;
 
@@ -379,10 +380,7 @@ export async function postReel(payload: {
     response = await fetchWithTimeout(`${API_URL}/reels`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...payload,
-        phone: payload.phone.replace(/\D/g, '').slice(-10),
-      }),
+      body: JSON.stringify(payload),
     });
   } catch {
     throw new ApiError("Couldn't reach our servers.", true);
@@ -402,15 +400,15 @@ export async function postReel(payload: {
 export type MyReel = ApiReel & { status: 'live' | 'pending' | 'hidden' };
 
 /** Everything this person has posted */
-export async function fetchMyReels(
-  phone: string
-): Promise<{ reels: MyReel[]; total: number; totalViews: number }> {
-  const digits = phone.replace(/\D/g, '').slice(-10);
-
+export async function fetchMyReels(): Promise<{
+  reels: MyReel[];
+  total: number;
+  totalViews: number;
+}> {
   let response: Response;
 
   try {
-    response = await fetchWithTimeout(`${API_URL}/reels/mine?phone=${digits}`);
+    response = await fetchWithTimeout(`${API_URL}/reels/mine`);
   } catch (err: any) {
     console.log('Network error fetching your reels:', err?.message);
     throw new ApiError("Couldn't reach our servers.", true);
