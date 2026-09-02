@@ -81,6 +81,9 @@ export type ApiReel = {
   source: 'team' | 'user';
   duration: string | null;
   view_count: number;
+  like_count: number;
+  liked_by_me: boolean;
+  is_mine: boolean;
   created_at: string;
 };
 
@@ -430,6 +433,52 @@ export async function fetchMyReels(): Promise<{
     total: data?.total || 0,
     totalViews: data?.totalViews || 0,
   };
+}
+
+/** Toggles a like. Returns the new state and count. */
+export async function toggleReelLike(
+  id: string
+): Promise<{ liked: boolean; likeCount: number }> {
+  const res = await fetchWithTimeout(`${API_URL}/reels/${id}/like`, {
+    method: 'POST',
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new ApiError(data?.error || 'Could not update like.');
+  }
+
+  return { liked: data.liked, likeCount: data.likeCount };
+}
+
+/** Edit your own caption */
+export async function updateReelCaption(
+  id: string,
+  caption: string
+): Promise<void> {
+  const res = await fetchWithTimeout(`${API_URL}/reels/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ caption }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(data?.error || 'Could not update the caption.');
+  }
+}
+
+/** Delete your own reel */
+export async function deleteReel(id: string): Promise<void> {
+  const res = await fetchWithTimeout(`${API_URL}/reels/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(data?.error || 'Could not delete the reel.');
+  }
 }
 
 /** Tells the backend which device belongs to this person */
