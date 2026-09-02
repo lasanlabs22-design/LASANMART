@@ -2,6 +2,7 @@ import {
   getAuth,
   signInWithPhoneNumber,
   signOut,
+  getIdToken,
 } from '@react-native-firebase/auth';
 
 export class PhoneAuthError extends Error {
@@ -59,6 +60,12 @@ function readable(err: any): PhoneAuthError {
         code
       );
 
+    case 'auth/operation-not-allowed':
+      return new PhoneAuthError(
+        'Phone sign-in is not available right now. Please try another method.',
+        code
+      );
+
     default:
       console.log('Phone auth error:', code, err?.message);
       return new PhoneAuthError(
@@ -109,6 +116,45 @@ export async function verifyCode(
   } catch (err) {
     throw readable(err);
   }
+}
+
+/* ---------------- Talking to our backend ---------------- */
+
+/**
+ * The current user's Firebase ID token, or null if they haven't
+ * verified a phone number.
+ *
+ * Sent with every API call so the backend knows who is asking —
+ * it reads the phone number out of this token rather than trusting
+ * whatever the app claims.
+ *
+ * Tokens last an hour; Firebase refreshes them internally, so
+ * calling this on every request is cheap.
+ */
+export async function getAuthToken(): Promise<string | null> {
+  try {
+    const user = getAuth().currentUser;
+    if (!user) return null;
+
+    return await getIdToken(user);
+  } catch (err) {
+    console.log('Could not get auth token:', err);
+    return null;
+  }
+}
+
+/** Is there a verified phone number on this device? */
+export function hasVerifiedPhone(): boolean {
+  return !!getAuth().currentUser?.phoneNumber;
+}
+
+/** The verified number, as 10 digits — or null if unverified */
+export function verifiedPhoneNumber(): string | null {
+  const raw = getAuth().currentUser?.phoneNumber;
+  if (!raw) return null;
+
+  const digits = raw.replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : null;
 }
 
 /** Clears the Firebase session — called on logout */
