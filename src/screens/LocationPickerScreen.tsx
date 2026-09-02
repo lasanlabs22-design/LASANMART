@@ -8,13 +8,16 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker } from 'react-native-maps';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 // Guntur — sensible default before we know where the user is
 const FALLBACK = { latitude: 16.3067, longitude: 80.4365 };
@@ -128,6 +131,7 @@ export default function LocationPickerScreen({ navigation }: any) {
       <View style={styles.mapWrap}>
         <MapView
           ref={mapRef}
+          provider={PROVIDER_GOOGLE}
           style={StyleSheet.absoluteFill}
           initialRegion={{
             ...coords,
