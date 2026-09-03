@@ -41,7 +41,7 @@ function formatDate(iso: string) {
 export default function MyRequestsScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { profile, hasContactDetails } = useAuth();
+  const { hasContactDetails } = useAuth();
 
   const [requests, setRequests] = useState<SavedRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ export default function MyRequestsScreen() {
 
   const load = useCallback(
     async (isRefresh = false) => {
-      // No phone number means nothing to look up yet
+      // No verified number means nothing to look up yet
       if (!hasContactDetails) {
         setRequests([]);
         setLoading(false);
@@ -63,7 +63,8 @@ export default function MyRequestsScreen() {
       setError(null);
 
       try {
-        const data = await fetchRequests(profile.phone);
+        // The backend reads the phone from the verified token
+        const data = await fetchRequests();
         setRequests(data);
       } catch (err) {
         setError(
@@ -76,7 +77,7 @@ export default function MyRequestsScreen() {
         setRefreshing(false);
       }
     },
-    [profile.phone, hasContactDetails]
+    [hasContactDetails]
   );
 
   // Reload every time the tab comes into view, so a new request appears

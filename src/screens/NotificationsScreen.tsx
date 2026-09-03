@@ -8,7 +8,10 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
@@ -46,7 +49,7 @@ function timeAgo(iso: string): string {
 
 export default function NotificationsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { profile, hasContactDetails } = useAuth();
+  const { hasContactDetails } = useAuth();
 
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +58,7 @@ export default function NotificationsScreen({ navigation }: any) {
 
   const load = useCallback(
     async (isRefresh = false) => {
+      // No verified number means there's nothing to look up
       if (!hasContactDetails) {
         setItems([]);
         setLoading(false);
@@ -65,7 +69,8 @@ export default function NotificationsScreen({ navigation }: any) {
       else setLoading(true);
 
       try {
-        const data = await fetchNotifications(profile.phone);
+        // The backend reads the phone from the verified token
+        const data = await fetchNotifications();
         setItems(data.notifications);
         setUnread(data.unread);
       } catch {
@@ -75,7 +80,7 @@ export default function NotificationsScreen({ navigation }: any) {
         setRefreshing(false);
       }
     },
-    [profile.phone, hasContactDetails]
+    [hasContactDetails]
   );
 
   useFocusEffect(
@@ -87,10 +92,13 @@ export default function NotificationsScreen({ navigation }: any) {
   const markAllRead = async () => {
     // Update the screen straight away, then tell the server
     setItems((prev) =>
-      prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+      prev.map((n) => ({
+        ...n,
+        read_at: n.read_at || new Date().toISOString(),
+      }))
     );
     setUnread(0);
-    await markNotificationsRead(profile.phone);
+    await markNotificationsRead();
   };
 
   const handlePress = async (item: AppNotification) => {
@@ -101,7 +109,7 @@ export default function NotificationsScreen({ navigation }: any) {
         )
       );
       setUnread((u) => Math.max(0, u - 1));
-      await markNotificationsRead(profile.phone, item.id);
+      await markNotificationsRead(item.id);
     }
 
     // Anything tied to a request sends them to their requests list
@@ -120,9 +128,7 @@ export default function NotificationsScreen({ navigation }: any) {
         activeOpacity={0.85}
         onPress={() => handlePress(item)}
       >
-        <View
-          style={[styles.iconTile, { backgroundColor: `${meta.color}1A` }]}
-        >
+        <View style={[styles.iconTile, { backgroundColor: `${meta.color}1A` }]}>
           <MaterialCommunityIcons
             name={meta.icon as any}
             size={20}
@@ -164,9 +170,7 @@ export default function NotificationsScreen({ navigation }: any) {
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Notifications</Text>
-          {unread > 0 && (
-            <Text style={styles.headerSub}>{unread} unread</Text>
-          )}
+          {unread > 0 && <Text style={styles.headerSub}>{unread} unread</Text>}
         </View>
 
         {unread > 0 ? (

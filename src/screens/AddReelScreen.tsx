@@ -28,7 +28,7 @@ const MAX_MB = 60;
 
 export default function AddReelScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { profile, hasContactDetails } = useAuth();
+  const { hasContactDetails } = useAuth();
 
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [fileSizeMb, setFileSizeMb] = useState(0);
@@ -95,7 +95,6 @@ export default function AddReelScreen({ navigation }: any) {
         publicId: uploaded.publicId,
         duration: uploaded.duration,
         caption: caption.trim() || undefined,
-        phone: profile.phone,
       });
 
       Alert.alert(
@@ -288,8 +287,7 @@ export default function AddReelScreen({ navigation }: any) {
           onClose={() => setSheetVisible(false)}
           onComplete={() => {
             setSheetVisible(false);
-            // The profile is saved by now, so this will pass the check
-            setTimeout(doUpload, 100);
+            doUpload();
           }}
         />
       </KeyboardAvoidingView>

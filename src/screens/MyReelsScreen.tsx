@@ -42,7 +42,7 @@ function timeAgo(iso: string): string {
 
 export default function MyReelsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { profile, hasContactDetails } = useAuth();
+  const { hasContactDetails } = useAuth();
 
   const [reels, setReels] = useState<MyReel[]>([]);
   const [totalViews, setTotalViews] = useState(0);
@@ -64,7 +64,8 @@ export default function MyReelsScreen({ navigation }: any) {
       setError(null);
 
       try {
-        const data = await fetchMyReels(profile.phone);
+        // The backend reads the phone from the verified token
+        const data = await fetchMyReels();
         setReels(data.reels);
         setTotalViews(data.totalViews);
       } catch (err: any) {
@@ -74,7 +75,7 @@ export default function MyReelsScreen({ navigation }: any) {
         setRefreshing(false);
       }
     },
-    [profile.phone, hasContactDetails]
+    [hasContactDetails]
   );
 
   useFocusEffect(
