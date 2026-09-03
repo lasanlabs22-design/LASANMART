@@ -1,6 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from 'react-native';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
@@ -69,7 +79,7 @@ export default function SettingsScreen({ navigation }: any) {
         <Row
           icon="information-outline"
           label="App version"
-          sublabel="1.0.0"
+          sublabel="1.0.3"
           showChevron={false}
         />
 
@@ -92,7 +102,9 @@ export default function SettingsScreen({ navigation }: any) {
           onPress={confirmLogout}
         />
 
-        <Text style={styles.footNote}>Lasan Mart · Your Business. Our Marketplace.</Text>
+        <Text style={styles.footNote}>
+          Lasan Mart · Your Business. Our Marketplace.
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -118,11 +130,7 @@ function Row({
   const Wrapper: any = onPress ? TouchableOpacity : View;
 
   return (
-    <Wrapper
-      style={styles.row}
-      activeOpacity={0.8}
-      onPress={onPress}
-    >
+    <Wrapper style={styles.row} activeOpacity={0.8} onPress={onPress}>
       <View
         style={[
           styles.rowIcon,
@@ -137,7 +145,9 @@ function Row({
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text style={[styles.rowLabel, labelColor ? { color: labelColor } : null]}>
+        <Text
+          style={[styles.rowLabel, labelColor ? { color: labelColor } : null]}
+        >
           {label}
         </Text>
         {sublabel && (
