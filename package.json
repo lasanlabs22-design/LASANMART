@@ -1,6 +1,6 @@
 {
   "name": "lasanmart",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
@@ -16,6 +16,7 @@
     "expo": "~57.0.16",
     "expo-blur": "~57.0.2",
     "expo-build-properties": "~57.0.15",
+    "expo-constants": "~57.0.17",
     "expo-dev-client": "~57.0.16",
     "expo-device": "~57.0.1",
     "expo-file-system": "~57.0.5",
