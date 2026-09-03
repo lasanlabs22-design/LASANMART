@@ -19,8 +19,9 @@ import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
-// Guntur — sensible default before we know where the user is
-const FALLBACK = { latitude: 16.3067, longitude: 80.4365 };
+// Tirupati — where we're based, and a sensible starting point
+// before we know where the user actually is
+const FALLBACK = { latitude: 13.6288, longitude: 79.4192 };
 
 export default function LocationPickerScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -34,11 +35,6 @@ export default function LocationPickerScreen({ navigation }: any) {
   const [address, setAddress] = useState(profile.address);
   const [locating, setLocating] = useState(false);
   const [resolving, setResolving] = useState(false);
-
-  // If we have no saved location, try the device's on open
-  useEffect(() => {
-    if (profile.latitude == null) useMyLocation();
-  }, []);
 
   const reverseGeocode = async (lat: number, lng: number) => {
     setResolving(true);
@@ -61,7 +57,8 @@ export default function LocationPickerScreen({ navigation }: any) {
     }
   };
 
-  const useMyLocation = async () => {
+  /** Named without the `use` prefix so it isn't mistaken for a hook */
+  const locateMe = async () => {
     setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -91,6 +88,12 @@ export default function LocationPickerScreen({ navigation }: any) {
       setLocating(false);
     }
   };
+
+  // If we have no saved location, try the device's on open
+  useEffect(() => {
+    if (profile.latitude == null) locateMe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onDragEnd = (e: any) => {
     const next = e.nativeEvent.coordinate;
@@ -160,7 +163,7 @@ export default function LocationPickerScreen({ navigation }: any) {
         <TouchableOpacity
           style={styles.locateBtn}
           activeOpacity={0.9}
-          onPress={useMyLocation}
+          onPress={locateMe}
         >
           {locating ? (
             <ActivityIndicator size="small" color={colors.primary} />
