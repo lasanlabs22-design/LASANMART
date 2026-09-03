@@ -19,7 +19,11 @@ type RequestBody = {
   details?: Record<string, any>;
 };
 
-/** The three fields the backend requires */
+/**
+ * What the contact sheet hands back once it's done.
+ * The phone is included because the sheet collects and verifies it,
+ * but it never goes to the backend — the token carries that.
+ */
 type ContactDetails = {
   name: string;
   phone: string;
@@ -28,7 +32,7 @@ type ContactDetails = {
 
 /**
  * Handles the whole submission flow:
- *   1. Check we have name / phone / email
+ *   1. Check we have a name, an email, and a verified phone number
  *   2. If not, open the details sheet and remember what was being submitted
  *   3. Send it to the backend
  *   4. Show success or a useful error
@@ -56,13 +60,13 @@ export function useSubmitRequest(onSuccess?: () => void) {
     // Use the details passed in (fresh from the sheet) if given,
     // otherwise fall back to the saved profile
     const name = (contact?.name ?? profile.name).trim();
-    const phone = (contact?.phone ?? profile.phone).replace(/\D/g, '').slice(-10);
     const email = (contact?.email ?? profile.email).trim().toLowerCase();
 
+    // No phone here — the backend reads it from the verified Firebase
+    // token, so sending one would be ignored anyway
     const payload: SubmitRequestPayload = {
       type: body.type,
       name,
-      phone,
       email,
       companyName: profile.companyName || undefined,
       companyDescription: profile.companyDescription || undefined,
@@ -105,7 +109,7 @@ export function useSubmitRequest(onSuccess?: () => void) {
     send(body);
   };
 
-  /** Called by the sheet once details are saved */
+  /** Called by the sheet once details are saved and the number verified */
   const handleDetailsComplete = (details: ContactDetails) => {
     setSheetVisible(false);
 

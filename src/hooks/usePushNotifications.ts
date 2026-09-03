@@ -13,26 +13,31 @@ import { registerPushToken } from '../api/client';
  */
 export function usePushNotifications() {
   const navigation = useNavigation<any>();
-  const { profile, hasContactDetails } = useAuth();
+  const { hasContactDetails } = useAuth();
 
-  // Avoid re-registering the same token on every profile change
-  const registeredFor = useRef<string | null>(null);
+  // Avoid asking for permission and registering twice in one session
+  const registered = useRef(false);
 
   /* ---- Register the device ---- */
   useEffect(() => {
-    if (!hasContactDetails) return;
+    // Nothing to attach a token to until they've verified a number
+    if (!hasContactDetails) {
+      registered.current = false;
+      return;
+    }
 
-    const phone = profile.phone.replace(/\D/g, '').slice(-10);
-    if (registeredFor.current === phone) return;
+    if (registered.current) return;
 
     (async () => {
       const token = await registerForPush();
       if (!token) return;
 
-      await registerPushToken(phone, token);
-      registeredFor.current = phone;
+      // The backend attaches this to whoever the verified token says
+      // we are, so there is no phone number to pass
+      await registerPushToken(token);
+      registered.current = true;
     })();
-  }, [profile.phone, hasContactDetails]);
+  }, [hasContactDetails]);
 
   /* ---- Handle taps ---- */
   useEffect(() => {

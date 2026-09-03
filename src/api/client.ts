@@ -3,18 +3,12 @@ import { getAuthToken } from '../lib/phoneAuth';
 /**
  * Everything that talks to the Lasan Mart backend lives here.
  * Screens call these functions and never touch fetch directly.
+ *
+ * Identity comes from the Firebase token attached to every request —
+ * the backend reads the phone number out of it and ignores anything
+ * the app claims, so nobody can read or write someone else's data.
  */
 
-/* ------------------------------------------------------------------
-   The address of the backend.
-
-   LOCAL DEVELOPMENT:
-     10.0.2.2 is the Android emulator's alias for "the computer I'm
-     running on". A real device would need your machine's LAN IP.
-
-   PRODUCTION:
-     Replace with the Railway URL once deployed.
-------------------------------------------------------------------- */
 const API_URL = 'https://lasanmartapihono-production-a721.up.railway.app';
 
 /** How long to wait before giving up on a request */
@@ -32,7 +26,6 @@ export type RequestType = 'service' | 'custom' | 'plan' | 'influencer';
 export type SubmitRequestPayload = {
   type: RequestType;
   name: string;
-  phone: string;
   email?: string;
   companyName?: string;
   companyDescription?: string;
@@ -86,6 +79,8 @@ export type ApiReel = {
   is_mine: boolean;
   created_at: string;
 };
+
+export type MyReel = ApiReel & { status: 'live' | 'pending' | 'hidden' };
 
 export type UploadResult = {
   videoUrl: string;
@@ -179,9 +174,6 @@ export async function submitRequest(
 /**
  * Fetch everything this person has submitted, newest first.
  * Powers the My Requests tab.
- *
- * Who "this person" is comes from the Firebase token attached by
- * fetchWithTimeout — the backend no longer accepts a phone here.
  */
 export async function fetchRequests(): Promise<SavedRequest[]> {
   let response: Response;
@@ -268,9 +260,23 @@ export async function markNotificationsRead(id?: string): Promise<void> {
   }
 }
 
+/** Tells the backend which device belongs to this person */
+export async function registerPushToken(token: string): Promise<void> {
+  try {
+    await fetchWithTimeout(`${API_URL}/notifications/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+  } catch (err: any) {
+    // Not worth surfacing — the in-app bell still works
+    console.log('Could not register push token:', err?.message);
+  }
+}
+
 /* ---------------- Lasan Vibes ---------------- */
 
-/** The reels feed */
+/** The reels feed. Public, but a token also marks what you've liked. */
 export async function fetchReels(): Promise<ApiReel[]> {
   let response: Response;
 
@@ -295,12 +301,91 @@ export async function fetchReels(): Promise<ApiReel[]> {
   return (data?.reels || []) as ApiReel[];
 }
 
+/** Everything this person has posted */
+export async function fetchMyReels(): Promise<{
+  reels: MyReel[];
+  total: number;
+  totalViews: number;
+}> {
+  let response: Response;
+
+  try {
+    response = await fetchWithTimeout(`${API_URL}/reels/mine`);
+  } catch (err: any) {
+    console.log('Network error fetching your reels:', err?.message);
+    throw new ApiError("Couldn't reach our servers.", true);
+  }
+
+  let data: any = null;
+  try {
+    data = await response.json();
+  } catch {
+    // ignore
+  }
+
+  if (!response.ok) {
+    throw new ApiError(data?.error || 'Could not load your reels.');
+  }
+
+  return {
+    reels: data?.reels || [],
+    total: data?.total || 0,
+    totalViews: data?.totalViews || 0,
+  };
+}
+
 /** Fire-and-forget view counter */
 export async function markReelViewed(id: string): Promise<void> {
   try {
     await fetchWithTimeout(`${API_URL}/reels/${id}/view`, { method: 'POST' });
   } catch {
     // Never worth surfacing
+  }
+}
+
+/** Toggles a like. Returns the new state and count. */
+export async function toggleReelLike(
+  id: string
+): Promise<{ liked: boolean; likeCount: number }> {
+  const res = await fetchWithTimeout(`${API_URL}/reels/${id}/like`, {
+    method: 'POST',
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new ApiError(data?.error || 'Could not update like.');
+  }
+
+  return { liked: data.liked, likeCount: data.likeCount };
+}
+
+/** Edit your own caption */
+export async function updateReelCaption(
+  id: string,
+  caption: string
+): Promise<void> {
+  const res = await fetchWithTimeout(`${API_URL}/reels/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ caption }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(data?.error || 'Could not update the caption.');
+  }
+}
+
+/** Delete your own reel */
+export async function deleteReel(id: string): Promise<void> {
+  const res = await fetchWithTimeout(`${API_URL}/reels/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(data?.error || 'Could not delete the reel.');
   }
 }
 
@@ -398,104 +483,5 @@ export async function postReel(payload: {
 
   if (!response.ok) {
     throw new ApiError(data?.error || 'Could not post your reel.');
-  }
-}
-export type MyReel = ApiReel & { status: 'live' | 'pending' | 'hidden' };
-
-/** Everything this person has posted */
-export async function fetchMyReels(): Promise<{
-  reels: MyReel[];
-  total: number;
-  totalViews: number;
-}> {
-  let response: Response;
-
-  try {
-    response = await fetchWithTimeout(`${API_URL}/reels/mine`);
-  } catch (err: any) {
-    console.log('Network error fetching your reels:', err?.message);
-    throw new ApiError("Couldn't reach our servers.", true);
-  }
-
-  let data: any = null;
-  try {
-    data = await response.json();
-  } catch {
-    // ignore
-  }
-
-  if (!response.ok) {
-    throw new ApiError(data?.error || 'Could not load your reels.');
-  }
-
-  return {
-    reels: data?.reels || [],
-    total: data?.total || 0,
-    totalViews: data?.totalViews || 0,
-  };
-}
-
-/** Toggles a like. Returns the new state and count. */
-export async function toggleReelLike(
-  id: string
-): Promise<{ liked: boolean; likeCount: number }> {
-  const res = await fetchWithTimeout(`${API_URL}/reels/${id}/like`, {
-    method: 'POST',
-  });
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new ApiError(data?.error || 'Could not update like.');
-  }
-
-  return { liked: data.liked, likeCount: data.likeCount };
-}
-
-/** Edit your own caption */
-export async function updateReelCaption(
-  id: string,
-  caption: string
-): Promise<void> {
-  const res = await fetchWithTimeout(`${API_URL}/reels/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ caption }),
-  });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new ApiError(data?.error || 'Could not update the caption.');
-  }
-}
-
-/** Delete your own reel */
-export async function deleteReel(id: string): Promise<void> {
-  const res = await fetchWithTimeout(`${API_URL}/reels/${id}`, {
-    method: 'DELETE',
-  });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new ApiError(data?.error || 'Could not delete the reel.');
-  }
-}
-
-/** Tells the backend which device belongs to this person */
-export async function registerPushToken(
-  phone: string,
-  token: string
-): Promise<void> {
-  const digits = phone.replace(/\D/g, '').slice(-10);
-
-  try {
-    await fetchWithTimeout(`${API_URL}/notifications/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: digits, token }),
-    });
-  } catch (err: any) {
-    // Not worth surfacing — the in-app bell still works
-    console.log('Could not register push token:', err?.message);
   }
 }

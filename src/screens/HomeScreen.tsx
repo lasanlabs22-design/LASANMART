@@ -21,7 +21,7 @@ import { plans } from '../data/plans';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const { profile, hasContactDetails } = useAuth();
+  const { hasContactDetails } = useAuth();
 
   const [unread, setUnread] = useState(0);
   const [reels, setReels] = useState<ApiReel[]>([]);
@@ -30,8 +30,13 @@ export default function HomeScreen() {
   // the team, or a newly posted reel, shows up without restarting the app
   useFocusEffect(
     useCallback(() => {
+      // The backend reads the phone from the verified token, so there's
+      // nothing to pass — but there's no point asking if they haven't
+      // verified a number yet
       if (hasContactDetails) {
-        fetchUnreadCount(profile.phone).then(setUnread);
+        fetchUnreadCount()
+          .then(setUnread)
+          .catch(() => setUnread(0));
       } else {
         setUnread(0);
       }
@@ -40,7 +45,7 @@ export default function HomeScreen() {
       fetchReels()
         .then(setReels)
         .catch(() => {});
-    }, [profile.phone, hasContactDetails])
+    }, [hasContactDetails])
   );
 
   const openReel = () => {

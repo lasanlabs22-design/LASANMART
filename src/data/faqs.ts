@@ -31,9 +31,9 @@ export const faqs: Faq[] = [
   },
   {
     id: 'g3',
-    question: 'Which cities do you cover?',
+    question: 'Which areas do you cover?',
     answer:
-      'We work across Andhra Pradesh and Telangana, with partners in most major cities. Some offline services like hoardings depend on availability in your area — tell us your city when you post a request and we will confirm.',
+      'We are based in Tirupati and work across Andhra Pradesh, with partners in nearby regions. Some offline services like hoardings depend on availability in your area — tell us your city when you post a request and we will confirm what we can do.',
     category: 'general',
   },
 
@@ -49,7 +49,7 @@ export const faqs: Faq[] = [
     id: 'r2',
     question: 'How do I track my request?',
     answer:
-      'Open the My Requests tab. Every request shows its current status — Received, Contacted, In Progress, or Completed. You will also get a notification here whenever the status changes.',
+      'Open the My Requests tab. Every request shows its current status — Received, Contacted, In Progress, or Completed. Your phone will also buzz whenever the status changes, and you can see the history behind the bell icon on the Home screen.',
     category: 'requests',
   },
   {
@@ -77,30 +77,44 @@ export const faqs: Faq[] = [
   /* ---------- Account ---------- */
   {
     id: 'a1',
-    question: 'Why do you need my name, phone and email?',
+    question: 'Why do you need to verify my phone number?',
     answer:
-      'So our team can get back to you about your request. We only use these details to contact you about work you have asked for — nothing else.',
+      'Your phone number is how we keep your requests private. Verifying it with a one-time code means only you can see what you have submitted — nobody else can look up your requests by guessing your number.',
     category: 'account',
   },
   {
     id: 'a2',
     question: 'Do I need to create an account?',
     answer:
-      'No. You can use the app straight away. We only ask for your contact details the first time you post a request, and they are saved on your device so you are not asked again.',
+      'No password, no sign-up form. You can browse straight away. The first time you post a request we ask for your name and email, and send a code to your phone to confirm it is yours. After that you are not asked again.',
     category: 'account',
   },
   {
     id: 'a3',
-    question: 'I changed my phone number. What happens to my requests?',
+    question: 'What can I sign in with?',
     answer:
-      'Your requests are linked to the number you used when posting them. If you change it in your profile, earlier requests stay under the old number. Contact support and we will move them across.',
+      'You can continue as a guest, sign in with Google, or sign in with your phone number. Whichever you choose, we verify your phone number before your first request — that is what keeps your request history private.',
     category: 'account',
   },
   {
     id: 'a4',
+    question: 'I did not receive the verification code.',
+    answer:
+      'Wait for the timer to finish and tap "Send a new code". Check your number is correct and that you have signal. If it still does not arrive, message our support team and we will help.',
+    category: 'account',
+  },
+  {
+    id: 'a5',
+    question: 'I changed my phone number. What happens to my requests?',
+    answer:
+      'Your requests stay linked to the number you used when posting them. Verify the new number and you will start a fresh history — contact support if you need earlier requests moved across.',
+    category: 'account',
+  },
+  {
+    id: 'a6',
     question: 'Someone else used my phone. How do I clear their details?',
     answer:
-      'Go to Settings and tap Log Out. That clears the saved profile from this device, and the next person can enter their own details.',
+      'Go to Settings and tap Log Out. That clears the saved profile from this device, and the next person can enter and verify their own number.',
     category: 'account',
   },
 
@@ -121,9 +135,9 @@ export const faqs: Faq[] = [
   },
   {
     id: 'v3',
-    question: 'How do I delete a reel I posted?',
+    question: 'How do I edit or delete a reel I posted?',
     answer:
-      'Contact support with the caption or roughly when you posted it, and our team will remove it. In-app deletion is coming in a future update.',
+      'Open the reel in the feed. On your own posts you will see Edit and Delete on the right-hand side — Edit changes the caption, Delete removes the video for everyone. You can also find all your posts by tapping the profile icon at the top of Lasan Vibes.',
     category: 'vibes',
   },
   {
@@ -131,6 +145,13 @@ export const faqs: Faq[] = [
     question: 'What are the video limits?',
     answer:
       'Up to 90 seconds and under 60MB. Portrait videos look best, since the feed is full screen.',
+    category: 'vibes',
+  },
+  {
+    id: 'v5',
+    question: 'Where can I see how my reels are doing?',
+    answer:
+      'Tap the profile icon at the top of Lasan Vibes to open My Vibes. It shows everything you have posted, along with total views and how many are live.',
     category: 'vibes',
   },
 
@@ -154,6 +175,13 @@ export const faqs: Faq[] = [
     question: 'How do Attendance and CRM work?',
     answer:
       'These are custom builds rather than ready-made apps. Tell us how your business runs and our team scopes something that fits, including setup, training and support.',
+    category: 'tools',
+  },
+  {
+    id: 't4',
+    question: 'How does influencer marketing work?',
+    answer:
+      'Browse our creator list, filter by budget, and select the ones that fit. You will see an estimated total as you pick. Send the request and our team confirms availability and handles the rest.',
     category: 'tools',
   },
 ];

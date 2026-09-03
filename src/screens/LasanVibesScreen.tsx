@@ -9,6 +9,10 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused, useFocusEffect } from '@react-navigation/native';
@@ -21,6 +25,7 @@ import {
   fetchReels,
   markReelViewed,
   toggleReelLike,
+  updateReelCaption,
   deleteReel,
   ApiReel,
 } from '../api/client';
@@ -74,6 +79,11 @@ export default function LasanVibesScreen({ navigation }: any) {
     setReels((prev) => prev.filter((r) => r.id !== id));
   }, []);
 
+  /** Update a caption in place, so the change shows immediately */
+  const handleCaptionChanged = useCallback((id: string, caption: string) => {
+    setReels((prev) => prev.map((r) => (r.id === id ? { ...r, caption } : r)));
+  }, []);
+
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 }).current;
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -93,9 +103,10 @@ export default function LasanVibesScreen({ navigation }: any) {
         height={pageHeight}
         isActive={isFocused && index === activeIndex}
         onDeleted={handleDeleted}
+        onCaptionChanged={handleCaptionChanged}
       />
     ),
-    [activeIndex, isFocused, pageHeight, handleDeleted]
+    [activeIndex, isFocused, pageHeight, handleDeleted, handleCaptionChanged]
   );
 
   /* ---------- States ---------- */
@@ -185,6 +196,19 @@ export default function LasanVibesScreen({ navigation }: any) {
         <View style={styles.brandDot} />
         <Text style={styles.brandText}>Lasan Vibes</Text>
       </View>
+
+      {/* My Vibes */}
+      <TouchableOpacity
+        style={[styles.myVibesButton, { top: insets.top + 12 }]}
+        activeOpacity={0.85}
+        onPress={() => navigation.getParent()?.navigate('MyReels')}
+      >
+        <MaterialCommunityIcons
+          name="account-box-outline"
+          size={20}
+          color={colors.white}
+        />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -196,11 +220,13 @@ function ReelItem({
   height,
   isActive,
   onDeleted,
+  onCaptionChanged,
 }: {
   reel: ApiReel;
   height: number;
   isActive: boolean;
   onDeleted: (id: string) => void;
+  onCaptionChanged: (id: string, caption: string) => void;
 }) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
@@ -212,19 +238,25 @@ function ReelItem({
   const [likeCount, setLikeCount] = useState(reel.like_count || 0);
   const [likeBusy, setLikeBusy] = useState(false);
 
+  // Caption editing
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(reel.caption || '');
+  const [saving, setSaving] = useState(false);
+
   const player = useVideoPlayer(reel.video_url, (p) => {
     p.loop = true;
     p.muted = false;
   });
 
-  // Only the visible reel plays — otherwise every player runs at once
+  // Only the visible reel plays — otherwise every player runs at once.
+  // Editing also pauses it, so the video isn't running behind the sheet.
   useEffect(() => {
-    if (isActive && !isPaused) {
+    if (isActive && !isPaused && !editing) {
       player.play();
     } else {
       player.pause();
     }
-  }, [isActive, isPaused, player]);
+  }, [isActive, isPaused, editing, player]);
 
   useEffect(() => {
     const sub = player.addListener('statusChange', (payload: any) => {
@@ -253,6 +285,28 @@ function ReelItem({
       setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
     } finally {
       setLikeBusy(false);
+    }
+  };
+
+  const openEditor = () => {
+    setDraft(reel.caption || '');
+    setEditing(true);
+  };
+
+  const saveCaption = async () => {
+    if (saving) return;
+
+    const next = draft.trim();
+    setSaving(true);
+
+    try {
+      await updateReelCaption(reel.id, next);
+      onCaptionChanged(reel.id, next);
+      setEditing(false);
+    } catch (err: any) {
+      Alert.alert('Could not save', err?.message || 'Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -328,7 +382,7 @@ function ReelItem({
         </View>
       )}
 
-      {isPaused && status !== 'error' && (
+      {isPaused && status !== 'error' && !editing && (
         <View style={styles.center} pointerEvents="none">
           <View style={styles.playBadge}>
             <MaterialCommunityIcons
@@ -367,20 +421,35 @@ function ReelItem({
         </View>
 
         {reel.is_mine && (
-          <TouchableOpacity
-            style={styles.action}
-            onPress={confirmDelete}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons
-              name="trash-can-outline"
-              size={27}
-              color="#FF6B6B"
-            />
-            <Text style={[styles.actionLabel, { color: '#FF9B9B' }]}>
-              Delete
-            </Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={styles.action}
+              onPress={openEditor}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="pencil-outline"
+                size={27}
+                color={colors.white}
+              />
+              <Text style={styles.actionLabel}>Edit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.action}
+              onPress={confirmDelete}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="trash-can-outline"
+                size={27}
+                color="#FF6B6B"
+              />
+              <Text style={[styles.actionLabel, { color: '#FF9B9B' }]}>
+                Delete
+              </Text>
+            </TouchableOpacity>
+          </>
         )}
       </View>
 
@@ -415,13 +484,67 @@ function ReelItem({
             )}
           </View>
 
-          {reel.caption && (
+          {reel.caption ? (
             <Text style={styles.caption} numberOfLines={3}>
               {reel.caption}
             </Text>
-          )}
+          ) : reel.is_mine ? (
+            <TouchableOpacity onPress={openEditor}>
+              <Text style={styles.addCaption}>Add a caption</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
+
+      {/* Caption editor */}
+      <Modal visible={editing} transparent animationType="slide">
+        <KeyboardAvoidingView
+          style={styles.editOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.editSheet}>
+            <View style={styles.editGrabber} />
+
+            <Text style={styles.editTitle}>Edit caption</Text>
+
+            <TextInput
+              style={styles.editInput}
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="What's happening in this vibe?"
+              placeholderTextColor={colors.textLight}
+              multiline
+              maxLength={300}
+              autoFocus
+              textAlignVertical="top"
+              editable={!saving}
+            />
+
+            <Text style={styles.editCounter}>{draft.length}/300</Text>
+
+            <TouchableOpacity
+              style={[styles.editSave, saving && styles.editSaveDisabled]}
+              activeOpacity={0.9}
+              onPress={saveCaption}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <Text style={styles.editSaveText}>Save changes</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.editCancel}
+              onPress={() => setEditing(false)}
+              disabled={saving}
+            >
+              <Text style={styles.editCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -444,7 +567,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 260,
+    height: 280,
   },
 
   center: {
@@ -546,13 +669,25 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
+  myVibesButton: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   /* Raised well clear of the bottom edge, so it falls under the thumb */
   actions: {
     position: 'absolute',
     right: 12,
-    bottom: 190,
+    bottom: 180,
     alignItems: 'center',
-    gap: 22,
+    gap: 20,
   },
   action: { alignItems: 'center', gap: 4, minWidth: 46 },
   actionLabel: {
@@ -615,5 +750,82 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     color: 'rgba(255,255,255,0.92)',
+  },
+  addCaption: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.55)',
+    textDecorationLine: 'underline',
+  },
+
+  /* Caption editor */
+  editOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  editSheet: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingHorizontal: 22,
+    paddingTop: 10,
+    paddingBottom: 28,
+  },
+  editGrabber: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: 'center',
+    marginBottom: 18,
+  },
+  editTitle: {
+    fontFamily: fonts.display,
+    fontSize: 20,
+    color: colors.textDark,
+    letterSpacing: -0.5,
+    marginBottom: 14,
+  },
+  editInput: {
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    height: 110,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 21,
+    color: colors.textDark,
+  },
+  editCounter: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    color: colors.textLight,
+    textAlign: 'right',
+    marginTop: 6,
+  },
+  editSave: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 14,
+    marginTop: 16,
+    minHeight: 54,
+  },
+  editSaveDisabled: { opacity: 0.6 },
+  editSaveText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+    color: colors.white,
+  },
+  editCancel: { alignItems: 'center', paddingVertical: 14, marginTop: 2 },
+  editCancelText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    color: colors.textLight,
   },
 });
