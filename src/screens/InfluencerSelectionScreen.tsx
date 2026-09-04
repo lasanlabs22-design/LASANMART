@@ -6,6 +6,8 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  Image,
+  Linking,
   Alert,
   ActivityIndicator,
 } from 'react-native';
@@ -218,26 +220,36 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
       >
         {/* Avatar */}
 
-        <View
-          style={[
-            styles.avatar,
-            {
-              backgroundColor: `${colour}1A`,
-              borderColor: isSelected ? colors.primary : `${colour}44`,
-            },
-          ]}
-        >
-          <Text
+        {item.avatar ? (
+          <Image
+            source={item.avatar}
             style={[
-              styles.avatarText,
+              styles.avatarPhoto,
+              isSelected && { borderColor: colors.primary },
+            ]}
+          />
+        ) : (
+          <View
+            style={[
+              styles.avatar,
               {
-                color: colour,
+                backgroundColor: `${colour}1A`,
+                borderColor: isSelected ? colors.primary : `${colour}44`,
               },
             ]}
           >
-            {initials(item.name)}
-          </Text>
-        </View>
+            <Text
+              style={[
+                styles.avatarText,
+                {
+                  color: colour,
+                },
+              ]}
+            >
+              {initials(item.name)}
+            </Text>
+          </View>
+        )}
 
         {/* Creator information */}
 
@@ -592,6 +604,16 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 16,
     letterSpacing: -0.3,
+  },
+
+  avatarPhoto: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: colors.border,
+    marginRight: 12,
+    backgroundColor: colors.surface,
   },
 
   /* =========================
