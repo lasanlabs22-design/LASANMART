@@ -12,6 +12,10 @@ import { colors } from '../theme/colors';
 
 const Tab = createBottomTabNavigator();
 
+/** PhonePe-style purple — used only in the tab bar */
+const TAB_ACTIVE = '#5F259F';
+const TAB_INACTIVE = '#9A93AD';
+
 // Never rendered — the tab press is intercepted and opens a modal instead
 function ToolsPlaceholder() {
   return <View />;
@@ -24,8 +28,8 @@ export default function BottomTabNavigator({ navigation }: any) {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textLight,
+        tabBarActiveTintColor: TAB_ACTIVE,
+        tabBarInactiveTintColor: TAB_INACTIVE,
         tabBarStyle: {
           borderTopColor: colors.border,
           height: 60 + insets.bottom,
@@ -33,17 +37,21 @@ export default function BottomTabNavigator({ navigation }: any) {
           paddingTop: 6,
         },
         tabBarLabelStyle: { fontSize: 10 },
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
 
+          // Filled when active, outline when not — the way PhonePe
+          // and most Indian apps do it
           if (route.name === 'Home') {
-            iconName = 'home';
+            iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Lasan Vibes') {
-            iconName = 'play-circle';
+            iconName = focused ? 'play-circle' : 'play-circle-outline';
           } else if (route.name === 'My Requests') {
-            iconName = 'checkmark-done-circle';
+            iconName = focused
+              ? 'checkmark-done-circle'
+              : 'checkmark-done-circle-outline';
           } else if (route.name === 'My Account') {
-            iconName = 'person';
+            iconName = focused ? 'person' : 'person-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
