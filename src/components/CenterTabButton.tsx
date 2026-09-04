@@ -4,6 +4,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 
+/** Matches the tab bar — PhonePe purple, kept local to this component */
+const TAB_PURPLE = '#5F259F';
+const TAB_PURPLE_LIGHT = '#7B3FC4';
+
 type Props = {
   onPress: () => void;
 };
@@ -73,7 +77,7 @@ export default function CenterTabButton({ onPress }: Props) {
           onPressOut={pressOut}
         >
           <LinearGradient
-            colors={['#FF8A3D', '#F2542D']}
+            colors={[TAB_PURPLE_LIGHT, TAB_PURPLE]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.button}
@@ -101,8 +105,8 @@ const styles = StyleSheet.create({
     width: 62,
     height: 62,
     borderRadius: 31,
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
+    backgroundColor: TAB_PURPLE,
+    shadowColor: TAB_PURPLE,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 16,
@@ -116,7 +120,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 4,
     borderColor: colors.white,
-    shadowColor: colors.primary,
+    shadowColor: TAB_PURPLE,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
     shadowRadius: 12,
