@@ -15,6 +15,7 @@ export type UserProfile = {
   name: string;
   companyName: string;
   companyDescription: string;
+  sector: string;
   phone: string;
   email: string;
   instagramId: string;
@@ -30,6 +31,7 @@ const emptyProfile: UserProfile = {
   name: '',
   companyName: '',
   companyDescription: '',
+  sector: '',
   phone: '',
   email: '',
   instagramId: '',

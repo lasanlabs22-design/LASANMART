@@ -19,6 +19,13 @@ type Props = {
 const CARD_WIDTH = Dimensions.get('window').width - 32;
 const CARD_HEIGHT = 84;
 
+/**
+ * This banner deliberately keeps the original orange, rather than
+ * following colors.primary — so it stays warm against the purple
+ * used elsewhere in the app.
+ */
+const ACCENT = '#FF6B35';
+
 export default function CustomRequirementBanner({ onPress }: Props) {
   return (
     <View style={styles.section}>
@@ -38,7 +45,7 @@ export default function CustomRequirementBanner({ onPress }: Props) {
             <MaterialCommunityIcons
               name="hammer-wrench"
               size={24}
-              color={colors.primary}
+              color={ACCENT}
             />
           </View>
 
@@ -145,7 +152,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: colors.primary,
+    backgroundColor: ACCENT,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 10,

@@ -70,7 +70,7 @@ export function useSubmitRequest(onSuccess?: () => void) {
       email,
       companyName: profile.companyName || undefined,
       companyDescription: profile.companyDescription || undefined,
-      sector: body.sector || undefined,
+      sector: body.sector || profile.sector || undefined,
       city: body.city || profile.address || undefined,
       title: body.title,
       description: body.description,

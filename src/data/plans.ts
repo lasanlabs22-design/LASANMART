@@ -23,7 +23,7 @@ export const plans: Plan[] = [
     savings: 'Save ₹7,000',
     tier: 1,
     features: ['Social Media', 'GMB Setup', 'Basic SEO'],
-    gradient: ['#FF8A3D', '#F2542D'],
+    gradient: ['#7C3AED', '#5B21B6'],
   },
   {
     id: 'plan2',
@@ -36,7 +36,7 @@ export const plans: Plan[] = [
     tier: 2,
     badge: 'MOST POPULAR',
     features: ['Everything in Starter', 'Paid Ads', 'Landing Pages'],
-    gradient: ['#2E6BE8', '#1A3F94'],
+    gradient: ['#5F259F', '#3F1470'],
   },
   {
     id: 'plan3',
@@ -48,6 +48,6 @@ export const plans: Plan[] = [
     savings: 'Save ₹30,000',
     tier: 3,
     features: ['Everything in Growth', 'Influencers', 'Dedicated Manager'],
-    gradient: ['#3A506B', '#1C2541'],
+    gradient: ['#4C1D95', '#2E1065'],
   },
 ];
