@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth, UserProfile } from '../context/AuthContext';
+import { businessSectors } from '../data/businessSectors';
 import ProfileCompletionCard from '../components/ProfileCompletionCard';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
@@ -59,6 +60,7 @@ const PROFILE_FIELDS: { key: keyof UserProfile; label: string }[] = [
   { key: 'profilePictureUri', label: 'Profile picture' },
   { key: 'name', label: 'Your name' },
   { key: 'companyName', label: 'Company name' },
+  { key: 'sector', label: 'Business sector' },
   { key: 'companyDescription', label: 'Company description' },
   { key: 'phone', label: 'Phone number' },
   { key: 'email', label: 'Email address' },
@@ -163,12 +165,51 @@ export default function MyAccountScreen() {
         >
           {/* Profile banner */}
           <LinearGradient
-            colors={['#2B2D42', '#14151F']}
+            colors={['#3B1E6E', '#1E1140', '#120B28']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.banner}
           >
-            <View pointerEvents="none" style={styles.bannerOrb} />
+            {/* Layered glows, so the card has depth rather than a flat wash */}
+            <View pointerEvents="none" style={styles.glowOne} />
+            <View pointerEvents="none" style={styles.glowTwo} />
+            <View pointerEvents="none" style={styles.sheen} />
+
+            {/* Company logo — small, top right, out of the way */}
+            <TouchableOpacity
+              style={styles.logoChip}
+              activeOpacity={0.85}
+              onPress={() =>
+                pickImage((uri) => setImage('companyLogoUri', uri))
+              }
+            >
+              {form.companyLogoUri ? (
+                <Image
+                  source={{ uri: form.companyLogoUri }}
+                  style={styles.logoImage}
+                />
+              ) : (
+                <MaterialCommunityIcons
+                  name="office-building-outline"
+                  size={16}
+                  color="rgba(255,255,255,0.55)"
+                />
+              )}
+
+              <View style={styles.logoChipBadge}>
+                <MaterialCommunityIcons
+                  name={form.companyLogoUri ? 'pencil' : 'plus'}
+                  size={9}
+                  color={colors.white}
+                />
+              </View>
+
+              {/* Only shown while there's no logo — otherwise the icon
+                  alone gives no clue what it's for */}
+              {!form.companyLogoUri && (
+                <Text style={styles.logoHint}>Add logo</Text>
+              )}
+            </TouchableOpacity>
 
             <View style={styles.bannerTop}>
               {/* Avatar */}
@@ -178,29 +219,31 @@ export default function MyAccountScreen() {
                   pickImage((uri) => setImage('profilePictureUri', uri))
                 }
               >
-                {form.profilePictureUri ? (
-                  <Image
-                    source={{ uri: form.profilePictureUri }}
-                    style={styles.avatar}
-                  />
-                ) : (
-                  <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                    {initials ? (
-                      <Text style={styles.initials}>{initials}</Text>
-                    ) : (
-                      <MaterialCommunityIcons
-                        name="account"
-                        size={36}
-                        color="rgba(255,255,255,0.6)"
-                      />
-                    )}
-                  </View>
-                )}
+                <View style={styles.avatarRing}>
+                  {form.profilePictureUri ? (
+                    <Image
+                      source={{ uri: form.profilePictureUri }}
+                      style={styles.avatar}
+                    />
+                  ) : (
+                    <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                      {initials ? (
+                        <Text style={styles.initials}>{initials}</Text>
+                      ) : (
+                        <MaterialCommunityIcons
+                          name="account"
+                          size={34}
+                          color="rgba(255,255,255,0.6)"
+                        />
+                      )}
+                    </View>
+                  )}
+                </View>
 
                 <View style={styles.editBadge}>
                   <MaterialCommunityIcons
                     name="camera"
-                    size={12}
+                    size={11}
                     color={colors.white}
                   />
                 </View>
@@ -213,52 +256,33 @@ export default function MyAccountScreen() {
                 <Text style={styles.bannerCompany} numberOfLines={1}>
                   {profile.companyName || 'No company added yet'}
                 </Text>
-
-                {loginMethod && (
-                  <View style={styles.methodPill}>
-                    <View style={styles.methodDot} />
-                    <Text style={styles.methodText}>
-                      {METHOD_LABEL[loginMethod]}
-                    </Text>
-                  </View>
-                )}
               </View>
             </View>
 
-            {/* Company logo strip */}
-            <TouchableOpacity
-              style={styles.logoStrip}
-              activeOpacity={0.85}
-              onPress={() =>
-                pickImage((uri) => setImage('companyLogoUri', uri))
-              }
-            >
-              {form.companyLogoUri ? (
-                <Image
-                  source={{ uri: form.companyLogoUri }}
-                  style={styles.logo}
-                />
-              ) : (
-                <View style={[styles.logo, styles.logoPlaceholder]}>
+            {/* Chips sit on their own row, so long names don't squeeze them */}
+            <View style={styles.chipRow}>
+              {profile.sector ? (
+                <View style={styles.chip}>
                   <MaterialCommunityIcons
-                    name="office-building-outline"
-                    size={20}
-                    color="rgba(255,255,255,0.55)"
+                    name="tag-outline"
+                    size={11}
+                    color="rgba(255,255,255,0.85)"
                   />
+                  <Text style={styles.chipText} numberOfLines={1}>
+                    {profile.sector}
+                  </Text>
+                </View>
+              ) : null}
+
+              {loginMethod && (
+                <View style={styles.chip}>
+                  <View style={styles.methodDot} />
+                  <Text style={styles.chipText}>
+                    {METHOD_LABEL[loginMethod]}
+                  </Text>
                 </View>
               )}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.logoTitle}>Company Logo</Text>
-                <Text style={styles.logoHint}>
-                  {form.companyLogoUri ? 'Tap to replace' : 'Tap to upload'}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="tray-arrow-up"
-                size={18}
-                color="rgba(255,255,255,0.6)"
-              />
-            </TouchableOpacity>
+            </View>
           </LinearGradient>
 
           {/* Profile completion */}
@@ -379,6 +403,12 @@ export default function MyAccountScreen() {
               <Text style={styles.groupTitle}>Business Details</Text>
 
               <InfoRow
+                icon="tag-outline"
+                label="Sector"
+                value={profile.sector}
+              />
+
+              <InfoRow
                 icon="text-box-outline"
                 label="About the company"
                 value={profile.companyDescription}
@@ -449,6 +479,43 @@ export default function MyAccountScreen() {
                 focused={focused}
                 setFocused={setFocused}
               />
+
+              {/* Sector — tap to select, tap again to clear */}
+              <View style={styles.fieldWrapper}>
+                <Text style={styles.fieldLabel}>Business Sector</Text>
+                <View style={styles.sectorWrap}>
+                  {businessSectors.map((s) => {
+                    const active = form.sector === s.label;
+                    return (
+                      <TouchableOpacity
+                        key={s.id}
+                        style={[
+                          styles.sectorChip,
+                          active && styles.sectorChipActive,
+                        ]}
+                        activeOpacity={0.85}
+                        onPress={() =>
+                          setField('sector', active ? '' : s.label)
+                        }
+                      >
+                        <MaterialCommunityIcons
+                          name={s.icon as any}
+                          size={14}
+                          color={active ? colors.white : colors.textLight}
+                        />
+                        <Text
+                          style={[
+                            styles.sectorChipText,
+                            active && styles.sectorChipTextActive,
+                          ]}
+                        >
+                          {s.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
 
               <Field
                 id="desc"
@@ -664,111 +731,163 @@ const styles = StyleSheet.create({
 
   /* Banner */
   banner: {
-    borderRadius: 22,
-    padding: 16,
+    borderRadius: 26,
+    padding: 18,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowColor: '#3B1E6E',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  bannerOrb: {
+  glowOne: {
     position: 'absolute',
-    top: -60,
-    right: -40,
+    top: -80,
+    right: -50,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: 'rgba(139,92,246,0.28)',
+  },
+  glowTwo: {
+    position: 'absolute',
+    bottom: -70,
+    left: -40,
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: 'rgba(255,107,53,0.14)',
+    backgroundColor: 'rgba(255,197,41,0.10)',
   },
-  bannerTop: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  avatar: { width: 96, height: 96, borderRadius: 28 },
+  sheen: {
+    position: 'absolute',
+    top: -40,
+    left: -60,
+    width: 90,
+    height: 280,
+    backgroundColor: 'rgba(255,255,255,0.045)',
+    transform: [{ rotate: '20deg' }],
+  },
+
+  /* Small logo chip, top right */
+  logoChip: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  logoImage: { width: 30, height: 30, borderRadius: 10 },
+  logoChipBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 17,
+    height: 17,
+    borderRadius: 9,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#1E1140',
+  },
+  logoHint: {
+    position: 'absolute',
+    top: 42,
+    right: 0,
+    width: 60,
+    textAlign: 'right',
+    fontFamily: fonts.bodyBold,
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.5)',
+  },
+
+  bannerTop: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+
+  /* A soft ring around the avatar lifts it off the gradient */
+  avatarRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 30,
+    padding: 3,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  avatar: { width: '100%', height: '100%', borderRadius: 27 },
   avatarPlaceholder: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   initials: {
     fontFamily: fonts.display,
-    fontSize: 32,
+    fontSize: 30,
     color: colors.white,
     letterSpacing: -0.5,
   },
   editBadge: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
+    bottom: -2,
+    right: -2,
     backgroundColor: colors.primary,
-    width: 28,
-    height: 28,
-    borderRadius: 10,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2.5,
-    borderColor: '#1B1D2A',
+    borderColor: '#1E1140',
   },
-  bannerText: { flex: 1 },
+
+  bannerText: { flex: 1, paddingRight: 44 },
   bannerName: {
     fontFamily: fonts.display,
-    fontSize: 20,
+    fontSize: 26,
     color: colors.white,
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
   },
   bannerCompany: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.65)',
-    marginTop: 2,
+    fontFamily: fonts.bodyBold,
+    fontSize: 17.5,
+    color: 'rgba(255,255,255,0.72)',
+    marginTop: 3,
   },
-  methodPill: {
+
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7,
+    marginTop: 16,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+  },
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.11)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.09)',
     borderRadius: 20,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  chipText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 10.5,
+    color: 'rgba(255,255,255,0.85)',
   },
   methodDot: {
     width: 5,
     height: 5,
     borderRadius: 3,
     backgroundColor: '#12B3A0',
-  },
-  methodText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.8)',
-  },
-
-  logoStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 16,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.14)',
-  },
-  logo: { width: 44, height: 44, borderRadius: 12 },
-  logoPlaceholder: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoTitle: {
-    fontFamily: fonts.displayMedium,
-    fontSize: 13,
-    color: colors.white,
-  },
-  logoHint: {
-    fontFamily: fonts.body,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.55)',
-    marginTop: 1,
   },
 
   /* Location */
@@ -904,6 +1023,30 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   fieldInputMultiline: { height: '100%', lineHeight: 20 },
+
+  /* Sector chips */
+  sectorWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  sectorChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  sectorChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  sectorChipText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    color: colors.textLight,
+  },
+  sectorChipTextActive: { color: colors.white },
 
   primaryButton: {
     flexDirection: 'row',

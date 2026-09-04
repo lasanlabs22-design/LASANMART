@@ -25,7 +25,7 @@ type Props = {
   onPlanPress?: (plan: Plan) => void;
 };
 
-export default function PlansCarousel({ data, onPlanPress}: Props) {
+export default function PlansCarousel({ data, onPlanPress }: Props) {
   const flatListRef = useRef<FlatList>(null);
   const indexRef = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -50,7 +50,7 @@ export default function PlansCarousel({ data, onPlanPress}: Props) {
   return (
     <View style={styles.section}>
       <SectionHeading
-        title="Digital Plans"
+        title="Most Popular Plans"
         subtitle="Bundled packages, billed quarterly"
       />
 
@@ -96,7 +96,11 @@ export default function PlansCarousel({ data, onPlanPress}: Props) {
                 <Text style={styles.planTitle}>{item.title}</Text>
                 {item.badge && (
                   <View style={styles.badge}>
-                    <MaterialCommunityIcons name="fire" size={11} color="#FFD166" />
+                    <MaterialCommunityIcons
+                      name="fire"
+                      size={11}
+                      color="#FFD166"
+                    />
                     <Text style={styles.badgeText}>{item.badge}</Text>
                   </View>
                 )}
@@ -255,7 +259,12 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  meterRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 14 },
+  meterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 14,
+  },
   meterSeg: {
     width: 22,
     height: 3,
@@ -271,7 +280,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  priceRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 10 },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    marginTop: 10,
+  },
   price: {
     fontFamily: fonts.display,
     fontSize: 32,

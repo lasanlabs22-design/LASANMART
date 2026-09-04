@@ -75,7 +75,7 @@ export default function ProfileCompletionCard({
       <View style={styles.track}>
         <Animated.View style={[styles.fillWrap, { width }]}>
           <LinearGradient
-            colors={done ? ['#12B3A0', '#0B8457'] : ['#FF8A3D', '#F2542D']}
+            colors={done ? ['#12B3A0', '#0B8457'] : ['#7B3FC4', '#5F259F']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.fill}

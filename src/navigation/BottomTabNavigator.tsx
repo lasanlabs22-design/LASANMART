@@ -14,7 +14,7 @@ const Tab = createBottomTabNavigator();
 
 /** PhonePe-style purple — used only in the tab bar */
 const TAB_ACTIVE = '#5F259F';
-const TAB_INACTIVE = '#9A93AD';
+const TAB_INACTIVE = '#E5A800';
 
 // Never rendered — the tab press is intercepted and opens a modal instead
 function ToolsPlaceholder() {
