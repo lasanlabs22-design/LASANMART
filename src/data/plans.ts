@@ -61,7 +61,7 @@ export const plans: Plan[] = [
     savings: 'Save ₹30,000',
     tier: 3,
     features: [
-      'Everything in Growth',
+      'Everything in Growth Plan',
       'Influencers',
       'Dedicated Manager',
       'Personalized Page Building',
