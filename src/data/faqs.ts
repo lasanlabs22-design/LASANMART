@@ -181,7 +181,7 @@ export const faqs: Faq[] = [
     id: 't4',
     question: 'How does influencer marketing work?',
     answer:
-      'Browse our creator list, filter by budget, and select the ones that fit. You will see an estimated total as you pick. Send the request and our team confirms availability and handles the rest.',
+      "We're building a verified network of local creators, launching soon. In the meantime, post a custom requirement telling us what you need and our team will arrange creators for your campaign.",
     category: 'tools',
   },
 ];

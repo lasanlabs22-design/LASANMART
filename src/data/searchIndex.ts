@@ -1,4 +1,8 @@
-import { onlineMarketing, offlineMarketing, CategoryItem } from './homeCategories';
+import {
+  onlineMarketing,
+  offlineMarketing,
+  CategoryItem,
+} from './homeCategories';
 import { businessSectors } from './businessSectors';
 import { plans } from './plans';
 import { businessIdeas } from './businessIdeas';
@@ -26,7 +30,16 @@ const KEYWORDS: Record<string, string[]> = {
   // Online
   om1: ['digital', 'online marketing', 'promotion', 'advertising'],
   om2: ['website', 'web', 'site', 'crm', 'app', 'software', 'portal'],
-  om3: ['instagram', 'facebook', 'social', 'insta', 'fb', 'posts', 'reels', 'smm'],
+  om3: [
+    'instagram',
+    'facebook',
+    'social',
+    'insta',
+    'fb',
+    'posts',
+    'reels',
+    'smm',
+  ],
   om4: ['leads', 'lead', 'enquiries', 'customers', 'funnel', 'sales'],
   om5: ['google', 'gmb', 'maps', 'google my business', 'listing', 'near me'],
   om6: ['seo', 'ads', 'google ads', 'ranking', 'search', 'ppc', 'adwords'],
@@ -41,7 +54,14 @@ const KEYWORDS: Record<string, string[]> = {
   om15: ['integration', 'offline online', 'sync', 'omnichannel'],
 
   // Offline
-  ofm1: ['hoarding', 'billboard', 'banner', 'flex', 'outdoor board', 'big board'],
+  ofm1: [
+    'hoarding',
+    'billboard',
+    'banner',
+    'flex',
+    'outdoor board',
+    'big board',
+  ],
   ofm2: ['outdoor', 'ooh', 'street', 'public advertising'],
   ofm3: ['led', 'digital board', 'screen', 'display screen', 'video wall'],
   ofm4: ['bus', 'auto', 'metro', 'transit', 'vehicle ad', 'train', 'cab'],
@@ -60,9 +80,19 @@ const KEYWORDS: Record<string, string[]> = {
 
 /** Things people search for that aren't services */
 const TOOL_KEYWORDS = [
-  'quotation', 'quote', 'invoice', 'bill', 'estimate',
-  'attendance', 'staff', 'employee', 'salary', 'register',
-  'crm', 'customer management', 'leads software',
+  'quotation',
+  'quote',
+  'invoice',
+  'bill',
+  'estimate',
+  'attendance',
+  'staff',
+  'employee',
+  'salary',
+  'register',
+  'crm',
+  'customer management',
+  'leads software',
 ];
 
 const ALL_SERVICES: {
@@ -208,6 +238,6 @@ export const POPULAR_SEARCHES = [
   'WhatsApp',
   'Leads',
   'Website',
-  'Influencer',
   'Print Media',
+  'Events',
 ];

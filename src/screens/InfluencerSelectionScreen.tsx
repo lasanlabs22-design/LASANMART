@@ -1,296 +1,28 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  Linking,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 
-import {
-  influencers,
-  priceBands,
-  formatPrice,
-  InfluencerProfile,
-} from '../data/influencers';
-
-import { useSubmitRequest } from '../hooks/useSubmitRequest';
-import ContactDetailsSheet from '../components/ContactDetailsSheet';
-
-/**
- * A consistent avatar colour for every creator,
- * generated from their name.
- */
-const AVATAR_COLOURS = [
-  '#FF6B35',
-  '#7B2FF7',
-  '#12B3A0',
-  '#C13584',
-  '#3A86FF',
-  '#E8AE00',
-  '#0B8457',
-  '#E63946',
-];
-
-/**
- * Generate a consistent colour for each influencer.
- */
-function colourFor(name: string) {
-  let sum = 0;
-
-  for (const ch of name) {
-    sum += ch.charCodeAt(0);
-  }
-
-  return AVATAR_COLOURS[sum % AVATAR_COLOURS.length];
-}
-
-/**
- * Generate initials for avatar.
- *
- * Example:
- * Lakshman Polisetty -> LP
- * Ramya -> R
- */
-function initials(name: string) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase();
-}
+/** Where creators apply to join. Change to a form link when there is one. */
+const APPLY_PHONE = '8309074248';
 
 export default function InfluencerSelectionScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
 
-  /**
-   * Multiple creators can be stored here.
-   *
-   * Example:
-   * ['inf1', 'inf4', 'inf10']
-   */
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  /**
-   * Current price filter.
-   */
-  const [band, setBand] = useState('all');
-
-  /**
-   * Search input.
-   */
-  const [query, setQuery] = useState('');
-
-  /**
-   * Submit influencer request.
-   */
-  const { submit, busy, sheetProps } = useSubmitRequest(() =>
-    navigation.goBack()
-  );
-
-  /**
-   * Apply:
-   *
-   * 1. Price filter
-   * 2. Search filter
-   * 3. Sort by lowest price
-   */
-  const visible = useMemo(() => {
-    const activeBand =
-      priceBands.find((priceBand) => priceBand.key === band) ?? priceBands[0];
-
-    const q = query.trim().toLowerCase();
-
-    return influencers
-      .filter(
-        (influencer) =>
-          influencer.price >= activeBand.min &&
-          influencer.price <= activeBand.max
-      )
-      .filter(
-        (influencer) =>
-          !q ||
-          influencer.name.toLowerCase().includes(q) ||
-          influencer.handle.toLowerCase().includes(q)
-      )
-      .sort((a, b) => a.price - b.price);
-  }, [band, query]);
-
-  /**
-   * Get complete influencer objects
-   * for all selected IDs.
-   */
-  const selected = useMemo(
-    () =>
-      influencers.filter((influencer) => selectedIds.includes(influencer.id)),
-    [selectedIds]
-  );
-
-  /**
-   * Total estimated campaign amount.
-   */
-  const total = useMemo(
-    () => selected.reduce((sum, influencer) => sum + influencer.price, 0),
-    [selected]
-  );
-
-  /**
-   * Select / deselect creator.
-   *
-   * Supports multiple creator selection.
-   */
-  const toggleSelect = (id: string) => {
-    setSelectedIds((previousIds) => {
-      if (previousIds.includes(id)) {
-        return previousIds.filter((selectedId) => selectedId !== id);
-      }
-
-      return [...previousIds, id];
-    });
-  };
-
-  /**
-   * Send request.
-   */
-  const handleSubmit = () => {
-    if (selected.length === 0) {
-      Alert.alert('No Selection', 'Please select at least one creator.');
-
-      return;
-    }
-
-    submit({
-      type: 'influencer',
-
-      title: `${selected.length} creator${
-        selected.length > 1 ? 's' : ''
-      } — ${formatPrice(total)}`,
-
-      details: {
-        creators: selected.map(
-          (influencer) =>
-            `${influencer.name} (${influencer.handle}) — ${formatPrice(
-              influencer.price
-            )}`
-        ),
-
-        count: selected.length,
-
-        estimatedTotal: formatPrice(total),
-      },
-    });
-  };
-
-  /**
-   * Creator card.
-   *
-   * Important:
-   * Instagram username is DISPLAY ONLY.
-   *
-   * Clicking anywhere on the card selects/deselects
-   * the creator instead of opening Instagram.
-   */
-  const renderItem = ({ item }: { item: InfluencerProfile }) => {
-    const isSelected = selectedIds.includes(item.id);
-
-    const colour = colourFor(item.name);
-
-    return (
-      <TouchableOpacity
-        style={[styles.row, isSelected && styles.rowSelected]}
-        activeOpacity={0.8}
-        onPress={() => toggleSelect(item.id)}
-      >
-        {/* Avatar */}
-
-        {item.avatar ? (
-          <Image
-            source={item.avatar}
-            style={[
-              styles.avatarPhoto,
-              isSelected && { borderColor: colors.primary },
-            ]}
-          />
-        ) : (
-          <View
-            style={[
-              styles.avatar,
-              {
-                backgroundColor: `${colour}1A`,
-                borderColor: isSelected ? colors.primary : `${colour}44`,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.avatarText,
-                {
-                  color: colour,
-                },
-              ]}
-            >
-              {initials(item.name)}
-            </Text>
-          </View>
-        )}
-
-        {/* Creator information */}
-
-        <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={1}>
-            {item.name}
-          </Text>
-
-          {/*
-            Display only.
-
-            There is NO Linking.openURL()
-            and NO TouchableOpacity here.
-          */}
-
-          <Text style={styles.handle} numberOfLines={1}>
-            {item.handle}
-          </Text>
-
-          <Text style={styles.price}>{formatPrice(item.price)} per post</Text>
-        </View>
-
-        {/* Selection checkbox */}
-
-        <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-          {isSelected && (
-            <MaterialCommunityIcons
-              name="check"
-              size={15}
-              color={colors.white}
-            />
-          )}
-        </View>
-      </TouchableOpacity>
+  const applyOnWhatsApp = () => {
+    const text = encodeURIComponent(
+      "Hi Lasan Mart, I'd like to join as an influencer."
+    );
+    Linking.openURL(`https://wa.me/91${APPLY_PHONE}?text=${text}`).catch(() =>
+      Linking.openURL(`tel:+91${APPLY_PHONE}`)
     );
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Header */}
-
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -302,163 +34,103 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
             color={colors.textDark}
           />
         </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Select Creators</Text>
-
-          <Text style={styles.headerSub}>{influencers.length} available</Text>
-        </View>
-
+        <Text style={styles.headerTitle}>Influencer Marketing</Text>
         <View style={{ width: 38 }} />
       </View>
 
-      {/* Search */}
+      <View style={[styles.body, { paddingBottom: 24 + insets.bottom }]}>
+        <LinearGradient
+          colors={['#4C1D95', '#2E1065']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
+          <View pointerEvents="none" style={styles.glow} />
 
-      <View style={styles.searchWrap}>
-        <View style={styles.searchBar}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={18}
-            color={colors.textLight}
-          />
-
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name or handle"
-            placeholderTextColor={colors.textLight}
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery('')}>
-              <MaterialCommunityIcons
-                name="close-circle"
-                size={17}
-                color={colors.textLight}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      {/* Budget filters */}
-
-      <View style={styles.filterWrap}>
-        <FlatList
-          data={priceBands}
-          keyExtractor={(item) => item.key}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContent}
-          renderItem={({ item }) => {
-            const active = item.key === band;
-
-            return (
-              <TouchableOpacity
-                style={[styles.chip, active && styles.chipActive]}
-                activeOpacity={0.8}
-                onPress={() => setBand(item.key)}
-              >
-                <Text
-                  style={[styles.chipText, active && styles.chipTextActive]}
-                >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
-
-      {/* Creators list */}
-
-      <FlatList
-        data={visible}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.empty}>
+          <View style={styles.iconTile}>
             <MaterialCommunityIcons
-              name="account-search-outline"
-              size={26}
-              color={colors.textLight}
+              name="account-star-outline"
+              size={30}
+              color="#FFC529"
             />
-
-            <Text style={styles.emptyText}>No creators match that</Text>
           </View>
-        }
-      />
 
-      {/* Sticky bottom selection area */}
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>COMING SOON</Text>
+          </View>
 
-      <View
-        style={[
-          styles.footer,
-          {
-            paddingBottom: 16 + insets.bottom,
-          },
-        ]}
-      >
-        {/* Total */}
-
-        <View>
-          <Text style={styles.totalValue}>
-            {selected.length > 0 ? formatPrice(total) : '—'}
+          <Text style={styles.title}>
+            Creator campaigns,{'\n'}launching shortly
           </Text>
 
-          <Text style={styles.totalLabel}>
-            {selected.length === 0
-              ? 'Nothing selected'
-              : `${selected.length} selected · estimate`}
+          <Text style={styles.subtitle}>
+            We're building a verified network of local creators across fashion,
+            food, fitness and city pages. Every creator is checked before they
+            join, so you know what you're paying for.
           </Text>
+
+          <View style={styles.pointList}>
+            {[
+              'Verified creators only',
+              'Rates agreed upfront',
+              'Our team handles the outreach',
+            ].map((p) => (
+              <View key={p} style={styles.point}>
+                <MaterialCommunityIcons
+                  name="check-circle"
+                  size={15}
+                  color="#FFC529"
+                />
+                <Text style={styles.pointText}>{p}</Text>
+              </View>
+            ))}
+          </View>
+        </LinearGradient>
+
+        {/* For creators who want to join */}
+        <View style={styles.applyCard}>
+          <View style={styles.applyIcon}>
+            <MaterialCommunityIcons
+              name="account-plus-outline"
+              size={20}
+              color={colors.primary}
+            />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text style={styles.applyTitle}>Are you a creator?</Text>
+            <Text style={styles.applyText}>
+              Get verified and join our network
+            </Text>
+          </View>
         </View>
-
-        {/* Submit */}
 
         <TouchableOpacity
-          style={[
-            styles.submitButton,
-            (selected.length === 0 || busy) && styles.submitDisabled,
-          ]}
+          style={styles.applyButton}
           activeOpacity={0.9}
-          onPress={handleSubmit}
-          disabled={selected.length === 0 || busy}
+          onPress={applyOnWhatsApp}
         >
-          {busy ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <>
-              <Text style={styles.submitButtonText}>Send Request</Text>
+          <MaterialCommunityIcons
+            name="whatsapp"
+            size={18}
+            color={colors.white}
+          />
+          <Text style={styles.applyButtonText}>Apply to join</Text>
+        </TouchableOpacity>
 
-              <MaterialCommunityIcons
-                name="arrow-right"
-                size={17}
-                color={colors.white}
-              />
-            </>
-          )}
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.secondaryText}>Back to browsing</Text>
         </TouchableOpacity>
       </View>
-
-      <ContactDetailsSheet {...sheetProps} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-
-  /* =========================
-     HEADER
-  ========================== */
+  container: { flex: 1, backgroundColor: colors.background },
 
   header: {
     flexDirection: 'row',
@@ -469,7 +141,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-
   backButton: {
     width: 38,
     height: 38,
@@ -478,11 +149,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  headerCenter: {
-    alignItems: 'center',
-  },
-
   headerTitle: {
     fontFamily: fonts.displayMedium,
     fontSize: 17,
@@ -490,268 +156,128 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
 
-  headerSub: {
-    fontFamily: fonts.body,
-    fontSize: 11,
-    color: colors.textLight,
-    marginTop: 1,
-  },
+  body: { flex: 1, padding: 16, justifyContent: 'center' },
 
-  /* =========================
-     SEARCH
-  ========================== */
-
-  searchWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 13,
-    height: 44,
-  },
-
-  searchInput: {
-    flex: 1,
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.textDark,
-    padding: 0,
-  },
-
-  /* =========================
-     FILTERS
-  ========================== */
-
-  filterWrap: {
-    paddingVertical: 12,
-  },
-
-  filterContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-
-  chip: {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-  },
-
-  chipActive: {
-    backgroundColor: colors.textDark,
-    borderColor: colors.textDark,
-  },
-
-  chipText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    color: colors.textLight,
-  },
-
-  chipTextActive: {
-    color: colors.white,
-  },
-
-  /* =========================
-     CREATOR LIST
-  ========================== */
-
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    marginBottom: 9,
-  },
-
-  rowSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
-  },
-
-  /* =========================
-     AVATAR
-  ========================== */
-
-  avatar: {
-    width: 48,
-    height: 48,
+  card: {
     borderRadius: 24,
-    borderWidth: 2,
+    padding: 24,
+    overflow: 'hidden',
+    shadowColor: '#4C1D95',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  glow: {
+    position: 'absolute',
+    top: -70,
+    right: -50,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,197,41,0.14)',
+  },
+  iconTile: {
+    width: 62,
+    height: 62,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginBottom: 18,
   },
-
-  avatarText: {
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,197,41,0.18)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 10,
+  },
+  badgeText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 9,
+    color: '#FFC529',
+    letterSpacing: 1,
+  },
+  title: {
     fontFamily: fonts.display,
-    fontSize: 16,
-    letterSpacing: -0.3,
+    fontSize: 26,
+    lineHeight: 32,
+    color: colors.white,
+    letterSpacing: -0.6,
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 21,
+    color: 'rgba(255,255,255,0.68)',
   },
 
-  avatarPhoto: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: colors.border,
-    marginRight: 12,
+  pointList: {
+    marginTop: 20,
+    paddingTop: 18,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.12)',
+    gap: 10,
+  },
+  point: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  pointText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
+  },
+
+  applyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 22,
   },
-
-  /* =========================
-     CREATOR DETAILS
-  ========================== */
-
-  info: {
-    flex: 1,
+  applyIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: colors.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-
-  name: {
+  applyTitle: {
     fontFamily: fonts.displayMedium,
     fontSize: 15,
     color: colors.textDark,
-    letterSpacing: -0.2,
   },
-
-  handle: {
+  applyText: {
     fontFamily: fonts.body,
-    fontSize: 12,
-
-    /*
-     * Neutral colour because this is no
-     * longer a clickable Instagram link.
-     */
-    color: colors.textLight,
-
-    marginTop: 2,
-  },
-
-  price: {
-    fontFamily: fonts.bodyBold,
     fontSize: 12.5,
-    color: colors.textDark,
-    marginTop: 5,
-  },
-
-  /* =========================
-     CHECKBOX
-  ========================== */
-
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 1.8,
-    borderColor: colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-
-  checkboxActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-
-  /* =========================
-     EMPTY STATE
-  ========================== */
-
-  empty: {
-    alignItems: 'center',
-    paddingTop: 50,
-    gap: 10,
-  },
-
-  emptyText: {
-    fontFamily: fonts.body,
-    fontSize: 13.5,
-    color: colors.textLight,
-  },
-
-  /* =========================
-     FOOTER
-  ========================== */
-
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.background,
-  },
-
-  totalValue: {
-    fontFamily: fonts.display,
-    fontSize: 20,
-    color: colors.textDark,
-    letterSpacing: -0.5,
-  },
-
-  totalLabel: {
-    fontFamily: fonts.body,
-    fontSize: 11,
     color: colors.textLight,
     marginTop: 1,
   },
 
-  /* =========================
-     SUBMIT BUTTON
-  ========================== */
-
-  submitButton: {
+  applyButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    gap: 8,
+    backgroundColor: '#25D366',
+    paddingVertical: 16,
     borderRadius: 14,
-    minWidth: 160,
-    minHeight: 50,
-
-    shadowColor: colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-
-    elevation: 5,
+    marginTop: 12,
+  },
+  applyButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15.5,
+    color: colors.white,
   },
 
-  submitDisabled: {
-    backgroundColor: colors.border,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-
-  submitButtonText: {
+  secondaryButton: { alignItems: 'center', paddingVertical: 16, marginTop: 4 },
+  secondaryText: {
     fontFamily: fonts.bodyBold,
     fontSize: 14,
-    color: colors.white,
+    color: colors.textLight,
   },
 });
