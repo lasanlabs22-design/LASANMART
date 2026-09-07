@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Animated,
+  Easing,
+  Dimensions,
 } from 'react-native';
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -21,10 +25,184 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { uploadVideo, postReel, ApiError } from '../api/client';
+import { VIBES_UNLOCKED } from '../config/features';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAX_SECONDS = 90;
 const MAX_MB = 60;
+
+/* ---------------- Locked state ---------------- */
+
+function LockedPanel({ onBack }: { onBack: () => void }) {
+  const sweep = useRef(new Animated.Value(0)).current;
+  const float = useRef(new Animated.Value(0)).current;
+  const ring = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // A light passing across the panel every few seconds
+    const shine = Animated.loop(
+      Animated.sequence([
+        Animated.delay(1000),
+        Animated.timing(sweep, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sweep, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    // The lock drifting, so the screen isn't static
+    const drift = Animated.loop(
+      Animated.sequence([
+        Animated.timing(float, {
+          toValue: 1,
+          duration: 2400,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(float, {
+          toValue: 0,
+          duration: 2400,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    // A ring expanding out from behind it
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ring, {
+          toValue: 1,
+          duration: 2200,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(ring, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    shine.start();
+    drift.start();
+    pulse.start();
+
+    return () => {
+      shine.stop();
+      drift.stop();
+      pulse.stop();
+    };
+  }, [sweep, float, ring]);
+
+  const sweepX = sweep.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-160, SCREEN_WIDTH],
+  });
+
+  const lift = float.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -8],
+  });
+
+  const ringScale = ring.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 2.2],
+  });
+
+  const ringFade = ring.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.55, 0],
+  });
+
+  return (
+    <View style={styles.lockedBody}>
+      <LinearGradient
+        colors={['#3B1E6E', '#1E1140', '#120B28']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.lockedCard}
+      >
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.sweep,
+            { transform: [{ translateX: sweepX }, { rotate: '18deg' }] },
+          ]}
+        />
+
+        <View pointerEvents="none" style={styles.lockedGlow} />
+
+        <View style={styles.lockArea}>
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.lockRing,
+              { transform: [{ scale: ringScale }], opacity: ringFade },
+            ]}
+          />
+
+          <Animated.View
+            style={[styles.lockTile, { transform: [{ translateY: lift }] }]}
+          >
+            <MaterialCommunityIcons
+              name="lock-outline"
+              size={28}
+              color="#FFC529"
+            />
+          </Animated.View>
+        </View>
+
+        <View style={styles.lockedBadge}>
+          <Text style={styles.lockedBadgeText}>COMING SOON</Text>
+        </View>
+
+        <Text style={styles.lockedTitle}>Posting opens shortly</Text>
+
+        <Text style={styles.lockedText}>
+          We're putting the finishing touches to Lasan Vibes. Soon you'll be
+          able to share what your business is up to with everyone on the app.
+        </Text>
+
+        <View style={styles.lockedPoints}>
+          {[
+            'Share campaigns and shoots',
+            'Seen by every Lasan Mart user',
+            'Free, always',
+          ].map((p) => (
+            <View key={p} style={styles.lockedPoint}>
+              <MaterialCommunityIcons
+                name="check-circle-outline"
+                size={14}
+                color="rgba(255,197,41,0.9)"
+              />
+              <Text style={styles.lockedPointText}>{p}</Text>
+            </View>
+          ))}
+        </View>
+      </LinearGradient>
+
+      <TouchableOpacity
+        style={styles.lockedButton}
+        activeOpacity={0.9}
+        onPress={onBack}
+      >
+        <Text style={styles.lockedButtonText}>Back to Vibes</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+/* ---------------- Screen ---------------- */
 
 export default function AddReelScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -122,6 +300,30 @@ export default function AddReelScreen({ navigation }: any) {
     }
     doUpload();
   };
+
+  /* Locked — nothing below this runs */
+  if (!VIBES_UNLOCKED) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons
+              name="close"
+              size={21}
+              color={colors.textDark}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Post a Vibe</Text>
+          <View style={{ width: 38 }} />
+        </View>
+
+        <LockedPanel onBack={() => navigation.goBack()} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -320,6 +522,120 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: colors.textDark,
     letterSpacing: -0.3,
+  },
+
+  /* ---------- Locked ---------- */
+  lockedBody: { flex: 1, padding: 16, justifyContent: 'center' },
+  lockedCard: {
+    borderRadius: 26,
+    padding: 26,
+    overflow: 'hidden',
+    alignItems: 'center',
+    shadowColor: '#3B1E6E',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.32,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  sweep: {
+    position: 'absolute',
+    top: -80,
+    left: 0,
+    width: 90,
+    height: 480,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  lockedGlow: {
+    position: 'absolute',
+    top: -70,
+    right: -50,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: 'rgba(255,197,41,0.11)',
+  },
+
+  lockArea: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  lockRing: {
+    position: 'absolute',
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,197,41,0.5)',
+  },
+  lockTile: {
+    width: 68,
+    height: 68,
+    borderRadius: 23,
+    backgroundColor: 'rgba(255,197,41,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,197,41,0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  lockedBadge: {
+    backgroundColor: 'rgba(255,197,41,0.18)',
+    borderRadius: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    marginBottom: 12,
+  },
+  lockedBadgeText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 9,
+    color: '#FFC529',
+    letterSpacing: 1.1,
+  },
+  lockedTitle: {
+    fontFamily: fonts.display,
+    fontSize: 23,
+    color: colors.white,
+    letterSpacing: -0.5,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  lockedText: {
+    fontFamily: fonts.body,
+    fontSize: 13.5,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,0.62)',
+    textAlign: 'center',
+  },
+
+  lockedPoints: {
+    alignSelf: 'stretch',
+    marginTop: 20,
+    paddingTop: 18,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.11)',
+    gap: 10,
+  },
+  lockedPoint: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  lockedPointText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    color: 'rgba(255,255,255,0.85)',
+  },
+
+  lockedButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 17,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    marginTop: 16,
+  },
+  lockedButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    color: colors.textDark,
   },
 
   content: { flex: 1, padding: 16 },

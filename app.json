@@ -17,6 +17,7 @@
     "android": {
       "package": "com.lasanmart.app",
       "googleServicesFile": "./google-services.json",
+      "softwareKeyboardLayoutMode": "pan",
       "versionCode": 1,
       "config": {
         "googleMaps": {

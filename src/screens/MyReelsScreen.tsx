@@ -21,6 +21,7 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { fetchMyReels, MyReel } from '../api/client';
+import { VIBES_UNLOCKED } from '../config/features';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GAP = 10;
@@ -184,26 +185,54 @@ export default function MyReelsScreen({ navigation }: any) {
             </View>
           ) : null
         }
+        /* A quiet note under existing reels while posting is closed */
+        ListFooterComponent={
+          !VIBES_UNLOCKED && reels.length > 0 ? (
+            <View style={styles.lockedNote}>
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={15}
+                color={colors.textLight}
+              />
+              <Text style={styles.lockedNoteText}>
+                Posting new vibes opens soon
+              </Text>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
               <MaterialCommunityIcons
-                name={error ? 'wifi-off' : 'video-plus-outline'}
+                name={
+                  error
+                    ? 'wifi-off'
+                    : VIBES_UNLOCKED
+                      ? 'video-plus-outline'
+                      : 'lock-outline'
+                }
                 size={28}
                 color={colors.textLight}
               />
             </View>
 
             <Text style={styles.emptyTitle}>
-              {error ? "Couldn't load your reels" : 'Nothing posted yet'}
+              {error
+                ? "Couldn't load your reels"
+                : VIBES_UNLOCKED
+                  ? 'Nothing posted yet'
+                  : 'Posting opens soon'}
             </Text>
+
             <Text style={styles.emptyText}>
               {error
                 ? 'Check your connection and pull down to try again.'
-                : 'Share what your business is up to — everyone using Lasan Mart will see it.'}
+                : VIBES_UNLOCKED
+                  ? 'Share what your business is up to — everyone using Lasan Mart will see it.'
+                  : "We're putting the finishing touches to Lasan Vibes. Soon you'll be able to share what your business is up to."}
             </Text>
 
-            {!error && (
+            {!error && VIBES_UNLOCKED && (
               <TouchableOpacity
                 style={styles.emptyButton}
                 activeOpacity={0.9}
@@ -221,7 +250,8 @@ export default function MyReelsScreen({ navigation }: any) {
         }
       />
 
-      {reels.length > 0 && (
+      {/* The button only exists once posting is open */}
+      {VIBES_UNLOCKED && reels.length > 0 && (
         <TouchableOpacity
           style={[styles.fab, { bottom: 20 + insets.bottom }]}
           activeOpacity={0.9}
@@ -375,6 +405,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 9,
     color: 'rgba(255,255,255,0.75)',
+  },
+
+  lockedNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+  },
+  lockedNoteText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    color: colors.textLight,
   },
 
   empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 36 },
