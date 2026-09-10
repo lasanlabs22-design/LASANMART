@@ -5,18 +5,51 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { businessSectors, BusinessSector } from '../data/businessSectors';
 import { findIdea } from '../data/businessIdeas';
+import { useSubmitRequest } from '../hooks/useSubmitRequest';
+import ContactDetailsSheet from '../components/ContactDetailsSheet';
 
 export default function BusinessIdeasScreen({ navigation }: any) {
   const [sector, setSector] = useState<BusinessSector | null>(null);
   const insets = useSafeAreaInsets();
   const idea = sector ? findIdea(sector.id) : undefined;
+
+  const { submit, busy, sheetProps } = useSubmitRequest(() =>
+    navigation.goBack()
+  );
+
+  /**
+   * Sends the request from here rather than opening an empty form.
+   * They've just read what we suggested — asking them to re-type it
+   * loses people for no reason.
+   */
+  const handleRequest = () => {
+    if (!sector || !idea) return;
+
+    submit({
+      type: 'custom',
+      title: `${sector.label} — ${idea.headline}`,
+      description: `Interested in growing their ${sector.label} business. Suggested: ${idea.bestServices.join(', ')}.`,
+      descriptionLabel: 'What they picked',
+      sector: sector.label,
+      details: {
+        source: 'Business Ideas',
+        sector: sector.label,
+        suggestedServices: idea.bestServices,
+        budgetGuidance: idea.budgetNote,
+      },
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -144,25 +177,37 @@ export default function BusinessIdeasScreen({ navigation }: any) {
               <Text style={styles.budgetText}>{idea.budgetNote}</Text>
             </View>
 
-            {/* CTA */}
+            {/* CTA — submits from here, so nobody has to re-describe
+                what we just recommended */}
             <TouchableOpacity
-              style={styles.cta}
+              style={[styles.cta, busy && styles.ctaBusy]}
               activeOpacity={0.9}
-              onPress={() => {
-                navigation.goBack();
-                navigation.navigate('PostRequest');
-              }}
+              onPress={handleRequest}
+              disabled={busy}
             >
-              <Text style={styles.ctaText}>Post a request for this</Text>
-              <MaterialCommunityIcons
-                name="arrow-right"
-                size={17}
-                color={colors.white}
-              />
+              {busy ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <>
+                  <Text style={styles.ctaText}>Get help with this</Text>
+                  <MaterialCommunityIcons
+                    name="arrow-right"
+                    size={17}
+                    color={colors.white}
+                  />
+                </>
+              )}
             </TouchableOpacity>
+
+            <Text style={styles.ctaNote}>
+              We'll send your sector and these services to our team, and call
+              you back to talk it through.
+            </Text>
           </View>
         ) : null}
       </ScrollView>
+
+      <ContactDetailsSheet {...sheetProps} />
     </SafeAreaView>
   );
 }
@@ -359,15 +404,26 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 14,
     marginTop: 26,
+    minHeight: 54,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.28,
     shadowRadius: 12,
     elevation: 6,
   },
+  ctaBusy: { opacity: 0.7 },
   ctaText: {
     fontFamily: fonts.bodyBold,
     fontSize: 15,
     color: colors.white,
+  },
+  ctaNote: {
+    fontFamily: fonts.body,
+    fontSize: 11.5,
+    lineHeight: 17,
+    color: colors.textLight,
+    textAlign: 'center',
+    marginTop: 12,
+    paddingHorizontal: 20,
   },
 });

@@ -11,7 +11,10 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
@@ -21,8 +24,14 @@ import { businessSectors, BusinessSector } from '../data/businessSectors';
 import { Plan } from '../data/plans';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
+import PlanAssurance from '../components/PlanAssurance';
 
-const START_WHEN = ['Right away', 'Within a week', 'This month', 'Just exploring'];
+const START_WHEN = [
+  'Right away',
+  'Within a week',
+  'This month',
+  'Just exploring',
+];
 
 export default function PlanEnquiryScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -158,7 +167,9 @@ export default function PlanEnquiryScreen({ route, navigation }: any) {
           />
 
           <Text style={styles.fieldLabel}>Phone Number</Text>
-          <View style={[styles.field, focused === 'phone' && styles.fieldActive]}>
+          <View
+            style={[styles.field, focused === 'phone' && styles.fieldActive]}
+          >
             <Text style={styles.countryCode}>+91</Text>
             <View style={styles.fieldDivider} />
             <TextInput
@@ -279,6 +290,7 @@ export default function PlanEnquiryScreen({ route, navigation }: any) {
               Our team usually calls back within one working day
             </Text>
           </View>
+          <PlanAssurance />
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>

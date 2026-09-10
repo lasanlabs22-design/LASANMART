@@ -25,6 +25,7 @@ import { useAuth, UserProfile } from '../context/AuthContext';
 import { businessSectors } from '../data/businessSectors';
 import ProfileCompletionCard from '../components/ProfileCompletionCard';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import TrustPanel from '../components/TrustPanel';
 
 const pickImage = async (onPicked: (uri: string) => void) => {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -663,6 +664,7 @@ export default function MyAccountScreen() {
               )}
             </View>
           )}
+          <TrustPanel />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

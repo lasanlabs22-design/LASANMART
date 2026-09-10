@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
@@ -171,18 +172,37 @@ export default function ContactDetailsSheet({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.sheet}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+    >
+      <SafeAreaView style={styles.screen}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          {/* Back goes to the details step from the code step, and
+              closes the sheet from the details step */}
+          <View style={styles.topBar}>
+            <TouchableOpacity
+              style={styles.close}
+              onPress={step === 'code' ? backToDetails : onClose}
+              disabled={busy}
+            >
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={21}
+                color={colors.textDark}
+              />
+            </TouchableOpacity>
+          </View>
+
           <ScrollView
+            contentContainerStyle={styles.body}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.grabber} />
-
             {step === 'details' ? (
               /* ---------------- Details ---------------- */
               <>
@@ -329,6 +349,46 @@ export default function ContactDetailsSheet({
                   </Text>
                 </View>
 
+                <View style={styles.whyPanel}>
+                  <Text style={styles.whyHeading}>Why we ask</Text>
+
+                  {[
+                    {
+                      icon: 'account-outline',
+                      label: 'Your name',
+                      text: 'So our team knows who they are speaking to when they call.',
+                    },
+                    {
+                      icon: 'phone-outline',
+                      label: 'Your number',
+                      text: 'This is how we reach you, and how we keep your requests private — only a verified number can see them.',
+                    },
+                    {
+                      icon: 'email-outline',
+                      label: 'Your email',
+                      text: 'For quotes and anything in writing. We never add you to a mailing list.',
+                    },
+                  ].map((w) => (
+                    <View key={w.label} style={styles.whyRow}>
+                      <View style={styles.whyIcon}>
+                        <MaterialCommunityIcons
+                          name={w.icon as any}
+                          size={15}
+                          color={colors.primary}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.whyLabel}>{w.label}</Text>
+                        <Text style={styles.whyText}>{w.text}</Text>
+                      </View>
+                    </View>
+                  ))}
+
+                  <Text style={styles.whyFoot}>
+                    Never sold, never shared. Ask us to delete it any time.
+                  </Text>
+                </View>
+
                 <TouchableOpacity
                   style={[
                     styles.primaryButton,
@@ -354,14 +414,6 @@ export default function ContactDetailsSheet({
                       />
                     </>
                   )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={onClose}
-                  disabled={busy}
-                >
-                  <Text style={styles.cancelText}>Not now</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -468,35 +520,24 @@ export default function ContactDetailsSheet({
               </>
             )}
           </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+  screen: { flex: 1, backgroundColor: colors.background },
+  topBar: { paddingHorizontal: 14, paddingVertical: 12 },
+  close: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sheet: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    paddingHorizontal: 22,
-    paddingTop: 10,
-    paddingBottom: 30,
-    maxHeight: '90%',
-  },
-  grabber: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-    alignSelf: 'center',
-    marginBottom: 18,
-  },
+  body: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 40 },
   iconTile: {
     width: 46,
     height: 46,
@@ -612,6 +653,49 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
 
+  whyPanel: {
+    marginTop: 22,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: 16,
+  },
+  whyHeading: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 0.9,
+    color: colors.textLight,
+    textTransform: 'uppercase',
+  },
+  whyRow: { flexDirection: 'row', gap: 11 },
+  whyIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 11,
+    backgroundColor: colors.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  whyLabel: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13.5,
+    color: colors.textDark,
+  },
+  whyText: {
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.textLight,
+    marginTop: 2,
+  },
+  whyFoot: {
+    fontFamily: fonts.body,
+    fontSize: 11.5,
+    lineHeight: 17,
+    color: colors.textLight,
+    paddingTop: 4,
+  },
+
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -637,13 +721,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 16,
     color: colors.white,
-  },
-
-  cancelButton: { alignItems: 'center', paddingVertical: 14, marginTop: 2 },
-  cancelText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    color: colors.textLight,
   },
 
   resendWaiting: {

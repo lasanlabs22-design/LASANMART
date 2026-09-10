@@ -24,6 +24,7 @@ import { faqs, faqCategories, Faq } from '../data/faqs';
 /* Change these to your team's real contact details */
 const SUPPORT_PHONE = '8309074248';
 const SUPPORT_EMAIL = 'admin@lasanlabs.com';
+const ACCENT = '#FF6B35';
 
 export default function HelpScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -112,11 +113,7 @@ export default function HelpScreen({ navigation }: any) {
 
           <View style={styles.supportTop}>
             <View style={styles.supportIcon}>
-              <MaterialCommunityIcons
-                name="headset"
-                size={22}
-                color={colors.primary}
-              />
+              <MaterialCommunityIcons name="headset" size={22} color={ACCENT} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.supportTitle}>Talk to our team</Text>
