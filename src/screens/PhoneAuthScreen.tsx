@@ -25,6 +25,7 @@ import {
   Confirmation,
   PhoneAuthError,
 } from '../lib/phoneAuth';
+import { events } from '../lib/analytics';
 
 const RESEND_SECONDS = 45;
 const CODE_LENGTH = 6;
@@ -99,6 +100,7 @@ export default function PhoneAuthScreen({ navigation }: any) {
 
       // The number is now verified — save it and let them in
       updateProfile({ phone });
+      events.signedIn('phone');
       setLoginMethod('phone');
       navigation.replace('Main');
     } catch (err: any) {

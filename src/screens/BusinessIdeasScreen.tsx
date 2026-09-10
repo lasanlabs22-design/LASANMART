@@ -18,6 +18,7 @@ import { businessSectors, BusinessSector } from '../data/businessSectors';
 import { findIdea } from '../data/businessIdeas';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
+import { events } from '../lib/analytics';
 
 export default function BusinessIdeasScreen({ navigation }: any) {
   const [sector, setSector] = useState<BusinessSector | null>(null);
@@ -89,7 +90,10 @@ export default function BusinessIdeasScreen({ navigation }: any) {
                 key={s.id}
                 style={[styles.sectorChip, active && styles.sectorChipActive]}
                 activeOpacity={0.85}
-                onPress={() => setSector(active ? null : s)}
+                onPress={() => {
+                  setSector(active ? null : s);
+                  if (!active) events.businessIdeaViewed(s.label);
+                }}
               >
                 <MaterialCommunityIcons
                   name={s.icon as any}

@@ -132,7 +132,7 @@ export default function PlansCarousel({ data, onPlanPress }: Props) {
 
               {/* Feature chips */}
               <View style={styles.chipRow}>
-                {item.features.map((f) => (
+                {item.features.map((f: string) => (
                   <View key={f} style={styles.chip}>
                     <Text style={styles.chipText} numberOfLines={1}>
                       {f}

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { trackScreen } from '../lib/analytics';
 import LoginScreen from '../screens/LoginScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import ReelPlayerScreen from '../screens/ReelPlayerScreen';
@@ -29,8 +30,34 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   const { loginMethod } = useAuth();
 
+  /* Screen tracking. Firebase works out time-on-screen from the gap
+     between one screen view and the next, so logging the change is
+     all that's needed — no per-screen code anywhere. */
+  const navigationRef = useRef<any>(null);
+  const routeNameRef = useRef<string | undefined>(undefined);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+
+        if (routeNameRef.current) {
+          trackScreen(routeNameRef.current);
+        }
+      }}
+      onStateChange={() => {
+        const previous = routeNameRef.current;
+        const current = navigationRef.current?.getCurrentRoute()?.name;
+
+        // Only log a real change, not a re-render
+        if (current && previous !== current) {
+          trackScreen(current);
+        }
+
+        routeNameRef.current = current;
+      }}
+    >
       <RootStack initialRoute={loginMethod ? 'Main' : 'Login'} />
     </NavigationContainer>
   );

@@ -20,6 +20,7 @@ import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import LasanLogo from '../components/LasanLogo';
 import { signInWithGoogle } from '../lib/googleAuth';
+import { events } from '../lib/analytics';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -126,7 +127,7 @@ export default function LoginScreen({ navigation }: Props) {
         email: user.email,
         profilePictureUri: user.photo,
       });
-
+      events.signedIn('google');
       setLoginMethod('google');
       navigation.replace('Main');
     } catch (err: any) {
@@ -146,6 +147,7 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   const handleSkip = () => {
+    events.signedIn('guest');
     setLoginMethod('skip');
     navigation.replace('Main');
   };
@@ -482,7 +484,7 @@ const styles = StyleSheet.create({
     bottom: 40,
     right: -140,
   },
-  vignette: { ...StyleSheet.absoluteFillObject },
+  vignette: StyleSheet.absoluteFill,
 
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: 26 },
 

@@ -18,6 +18,7 @@ import {
   CategoryItem,
 } from '../data/homeCategories';
 import { plans } from '../data/plans';
+import { events } from '../lib/analytics';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -77,6 +78,7 @@ export default function HomeScreen() {
   };
 
   const openPlanEnquiry = (plan: any) => {
+    events.planOpened(plan.title, plan.price);
     navigation.getParent()?.navigate('PlanEnquiry', { plan });
   };
 
@@ -84,6 +86,7 @@ export default function HomeScreen() {
     service: CategoryItem,
     category: 'online' | 'offline'
   ) => {
+    events.serviceOpened(service.label, category);
     navigation.getParent()?.navigate('PostRequest', { service, category });
   };
 

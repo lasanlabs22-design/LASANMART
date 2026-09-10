@@ -340,7 +340,7 @@ function ReelItem({
       <TouchableOpacity
         activeOpacity={1}
         onPress={() => setIsPaused((v) => !v)}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       >
         <VideoView
           style={styles.video}
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
   },
 
   center: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -15,7 +15,9 @@ import { fonts } from '../theme/typography';
 
 export default function ReelPlayerScreen({ route, navigation }: any) {
   const { reel } = route.params;
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
+    'loading'
+  );
   const [isPaused, setIsPaused] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
@@ -47,7 +49,7 @@ export default function ReelPlayerScreen({ route, navigation }: any) {
       <TouchableOpacity
         activeOpacity={1}
         onPress={togglePlayback}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       >
         <VideoView
           style={styles.video}
@@ -95,7 +97,11 @@ export default function ReelPlayerScreen({ route, navigation }: any) {
       {isPaused && status !== 'error' && (
         <View style={styles.centerOverlay} pointerEvents="none">
           <View style={styles.playBadge}>
-            <MaterialCommunityIcons name="play" size={34} color={colors.white} />
+            <MaterialCommunityIcons
+              name="play"
+              size={34}
+              color={colors.white}
+            />
           </View>
         </View>
       )}
@@ -107,7 +113,11 @@ export default function ReelPlayerScreen({ route, navigation }: any) {
             style={styles.iconButton}
             onPress={() => navigation.goBack()}
           >
-            <MaterialCommunityIcons name="close" size={22} color={colors.white} />
+            <MaterialCommunityIcons
+              name="close"
+              size={22}
+              color={colors.white}
+            />
           </TouchableOpacity>
 
           <View style={styles.brandPill}>
@@ -199,7 +209,7 @@ const styles = StyleSheet.create({
   },
 
   centerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -241,7 +251,7 @@ const styles = StyleSheet.create({
   },
 
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
   },
 
@@ -291,7 +301,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   captionArea: { flex: 1 },
-  userRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
   avatarRing: {
     width: 32,
     height: 32,

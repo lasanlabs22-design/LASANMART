@@ -7,7 +7,7 @@ import { fonts } from '../theme/typography';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type Props = {
-  percent: number;      // 0–100
+  percent: number; // 0–100
   size?: number;
   stroke?: number;
   children?: React.ReactNode;
@@ -89,7 +89,7 @@ export function ProgressPercent({ percent }: { percent: number }) {
 
 const styles = StyleSheet.create({
   inner: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
   },

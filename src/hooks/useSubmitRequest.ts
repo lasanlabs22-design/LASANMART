@@ -7,7 +7,7 @@ import {
   SubmitRequestPayload,
   RequestType,
 } from '../api/client';
-
+import { events } from '../lib/analytics';
 /** Everything a screen supplies about the request itself */
 type RequestBody = {
   type: RequestType;
@@ -80,6 +80,7 @@ export function useSubmitRequest(onSuccess?: () => void) {
 
     try {
       await submitRequest(payload);
+      events.requestSubmitted(body.type, body.title);
 
       Alert.alert(
         'Request Sent',
