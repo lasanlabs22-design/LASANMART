@@ -26,6 +26,7 @@ import { businessSectors } from '../data/businessSectors';
 import ProfileCompletionCard from '../components/ProfileCompletionCard';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import TrustPanel from '../components/TrustPanel';
+import { uploadPhoto } from '../api/client';
 
 const pickImage = async (onPicked: (uri: string) => void) => {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -45,8 +46,18 @@ const pickImage = async (onPicked: (uri: string) => void) => {
     quality: 0.7,
   });
 
-  if (!result.canceled && result.assets?.[0]) {
-    onPicked(result.assets[0].uri);
+  if (result.canceled || !result.assets?.[0]) return;
+
+  const localUri = result.assets[0].uri;
+
+  // Show it immediately, then replace with the hosted URL
+  onPicked(localUri);
+
+  try {
+    const url = await uploadPhoto(localUri);
+    onPicked(url);
+  } catch {
+    // Keep the local one — it still works on this device
   }
 };
 
