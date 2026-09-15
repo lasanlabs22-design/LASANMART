@@ -522,3 +522,45 @@ export async function postReel(payload: {
     throw new ApiError(data?.error || 'Could not post your reel.');
   }
 }
+
+export type RequestProgress = {
+  status: 'accepted' | 'in_progress' | 'completed';
+  assigned_at: string;
+  completed_at: string | null;
+};
+
+/** Where a request has got to with our partner. Null if not placed yet. */
+export async function fetchProgress(
+  requestId: string
+): Promise<RequestProgress | null> {
+  try {
+    const res = await fetchWithTimeout(
+      `${API_URL}/requests/${requestId}/progress`
+    );
+    const data = await res.json();
+    return data?.progress || null;
+  } catch {
+    return null;
+  }
+}
+
+/** How the work went. Three answers, not five stars. */
+export async function sendFeedback(
+  requestId: string,
+  verdict: 'good' | 'okay' | 'poor',
+  comment?: string
+): Promise<void> {
+  const res = await fetchWithTimeout(
+    `${API_URL}/requests/${requestId}/feedback`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verdict, comment }),
+    }
+  );
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(data?.error || 'Could not save your feedback.');
+  }
+}

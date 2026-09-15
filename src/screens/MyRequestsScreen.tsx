@@ -8,13 +8,23 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
-import { fetchRequests, SavedRequest, ApiError } from '../api/client';
+import {
+  fetchRequests,
+  fetchProgress,
+  SavedRequest,
+  RequestProgress,
+  ApiError,
+} from '../api/client';
+import FeedbackSheet from '../components/FeedbackSheet';
 
 const TYPE_META: Record<string, { label: string; icon: string }> = {
   service: { label: 'Service Request', icon: 'monitor-dashboard' },
@@ -48,6 +58,10 @@ export default function MyRequestsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [progress, setProgress] = useState<Record<string, RequestProgress>>({});
+  const [rating, setRating] = useState<string | null>(null);
+  const [rated, setRated] = useState<string[]>([]);
+
   const load = useCallback(
     async (isRefresh = false) => {
       // No verified number means nothing to look up yet
@@ -66,6 +80,21 @@ export default function MyRequestsScreen() {
         // The backend reads the phone from the verified token
         const data = await fetchRequests();
         setRequests(data);
+
+        // Which of these have been placed with a partner
+        const active = data.filter((r) =>
+          ['in_progress', 'closed'].includes(r.status)
+        );
+        const found: Record<string, RequestProgress> = {};
+
+        await Promise.all(
+          active.map(async (r) => {
+            const p = await fetchProgress(r.id);
+            if (p) found[r.id] = p;
+          })
+        );
+
+        setProgress(found);
       } catch (err) {
         setError(
           err instanceof ApiError
@@ -90,7 +119,10 @@ export default function MyRequestsScreen() {
   const openPost = () => navigation.getParent()?.navigate('PostRequest');
 
   const renderItem = ({ item }: { item: SavedRequest }) => {
-    const type = TYPE_META[item.type] || { label: item.type, icon: 'file-outline' };
+    const type = TYPE_META[item.type] || {
+      label: item.type,
+      icon: 'file-outline',
+    };
     const status = STATUS_META[item.status] || STATUS_META.new;
 
     const detailEntries = item.details
@@ -112,14 +144,60 @@ export default function MyRequestsScreen() {
           </View>
 
           <View
-            style={[styles.statusPill, { backgroundColor: `${status.color}1A` }]}
+            style={[
+              styles.statusPill,
+              { backgroundColor: `${status.color}1A` },
+            ]}
           >
-            <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+            <View
+              style={[styles.statusDot, { backgroundColor: status.color }]}
+            />
             <Text style={[styles.statusText, { color: status.color }]}>
               {status.label}
             </Text>
           </View>
         </View>
+
+        {progress[item.id] && (
+          <View style={styles.progressRow}>
+            <MaterialCommunityIcons
+              name={
+                progress[item.id].status === 'completed'
+                  ? 'check-circle'
+                  : 'account-hard-hat'
+              }
+              size={15}
+              color={
+                progress[item.id].status === 'completed'
+                  ? '#0EA97A'
+                  : colors.primary
+              }
+            />
+            <Text style={styles.progressText}>
+              {progress[item.id].status === 'completed'
+                ? 'Our partner has finished this'
+                : progress[item.id].status === 'in_progress'
+                  ? 'Our partner is working on this now'
+                  : 'A partner has taken this on'}
+            </Text>
+          </View>
+        )}
+
+        {progress[item.id]?.status === 'completed' &&
+          !rated.includes(item.id) && (
+            <TouchableOpacity
+              style={styles.rateButton}
+              activeOpacity={0.85}
+              onPress={() => setRating(item.id)}
+            >
+              <MaterialCommunityIcons
+                name="star-outline"
+                size={15}
+                color={colors.primary}
+              />
+              <Text style={styles.rateText}>Tell us how it went</Text>
+            </TouchableOpacity>
+          )}
 
         {item.title && (
           <Text style={styles.cardTitle} numberOfLines={2}>
@@ -145,7 +223,9 @@ export default function MyRequestsScreen() {
           </View>
         )}
 
-        <Text style={styles.postedOn}>Posted {formatDate(item.created_at)}</Text>
+        <Text style={styles.postedOn}>
+          Posted {formatDate(item.created_at)}
+        </Text>
       </View>
     );
   };
@@ -162,8 +242,8 @@ export default function MyRequestsScreen() {
           {loading
             ? 'Loading…'
             : requests.length === 0
-            ? 'Nothing posted yet'
-            : `${requests.length} request${requests.length > 1 ? 's' : ''}`}
+              ? 'Nothing posted yet'
+              : `${requests.length} request${requests.length > 1 ? 's' : ''}`}
         </Text>
       </View>
 
@@ -245,6 +325,18 @@ export default function MyRequestsScreen() {
           <MaterialCommunityIcons name="plus" size={20} color={colors.white} />
           <Text style={styles.fabText}>Post Request</Text>
         </TouchableOpacity>
+      )}
+
+      {rating && (
+        <FeedbackSheet
+          visible={!!rating}
+          requestId={rating}
+          onClose={() => setRating(null)}
+          onDone={() => {
+            setRated((prev) => [...prev, rating]);
+            setRating(null);
+          }}
+        />
       )}
     </SafeAreaView>
   );
@@ -329,6 +421,37 @@ const styles = StyleSheet.create({
   },
   statusDot: { width: 5, height: 5, borderRadius: 3 },
   statusText: { fontFamily: fonts.bodyBold, fontSize: 10 },
+
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  progressText: {
+    flex: 1,
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    color: colors.textDark,
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 11,
+    borderRadius: 12,
+    backgroundColor: colors.primarySoft,
+  },
+  rateText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: colors.primary,
+  },
 
   cardTitle: {
     fontFamily: fonts.displayMedium,
