@@ -117,16 +117,16 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
       // Bring back whatever we already hold against this number.
       // Returns null for a brand new number (or if the call fails).
       const contact = await fetchMyContact();
-
+  
       if (contact) {
         updateProfile({
           name: contact.name || '',
           email: contact.email || '',
-          companyName: contact.company_name || '',
-          companyDescription: contact.company_description || '',
+          companyName: contact.companyName || '',
+          companyDescription: contact.companyDescription || '',
           sector: contact.sector || '',
-          profilePictureUri: contact.photo_url || null,
-          companyLogoUri: contact.logo_url || null,
+          profilePictureUri: contact.photoUrl || null,
+          companyLogoUri: contact.logoUrl || null,
         });
         markProfileSaved();
         enterApp();
