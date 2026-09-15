@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
   Keyboard,
+  Alert,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -25,14 +26,19 @@ import {
   Confirmation,
   PhoneAuthError,
 } from '../lib/phoneAuth';
+import { fetchMyContact } from '../api/client';
 import { events } from '../lib/analytics';
 
 const RESEND_SECONDS = 45;
 const CODE_LENGTH = 6;
 
-export default function PhoneAuthScreen({ navigation }: any) {
+export default function PhoneAuthScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
-  const { setLoginMethod, updateProfile } = useAuth();
+  const { setLoginMethod, updateProfile, markProfileSaved } = useAuth();
+
+  /* Sent from the "already have an account?" entry point, so the copy
+     can say "welcome back" instead of asking like it's the first time */
+  const returning = route?.params?.returning === true;
 
   const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [phone, setPhone] = useState('');
@@ -88,6 +94,12 @@ export default function PhoneAuthScreen({ navigation }: any) {
     }
   };
 
+  const enterApp = () => {
+    events.signedIn('phone');
+    setLoginMethod('phone');
+    navigation.replace('Main');
+  };
+
   const handleVerify = async () => {
     if (!codeValid || !confirmation || busy) return;
 
@@ -98,11 +110,40 @@ export default function PhoneAuthScreen({ navigation }: any) {
     try {
       await verifyCode(confirmation, code);
 
-      // The number is now verified — save it and let them in
+      // The number is now verified — save it regardless of what
+      // happens next
       updateProfile({ phone });
-      events.signedIn('phone');
-      setLoginMethod('phone');
-      navigation.replace('Main');
+
+      // Bring back whatever we already hold against this number.
+      // Returns null for a brand new number (or if the call fails).
+      const contact = await fetchMyContact();
+
+      if (contact) {
+        updateProfile({
+          name: contact.name || '',
+          email: contact.email || '',
+          companyName: contact.companyName || '',
+          companyDescription: contact.companyDescription || '',
+          sector: contact.sector || '',
+        });
+        markProfileSaved();
+        enterApp();
+        return;
+      }
+
+      // Verified, but we've never seen this number before.
+      // Only worth flagging if they came in expecting an existing
+      // account — a plain first-time sign-up should never see this.
+      if (returning) {
+        Alert.alert(
+          'No account found',
+          "We don't have anything saved against this number yet. Your number is verified, so you can carry on and set things up now.",
+          [{ text: 'Continue', onPress: enterApp }]
+        );
+        return;
+      }
+
+      enterApp();
     } catch (err: any) {
       // TEMPORARY — same as above
       setError(`${err?.code || 'no-code'} — ${err?.message || 'no message'}`);
@@ -163,9 +204,13 @@ export default function PhoneAuthScreen({ navigation }: any) {
                   />
                 </View>
 
-                <Text style={styles.title}>What's your number?</Text>
+                <Text style={styles.title}>
+                  {returning ? 'Welcome back' : "What's your number?"}
+                </Text>
                 <Text style={styles.subtitle}>
-                  We'll text you a 6-digit code to confirm it's really you.
+                  {returning
+                    ? "Enter the number you used before and we'll bring your requests back."
+                    : "We'll text you a 6-digit code to confirm it's really you."}
                 </Text>
 
                 <View style={[styles.field, phoneValid && styles.fieldValid]}>

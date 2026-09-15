@@ -362,6 +362,27 @@ export default function LoginScreen({ navigation }: Props) {
                 color="rgba(255,255,255,0.75)"
               />
             </TouchableOpacity>
+
+            {/* For anyone coming back on a new phone or after a reinstall.
+                Same OTP flow — the flag only changes the wording and tells
+                the app to look for existing data afterwards. */}
+            <TouchableOpacity
+              style={styles.returning}
+              activeOpacity={0.7}
+              onPress={() =>
+                navigation.navigate('PhoneAuth', { returning: true })
+              }
+            >
+              <MaterialCommunityIcons
+                name="account-check-outline"
+                size={15}
+                color="rgba(255,255,255,0.55)"
+              />
+              <Text style={styles.returningText}>
+                Already have an account?{' '}
+                <Text style={styles.returningLink}>Sign in</Text>
+              </Text>
+            </TouchableOpacity>
           </Animated.View>
         </View>
 
@@ -603,6 +624,23 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 14,
     color: 'rgba(255,255,255,0.75)',
+  },
+
+  returning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingVertical: 14,
+  },
+  returningText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.55)',
+  },
+  returningLink: {
+    fontFamily: fonts.bodyBold,
+    color: '#FF8A3D',
   },
 
   legal: {

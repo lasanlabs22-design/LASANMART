@@ -55,6 +55,21 @@ export type SavedRequest = {
   created_at: string;
 };
 
+/**
+ * The saved details behind a verified phone number.
+ * Same camelCase shape the app sends up in SubmitRequestPayload,
+ * so a profile form can read it and post it straight back.
+ */
+export type MyContact = {
+  name: string | null;
+  email: string | null;
+  phone: string;
+  companyName: string | null;
+  companyDescription: string | null;
+  sector: string | null;
+  city: string | null;
+};
+
 export type AppNotification = {
   id: string;
   request_id: string | null;
@@ -200,6 +215,28 @@ export async function fetchRequests(): Promise<SavedRequest[]> {
   }
 
   return (data?.requests || []) as SavedRequest[];
+}
+
+/**
+ * The saved details behind the verified number — so someone signing in
+ * on a new phone gets their name and email back, not an empty profile.
+ *
+ * Returns null rather than throwing: a profile screen with nothing to
+ * prefill is a normal first-time state, not an error worth showing.
+ * Signed out, offline, or a brand new number all land here the same way.
+ */
+export async function fetchMyContact(): Promise<MyContact | null> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/requests/contact`);
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return (data?.contact as MyContact) || null;
+  } catch (err: any) {
+    console.log('Could not load saved contact:', err?.message);
+    return null;
+  }
 }
 
 /* ---------------- Notifications ---------------- */
