@@ -122,9 +122,11 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
         updateProfile({
           name: contact.name || '',
           email: contact.email || '',
-          companyName: contact.companyName || '',
-          companyDescription: contact.companyDescription || '',
+          companyName: contact.company_name || '',
+          companyDescription: contact.company_description || '',
           sector: contact.sector || '',
+          profilePictureUri: contact.photo_url || null,
+          companyLogoUri: contact.logo_url || null,
         });
         markProfileSaved();
         enterApp();

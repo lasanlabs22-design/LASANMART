@@ -63,11 +63,12 @@ export type SavedRequest = {
 export type MyContact = {
   name: string | null;
   email: string | null;
-  phone: string;
-  companyName: string | null;
-  companyDescription: string | null;
+  company_name: string | null;
+  company_description: string | null;
   sector: string | null;
   city: string | null;
+  photo_url: string | null;
+  logo_url: string | null;
 };
 
 export type AppNotification = {
@@ -602,5 +603,21 @@ export async function uploadPhoto(uri: string): Promise<string> {
   } catch (err: any) {
     if (err instanceof ApiError) throw err;
     throw new ApiError('Could not upload the photo. Check your connection.');
+  }
+}
+
+/** Saves photo URLs against the contact, so they survive a reinstall */
+export async function saveContactImages(payload: {
+  photoUrl?: string;
+  logoUrl?: string;
+}): Promise<void> {
+  try {
+    await fetchWithTimeout(`${API_URL}/requests/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Not worth surfacing — the image still shows on this device
   }
 }

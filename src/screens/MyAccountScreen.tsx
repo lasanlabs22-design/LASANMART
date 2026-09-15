@@ -26,7 +26,7 @@ import { businessSectors } from '../data/businessSectors';
 import ProfileCompletionCard from '../components/ProfileCompletionCard';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import TrustPanel from '../components/TrustPanel';
-import { uploadPhoto } from '../api/client';
+import { uploadPhoto, saveContactImages } from '../api/client';
 
 const pickImage = async (onPicked: (uri: string) => void) => {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -106,10 +106,17 @@ export default function MyAccountScreen() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Images save immediately — they aren't part of the form's save/cancel flow
-  const setImage = (key: keyof UserProfile, uri: string) => {
+  const setImage = async (key: keyof UserProfile, uri: string) => {
     setForm((prev) => ({ ...prev, [key]: uri }));
     updateProfile({ [key]: uri } as Partial<UserProfile>);
+
+    // Only hosted URLs are worth saving — a local path means nothing
+    // on another device
+    if (uri.startsWith('http')) {
+      saveContactImages(
+        key === 'profilePictureUri' ? { photoUrl: uri } : { logoUrl: uri }
+      );
+    }
   };
 
   const startEditing = () => {
