@@ -17,7 +17,7 @@ type Props = {
 };
 
 const CARD_WIDTH = Dimensions.get('window').width - 32;
-const CARD_HEIGHT = 84;
+const CARD_HEIGHT = 96;
 
 /**
  * This banner deliberately keeps the original orange, rather than

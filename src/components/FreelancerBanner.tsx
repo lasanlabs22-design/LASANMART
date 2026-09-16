@@ -13,14 +13,14 @@ import { fonts } from '../theme/typography';
 import Shimmer from './Shimmer';
 
 const CARD_WIDTH = Dimensions.get('window').width - 32;
-const CARD_HEIGHT = 84;
+const CARD_HEIGHT = 96;
 
 export default function FreelancerBanner({ onPress }: { onPress: () => void }) {
   return (
     <View style={styles.section}>
       <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
         <LinearGradient
-          colors={['#3A86FF', '#1D4ED8']}
+          colors={['#2E1065', '#2E1065']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.card}
