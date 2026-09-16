@@ -24,6 +24,7 @@ import AddReelScreen from '../screens/AddReelScreen';
 import HelpScreen from '../screens/HelpScreen';
 import MyReelsScreen from '../screens/MyReelsScreen';
 import PhoneAuthScreen from '../screens/PhoneAuthScreen';
+import FreelancerRequestScreen from '../screens/FreelancerRequestScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -88,6 +89,10 @@ function RootStack({ initialRoute }: { initialRoute: string }) {
         name="CustomRequirement"
         component={CustomRequirementScreen}
         options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="FreelancerRequest"
+        component={FreelancerRequestScreen}
       />
       <Stack.Screen
         name="InfluencerSelection"

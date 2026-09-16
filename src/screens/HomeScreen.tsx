@@ -9,6 +9,7 @@ import CategoryCarousel from '../components/CategoryCarousal';
 import ReelsRow from '../components/ReelsRow';
 import CustomRequirementBanner from '../screens/CustomRequirementBanner';
 import InfluencerBanner from '../components/InfluencerBanner';
+import FreelancerBanner from '../components/FreelancerBanner';
 import BusinessIdeasBanner from '../components/BusinessIdeasBanner';
 import { useAuth } from '../context/AuthContext';
 import { fetchUnreadCount, fetchReels, ApiReel } from '../api/client';
@@ -73,6 +74,10 @@ export default function HomeScreen() {
     navigation.getParent()?.navigate('InfluencerSelection');
   };
 
+  const openFreelancers = () => {
+    navigation.getParent()?.navigate('FreelancerRequest');
+  };
+
   const openBusinessIdeas = () => {
     navigation.getParent()?.navigate('BusinessIdeas');
   };
@@ -116,6 +121,8 @@ export default function HomeScreen() {
         />
 
         <InfluencerBanner onPress={openInfluencerSelection} />
+
+        <FreelancerBanner onPress={openFreelancers} />
 
         {/* Hidden entirely when there's nothing to show, rather than
             an empty row with just the Add tile */}
