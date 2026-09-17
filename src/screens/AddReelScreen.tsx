@@ -25,7 +25,8 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { uploadVideo, postReel, ApiError } from '../api/client';
-import { VIBES_UNLOCKED } from '../config/features';
+import { useVibesAccess } from '../hooks/useVibesAccess';
+import VibesAccessSheet from '../components/VibesAccessSheet';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -34,7 +35,15 @@ const MAX_MB = 60;
 
 /* ---------------- Locked state ---------------- */
 
-function LockedPanel({ onBack }: { onBack: () => void }) {
+function LockedPanel({
+  state,
+  onAsk,
+  onBack,
+}: {
+  state: 'open' | 'waiting' | 'declined';
+  onAsk: () => void;
+  onBack: () => void;
+}) {
   const sweep = useRef(new Animated.Value(0)).current;
   const float = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;
@@ -155,7 +164,7 @@ function LockedPanel({ onBack }: { onBack: () => void }) {
             style={[styles.lockTile, { transform: [{ translateY: lift }] }]}
           >
             <MaterialCommunityIcons
-              name="lock-outline"
+              name={state === 'waiting' ? 'clock-outline' : 'lock-outline'}
               size={28}
               color="#FFC529"
             />
@@ -163,20 +172,35 @@ function LockedPanel({ onBack }: { onBack: () => void }) {
         </View>
 
         <View style={styles.lockedBadge}>
-          <Text style={styles.lockedBadgeText}>COMING SOON</Text>
+          <Text style={styles.lockedBadgeText}>
+            {state === 'waiting'
+              ? 'WITH OUR TEAM'
+              : state === 'declined'
+                ? 'NOT OPEN YET'
+                : 'BY REQUEST'}
+          </Text>
         </View>
 
-        <Text style={styles.lockedTitle}>Posting opens shortly</Text>
+        <Text style={styles.lockedTitle}>
+          {state === 'waiting'
+            ? "We're looking at it"
+            : state === 'declined'
+              ? 'Not right now'
+              : 'Share what you do'}
+        </Text>
 
         <Text style={styles.lockedText}>
-          We're putting the finishing touches to Lasan Vibes. Soon you'll be
-          able to share what your business is up to with everyone on the app.
+          {state === 'waiting'
+            ? "Your request is with our team. We usually come back within a day, and you'll get a notification here."
+            : state === 'declined'
+              ? "We're not able to open posting for this account at the moment. Message our team if you'd like to talk it through."
+              : "Lasan Vibes is seen by everyone using the app. Ask us for posting access and tell us what you'd share."}
         </Text>
 
         <View style={styles.lockedPoints}>
           {[
-            'Share campaigns and shoots',
             'Seen by every Lasan Mart user',
+            'Up to 90 seconds, portrait',
             'Free, always',
           ].map((p) => (
             <View key={p} style={styles.lockedPoint}>
@@ -190,6 +214,21 @@ function LockedPanel({ onBack }: { onBack: () => void }) {
           ))}
         </View>
       </LinearGradient>
+
+      {state === 'open' ? (
+        <TouchableOpacity
+          style={styles.askButton}
+          activeOpacity={0.9}
+          onPress={onAsk}
+        >
+          <MaterialCommunityIcons
+            name="hand-wave-outline"
+            size={18}
+            color={colors.white}
+          />
+          <Text style={styles.askButtonText}>Ask for access</Text>
+        </TouchableOpacity>
+      ) : null}
 
       <TouchableOpacity
         style={styles.lockedButton}
@@ -215,6 +254,9 @@ export default function AddReelScreen({ navigation }: any) {
   const [busy, setBusy] = useState(false);
   const [focused, setFocused] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
+
+  const { canPost, requested, declined, loading, refresh } = useVibesAccess();
+  const [asking, setAsking] = useState(false);
 
   // Preview player — only created once a video is chosen
   const player = useVideoPlayer(videoUri || '', (p) => {
@@ -301,8 +343,8 @@ export default function AddReelScreen({ navigation }: any) {
     doUpload();
   };
 
-  /* Locked — nothing below this runs */
-  if (!VIBES_UNLOCKED) {
+  /* Still checking, so show nothing rather than the wrong thing */
+  if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
@@ -320,7 +362,51 @@ export default function AddReelScreen({ navigation }: any) {
           <View style={{ width: 38 }} />
         </View>
 
-        <LockedPanel onBack={() => navigation.goBack()} />
+        <View style={styles.centre}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  /* No access yet — ask, or wait for an answer */
+  if (!canPost) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons
+              name="close"
+              size={21}
+              color={colors.textDark}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Post a Vibe</Text>
+          <View style={{ width: 38 }} />
+        </View>
+
+        <LockedPanel
+          state={declined ? 'declined' : requested ? 'waiting' : 'open'}
+          onAsk={() => setAsking(true)}
+          onBack={() => navigation.goBack()}
+        />
+
+        <VibesAccessSheet
+          visible={asking}
+          onClose={() => setAsking(false)}
+          onDone={async () => {
+            setAsking(false);
+            await refresh();
+            Alert.alert(
+              'Request sent',
+              "Our team will take a look and get back to you, usually within a day.",
+              [{ text: 'OK' }]
+            );
+          }}
+        />
       </SafeAreaView>
     );
   }
@@ -637,6 +723,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textDark,
   },
+  askButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 17,
+    borderRadius: 14,
+    marginTop: 16,
+  },
+  askButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    color: colors.white,
+  },
+  centre: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   content: { flex: 1, padding: 16 },
 

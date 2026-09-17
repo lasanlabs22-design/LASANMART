@@ -15,7 +15,7 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import SectionHeading from './SectionHeading';
 import { ApiReel } from '../api/client';
-import { VIBES_UNLOCKED } from '../config/features';
+import { useVibesAccess } from '../hooks/useVibesAccess';
 
 type Props = {
   data: ApiReel[];
@@ -33,11 +33,13 @@ const THUMB_HEIGHT = 186;
  * rather than never seeing it at all.
  */
 function AddTile({ onPress }: { onPress?: () => void }) {
+  const { canPost, requested } = useVibesAccess();
+
   const sweep = useRef(new Animated.Value(0)).current;
   const float = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (VIBES_UNLOCKED) return;
+    if (canPost) return;
 
     // A light passing across the tile
     const shine = Animated.loop(
@@ -82,7 +84,7 @@ function AddTile({ onPress }: { onPress?: () => void }) {
       shine.stop();
       drift.stop();
     };
-  }, [sweep, float]);
+  }, [canPost, sweep, float]);
 
   const sweepX = sweep.interpolate({
     inputRange: [0, 1],
@@ -95,7 +97,7 @@ function AddTile({ onPress }: { onPress?: () => void }) {
   });
 
   /* Open — the plain tile */
-  if (VIBES_UNLOCKED) {
+  if (canPost) {
     return (
       <TouchableOpacity
         style={styles.addTile}
@@ -145,7 +147,7 @@ function AddTile({ onPress }: { onPress?: () => void }) {
       <Text style={styles.lockedLabel}>Post a{'\n'}Vibe</Text>
 
       <View style={styles.soonBadge}>
-        <Text style={styles.soonText}>SOON</Text>
+        <Text style={styles.soonText}>{requested ? 'PENDING' : 'ASK'}</Text>
       </View>
     </TouchableOpacity>
   );

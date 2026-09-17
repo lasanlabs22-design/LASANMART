@@ -21,7 +21,7 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { fetchMyReels, MyReel } from '../api/client';
-import { VIBES_UNLOCKED } from '../config/features';
+import { useVibesAccess } from '../hooks/useVibesAccess';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GAP = 10;
@@ -44,6 +44,7 @@ function timeAgo(iso: string): string {
 export default function MyReelsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { hasContactDetails } = useAuth();
+  const { canPost, requested } = useVibesAccess();
 
   const [reels, setReels] = useState<MyReel[]>([]);
   const [totalViews, setTotalViews] = useState(0);
@@ -187,17 +188,23 @@ export default function MyReelsScreen({ navigation }: any) {
         }
         /* A quiet note under existing reels while posting is closed */
         ListFooterComponent={
-          !VIBES_UNLOCKED && reels.length > 0 ? (
-            <View style={styles.lockedNote}>
+          !canPost && reels.length > 0 ? (
+            <TouchableOpacity
+              style={styles.lockedNote}
+              activeOpacity={0.85}
+              onPress={openAddReel}
+            >
               <MaterialCommunityIcons
-                name="lock-outline"
+                name={requested ? 'clock-outline' : 'lock-outline'}
                 size={15}
                 color={colors.textLight}
               />
               <Text style={styles.lockedNoteText}>
-                Posting new vibes opens soon
+                {requested
+                  ? 'Your posting request is with our team'
+                  : 'Ask for posting access'}
               </Text>
-            </View>
+            </TouchableOpacity>
           ) : null
         }
         ListEmptyComponent={
@@ -207,7 +214,7 @@ export default function MyReelsScreen({ navigation }: any) {
                 name={
                   error
                     ? 'wifi-off'
-                    : VIBES_UNLOCKED
+                    : canPost
                       ? 'video-plus-outline'
                       : 'lock-outline'
                 }
@@ -219,7 +226,7 @@ export default function MyReelsScreen({ navigation }: any) {
             <Text style={styles.emptyTitle}>
               {error
                 ? "Couldn't load your reels"
-                : VIBES_UNLOCKED
+                : canPost
                   ? 'Nothing posted yet'
                   : 'Posting opens soon'}
             </Text>
@@ -227,12 +234,12 @@ export default function MyReelsScreen({ navigation }: any) {
             <Text style={styles.emptyText}>
               {error
                 ? 'Check your connection and pull down to try again.'
-                : VIBES_UNLOCKED
+                : canPost
                   ? 'Share what your business is up to — everyone using Lasan Mart will see it.'
                   : "We're putting the finishing touches to Lasan Vibes. Soon you'll be able to share what your business is up to."}
             </Text>
 
-            {!error && VIBES_UNLOCKED && (
+            {!error && canPost && (
               <TouchableOpacity
                 style={styles.emptyButton}
                 activeOpacity={0.9}
@@ -246,12 +253,29 @@ export default function MyReelsScreen({ navigation }: any) {
                 <Text style={styles.emptyButtonText}>Post your first vibe</Text>
               </TouchableOpacity>
             )}
+
+            {!error && !canPost && (
+              <TouchableOpacity
+                style={styles.emptyButton}
+                activeOpacity={0.9}
+                onPress={openAddReel}
+              >
+                <MaterialCommunityIcons
+                  name={requested ? 'clock-outline' : 'hand-wave-outline'}
+                  size={17}
+                  color={colors.white}
+                />
+                <Text style={styles.emptyButtonText}>
+                  {requested ? 'Request sent' : 'Ask for access'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
 
       {/* The button only exists once posting is open */}
-      {VIBES_UNLOCKED && reels.length > 0 && (
+      {canPost && reels.length > 0 && (
         <TouchableOpacity
           style={[styles.fab, { bottom: 20 + insets.bottom }]}
           activeOpacity={0.9}
