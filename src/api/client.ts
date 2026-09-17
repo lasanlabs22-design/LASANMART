@@ -639,3 +639,40 @@ export async function saveContactImages(payload: {
     // Not worth surfacing — the image still shows on this device
   }
 }
+
+export type ApprovedInfluencer = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  instagram_id: string | null;
+  followers: string | null;
+  category: string | null;
+  city: string | null;
+  rate_per_post: number | null;
+  bio: string | null;
+};
+
+/**
+ * Approved creators, for the selection screen.
+ * Public — no token needed, since someone browsing may not have
+ * signed in yet.
+ */
+export async function fetchApprovedInfluencers(): Promise<{
+  influencers: ApprovedInfluencer[];
+  categories: string[];
+  cities: string[];
+}> {
+  const res = await fetch(`${API_URL}/influencers/approved`);
+
+  if (!res.ok) {
+    throw new ApiError('Could not load creators.');
+  }
+
+  const data = await res.json();
+
+  return {
+    influencers: data.influencers || [],
+    categories: data.categories || [],
+    cities: data.cities || [],
+  };
+}

@@ -36,6 +36,20 @@ export const faqs: Faq[] = [
       'We are based in Tirupati and work across Andhra Pradesh, with partners in nearby regions. Some offline services like hoardings depend on availability in your area — tell us your city when you post a request and we will confirm what we can do.',
     category: 'general',
   },
+  {
+    id: 'g4',
+    question: 'Do you do the work yourselves?',
+    answer:
+      'Some of it. For hoardings, printing, shoots and events we use partners we have checked and verified, and our team manages them for you. You deal with us throughout — we handle the coordination, the cost and the quality.',
+    category: 'general',
+  },
+  {
+    id: 'g5',
+    question: 'I provide these services. Can I work with you?',
+    answer:
+      'Yes — that is what Lasan Hub is for. It is a separate app for creators, vendors and freelancers who want work from businesses using Lasan Mart. Call our support team and we will get you set up.',
+    category: 'general',
+  },
 
   /* ---------- Requests ---------- */
   {
@@ -73,6 +87,20 @@ export const faqs: Faq[] = [
       'Use the Custom Requirement option on the Home screen. Tell us what you need and our team will come back with a tailored plan.',
     category: 'requests',
   },
+  {
+    id: 'r6',
+    question: 'My request says a partner is working on it. Who are they?',
+    answer:
+      'Someone from our verified network doing the work on the ground. We stay in the middle throughout, so anything you need — a change, an update, a problem — comes to us and we handle it. You never have to chase them.',
+    category: 'requests',
+  },
+  {
+    id: 'r7',
+    question: 'Why are you asking me how it went?',
+    answer:
+      'Once work is finished we ask whether it went well. It takes one tap, it is seen only by our team, and it decides who we send your next job to. It is the main way we keep quality up.',
+    category: 'requests',
+  },
 
   /* ---------- Account ---------- */
   {
@@ -105,13 +133,20 @@ export const faqs: Faq[] = [
   },
   {
     id: 'a5',
+    question: 'I already have an account on another phone.',
+    answer:
+      'Tap "Already have an account? Sign in" on the login screen and verify the number you used before. Your details and request history come back automatically.',
+    category: 'account',
+  },
+  {
+    id: 'a6',
     question: 'I changed my phone number. What happens to my requests?',
     answer:
       'Your requests stay linked to the number you used when posting them. Verify the new number and you will start a fresh history — contact support if you need earlier requests moved across.',
     category: 'account',
   },
   {
-    id: 'a6',
+    id: 'a7',
     question: 'Someone else used my phone. How do I clear their details?',
     answer:
       'Go to Settings and tap Log Out. That clears the saved profile from this device, and the next person can enter and verify their own number.',
@@ -123,35 +158,28 @@ export const faqs: Faq[] = [
     id: 'v1',
     question: 'What is Lasan Vibes?',
     answer:
-      'A short-video feed where our team and other businesses share campaigns, shoots and stories from the ground. Anyone using the app can post.',
+      'A short-video feed where our team and other businesses share campaigns, shoots and stories from the ground. Watch as much as you like — posting is opening soon.',
     category: 'vibes',
   },
   {
     id: 'v2',
-    question: 'Who can see the reels I post?',
+    question: 'Why can I not post a video?',
+    answer:
+      'Posting is not open yet. We are putting the finishing touches to it, and it will arrive in an update — you will be able to share what your business is up to with everyone using the app.',
+    category: 'vibes',
+  },
+  {
+    id: 'v3',
+    question: 'Who will see the reels I post?',
     answer:
       'Everyone using Lasan Mart. Reels are public, so only post content you are happy to share widely.',
     category: 'vibes',
   },
   {
-    id: 'v3',
-    question: 'How do I edit or delete a reel I posted?',
-    answer:
-      'Open the reel in the feed. On your own posts you will see Edit and Delete on the right-hand side — Edit changes the caption, Delete removes the video for everyone. You can also find all your posts by tapping the profile icon at the top of Lasan Vibes.',
-    category: 'vibes',
-  },
-  {
     id: 'v4',
-    question: 'What are the video limits?',
+    question: 'What will the video limits be?',
     answer:
       'Up to 90 seconds and under 60MB. Portrait videos look best, since the feed is full screen.',
-    category: 'vibes',
-  },
-  {
-    id: 'v5',
-    question: 'Where can I see how my reels are doing?',
-    answer:
-      'Tap the profile icon at the top of Lasan Vibes to open My Vibes. It shows everything you have posted, along with total views and how many are live.',
     category: 'vibes',
   },
 
@@ -181,7 +209,14 @@ export const faqs: Faq[] = [
     id: 't4',
     question: 'How does influencer marketing work?',
     answer:
-      "We're building a verified network of local creators, launching soon. In the meantime, post a custom requirement telling us what you need and our team will arrange creators for your campaign.",
+      'Open the Influencers section and browse our verified creators — you can see what they post about, their following, their city and their rate. Pick as many as you like and send the request. Our team then handles the brief, the negotiating and the campaign.',
+    category: 'tools',
+  },
+  {
+    id: 't5',
+    question: 'Can I hire a photographer or video editor?',
+    answer:
+      'Yes. The Freelancers section covers photography, videography, video editing and digital marketing. Pick what you need — more than one is fine — describe the work, and our team finds the right person and comes back with a quote.',
     category: 'tools',
   },
 ];
