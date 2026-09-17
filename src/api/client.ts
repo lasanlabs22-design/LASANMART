@@ -676,3 +676,42 @@ export async function fetchApprovedInfluencers(): Promise<{
     cities: data.cities || [],
   };
 }
+
+export type VibesAccess = {
+  canPost: boolean;
+  requested: boolean;
+  declined: boolean;
+};
+
+/**
+ * Whether this person may post to Vibes, and whether they've asked.
+ * Never throws — a failed check just means the button stays hidden.
+ */
+export async function fetchVibesAccess(): Promise<VibesAccess> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/reels/access`);
+    const data = await res.json();
+
+    return {
+      canPost: data?.canPost || false,
+      requested: data?.requested || false,
+      declined: data?.declined || false,
+    };
+  } catch {
+    return { canPost: false, requested: false, declined: false };
+  }
+}
+
+/** Asking to be allowed to post */
+export async function requestVibesAccess(reason: string): Promise<void> {
+  const res = await fetchWithTimeout(`${API_URL}/reels/access`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(data?.error || 'Could not send your request.');
+  }
+}
