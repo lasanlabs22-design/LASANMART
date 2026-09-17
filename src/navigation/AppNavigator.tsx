@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
@@ -25,17 +25,29 @@ import HelpScreen from '../screens/HelpScreen';
 import MyReelsScreen from '../screens/MyReelsScreen';
 import PhoneAuthScreen from '../screens/PhoneAuthScreen';
 import FreelancerRequestScreen from '../screens/FreelancerRequestScreen';
+import OnBoardingScreen from '../screens/OnBoardingScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { loginMethod } = useAuth();
 
+  /**
+   * Shown once per launch to anyone not signed in. Not persisted —
+   * someone who hasn't committed hasn't really seen it.
+   */
+  const [seenIntro, setSeenIntro] = useState(false);
+
   /* Screen tracking. Firebase works out time-on-screen from the gap
      between one screen view and the next, so logging the change is
      all that's needed — no per-screen code anywhere. */
   const navigationRef = useRef<any>(null);
   const routeNameRef = useRef<string | undefined>(undefined);
+
+  // The pitch, before anything else
+  if (!loginMethod && !seenIntro) {
+    return <OnBoardingScreen onDone={() => setSeenIntro(true)} />;
+  }
 
   return (
     <NavigationContainer
