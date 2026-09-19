@@ -51,9 +51,8 @@ export default function InfluencerProfileScreen() {
   // Same submit hook + bottom sheet the selection screen uses — this is
   // what actually sends the request. There is no 'InfluencerEnquiry'
   // screen in the navigator, so we don't navigate to one.
-  const { submit, busy, sheetProps } = useSubmitRequest(() =>
-    navigation.goBack()
-  );
+  const { submit, busy, duplicate, clearDuplicate, sheetProps } =
+    useSubmitRequest(() => navigation.goBack());
 
   if (!influencer) {
     navigation.goBack();
@@ -222,6 +221,54 @@ export default function InfluencerProfileScreen() {
             </View>
           </View>
         </View>
+
+        {/* Shown instead of a generic alert — a duplicate has a real
+            next step (go look at the existing request), so it earns
+            a permanent spot on screen rather than a dismissible popup */}
+        {duplicate && (
+          <View style={styles.section}>
+            <View style={styles.duplicateCard}>
+              <View style={styles.duplicateIconTile}>
+                <MaterialCommunityIcons
+                  name="information-outline"
+                  size={18}
+                  color="#B8860B"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.duplicateTitle}>Already requested</Text>
+                <Text style={styles.duplicateText}>{duplicate.message}</Text>
+
+                <View style={styles.duplicateActions}>
+                  <TouchableOpacity
+                    style={styles.duplicateViewButton}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      const requestId = duplicate.requestId;
+                      clearDuplicate();
+                      navigation.navigate('Main', {
+                        screen: 'My Requests',
+                        params: { highlightId: requestId },
+                      });
+                    }}
+                  >
+                    <Text style={styles.duplicateViewButtonText}>
+                      View request
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={clearDuplicate}
+                    activeOpacity={0.6}
+                    style={styles.duplicateDismissButton}
+                  >
+                    <Text style={styles.duplicateDismissText}>Dismiss</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
 
         <View style={styles.section}>
           <View style={styles.helpCard}>
@@ -449,6 +496,61 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 13.5,
     color: colors.textDark,
+  },
+
+  duplicateCard: {
+    flexDirection: 'row',
+    gap: 12,
+    backgroundColor: '#FFF7E6',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F5D98B',
+  },
+  duplicateIconTile: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: '#FFECC0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  duplicateTitle: {
+    fontFamily: fonts.displayMedium,
+    fontSize: 14,
+    color: '#7A5A00',
+  },
+  duplicateText: {
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: '#8A6A10',
+    marginTop: 3,
+  },
+  duplicateActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 10,
+  },
+  duplicateViewButton: {
+    backgroundColor: '#B8860B',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  duplicateViewButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    color: colors.white,
+  },
+  duplicateDismissButton: {
+    paddingVertical: 8,
+  },
+  duplicateDismissText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    color: '#8A6A10',
   },
 
   helpCard: {

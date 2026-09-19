@@ -122,6 +122,30 @@ export class ApiError extends Error {
 }
 
 /**
+ * Thrown specifically when the backend says this creator already has
+ * an open request from this contact. Carries what the app needs to
+ * point the user at that existing request instead of retrying.
+ */
+export class DuplicateRequestError extends ApiError {
+  existingRequestId: string;
+  existingStatus: string;
+  matchedCreator: string | null;
+
+  constructor(
+    message: string,
+    existingRequestId: string,
+    existingStatus: string,
+    matchedCreator: string | null = null
+  ) {
+    super(message);
+    this.name = 'DuplicateRequestError';
+    this.existingRequestId = existingRequestId;
+    this.existingStatus = existingStatus;
+    this.matchedCreator = matchedCreator;
+  }
+}
+
+/**
  * fetch with a timeout, and the user's Firebase token attached.
  *
  * Without this, the backend has no way to know who is asking —
@@ -177,6 +201,17 @@ export async function submitRequest(
     data = await response.json();
   } catch {
     // Server replied with something that wasn't JSON
+  }
+
+  // Checked before the generic !response.ok branch, since 409 is
+  // still a "failed" status but needs different handling
+  if (response.status === 409 && data?.error === 'already_requested') {
+    throw new DuplicateRequestError(
+      data.message || 'You already have an open request for this.',
+      data.existingRequestId,
+      data.existingStatus,
+      data.matchedCreator ?? null
+    );
   }
 
   if (!response.ok) {

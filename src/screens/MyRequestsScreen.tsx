@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
@@ -52,6 +52,11 @@ export default function MyRequestsScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { hasContactDetails } = useAuth();
+  const route = useRoute<any>();
+  const listRef = useRef<FlatList>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(
+    route.params?.highlightId ?? null
+  );
 
   const [requests, setRequests] = useState<SavedRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,6 +121,41 @@ export default function MyRequestsScreen() {
     }, [load])
   );
 
+  // Pick up a new highlightId each time the screen is focused with one
+  // (e.g. tapping "View request" again while already on this tab)
+  useFocusEffect(
+    useCallback(() => {
+      const id = route.params?.highlightId;
+      if (id) {
+        setHighlightId(id);
+        // Clear the param so navigating away and back doesn't
+        // re-highlight the same request forever
+        navigation.setParams({ highlightId: undefined });
+      }
+    }, [route.params?.highlightId])
+  );
+
+  // Once requests are loaded, scroll to the highlighted row and fade it out
+  React.useEffect(() => {
+    if (!highlightId || requests.length === 0) return;
+
+    const index = requests.findIndex((r) => r.id === highlightId);
+    if (index === -1) return;
+
+    // Give the list a moment to lay out before scrolling
+    const scrollTimer = setTimeout(() => {
+      listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.2 });
+    }, 250);
+
+    // Highlight fades after a few seconds rather than staying forever
+    const clearTimer = setTimeout(() => setHighlightId(null), 4000);
+
+    return () => {
+      clearTimeout(scrollTimer);
+      clearTimeout(clearTimer);
+    };
+  }, [highlightId, requests]);
+
   const openPost = () => navigation.getParent()?.navigate('PostRequest');
 
   const renderItem = ({ item }: { item: SavedRequest }) => {
@@ -124,6 +164,7 @@ export default function MyRequestsScreen() {
       icon: 'file-outline',
     };
     const status = STATUS_META[item.status] || STATUS_META.new;
+    const isHighlighted = item.id === highlightId;
 
     const detailEntries = item.details
       ? Object.entries(item.details).filter(
@@ -132,7 +173,7 @@ export default function MyRequestsScreen() {
       : [];
 
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, isHighlighted && styles.cardHighlighted]}>
         <View style={styles.cardTop}>
           <View style={styles.typeTag}>
             <MaterialCommunityIcons
@@ -253,9 +294,20 @@ export default function MyRequestsScreen() {
         </View>
       ) : (
         <FlatList
+          ref={listRef}
           data={requests}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          onScrollToIndexFailed={(info) => {
+            // Falls back to an approximate offset if the target row hasn't
+            // rendered yet — scrollToIndex can fail on first mount
+            setTimeout(() => {
+              listRef.current?.scrollToOffset({
+                offset: info.averageItemLength * info.index,
+                animated: true,
+              });
+            }, 200);
+          }}
           contentContainerStyle={[
             styles.listContent,
             { paddingBottom: 100 + insets.bottom },
@@ -390,6 +442,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 14,
     backgroundColor: colors.white,
+  },
+  cardHighlighted: {
+    borderColor: colors.primary,
+    borderWidth: 2,
+    backgroundColor: colors.primarySoft,
   },
   cardTop: {
     flexDirection: 'row',

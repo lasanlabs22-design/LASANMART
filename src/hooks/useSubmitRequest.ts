@@ -4,10 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import {
   submitRequest,
   ApiError,
+  DuplicateRequestError,
   SubmitRequestPayload,
   RequestType,
 } from '../api/client';
 import { events } from '../lib/analytics';
+
 /** Everything a screen supplies about the request itself */
 type RequestBody = {
   type: RequestType;
@@ -30,6 +32,14 @@ type ContactDetails = {
   email: string;
 };
 
+/** What's shown when the backend says this was already asked for */
+export type DuplicateInfo = {
+  requestId: string;
+  status: string;
+  message: string;
+  matchedCreator: string | null;
+};
+
 /**
  * Handles the whole submission flow:
  *   1. Check we have a name, an email, and a verified phone number
@@ -45,6 +55,7 @@ export function useSubmitRequest(onSuccess?: () => void) {
 
   const [busy, setBusy] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [duplicate, setDuplicate] = useState<DuplicateInfo | null>(null);
 
   /** What the user was trying to send when we interrupted them */
   const pending = useRef<RequestBody | null>(null);
@@ -56,6 +67,7 @@ export function useSubmitRequest(onSuccess?: () => void) {
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
+    setDuplicate(null);
 
     // Use the details passed in (fresh from the sheet) if given,
     // otherwise fall back to the saved profile
@@ -88,6 +100,18 @@ export function useSubmitRequest(onSuccess?: () => void) {
         [{ text: 'OK', onPress: onSuccess }]
       );
     } catch (err) {
+      // Shown inline by the screen, not as a blocking alert — the
+      // user has a real next step (view the existing request)
+      if (err instanceof DuplicateRequestError) {
+        setDuplicate({
+          requestId: err.existingRequestId,
+          status: err.existingStatus,
+          message: err.message,
+          matchedCreator: err.matchedCreator,
+        });
+        return;
+      }
+
       const message =
         err instanceof ApiError
           ? err.message
@@ -102,6 +126,8 @@ export function useSubmitRequest(onSuccess?: () => void) {
 
   /** Call this from the screen's submit button */
   const submit = (body: RequestBody) => {
+    setDuplicate(null);
+
     if (!hasContactDetails) {
       pending.current = body;
       setSheetVisible(true);
@@ -124,6 +150,8 @@ export function useSubmitRequest(onSuccess?: () => void) {
   return {
     submit,
     busy,
+    duplicate,
+    clearDuplicate: () => setDuplicate(null),
     sheetProps: {
       visible: sheetVisible,
       onClose: () => {

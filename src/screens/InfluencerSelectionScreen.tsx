@@ -74,9 +74,8 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
   const [category, setCategory] = useState('all');
   const [query, setQuery] = useState('');
 
-  const { submit, busy, sheetProps } = useSubmitRequest(() =>
-    navigation.goBack()
-  );
+  const { submit, busy, duplicate, clearDuplicate, sheetProps } =
+    useSubmitRequest(() => navigation.goBack());
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -406,30 +405,66 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
       {/* Sticky footer — only appears once something is selected */}
       {!loading && selected.length > 0 && (
         <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
-          <View>
-            <Text style={styles.totalValue}>{selected.length} picked</Text>
-            <Text style={styles.totalLabel}>{selected.length} selected</Text>
-          </View>
+          {duplicate ? (
+            <View style={styles.duplicateInline}>
+              <MaterialCommunityIcons
+                name="information-outline"
+                size={18}
+                color="#B8860B"
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.duplicateInlineText}>
+                  {duplicate.message}
+                </Text>
+                <View style={styles.duplicateInlineActions}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const requestId = duplicate.requestId;
+                      clearDuplicate();
+                      navigation.navigate('Main', {
+                        screen: 'My Requests',
+                        params: { highlightId: requestId },
+                      });
+                    }}
+                  >
+                    <Text style={styles.duplicateInlineLink}>View request</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={clearDuplicate}>
+                    <Text style={styles.duplicateInlineDismiss}>Dismiss</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <>
+              <View>
+                <Text style={styles.totalValue}>{selected.length} picked</Text>
+                <Text style={styles.totalLabel}>
+                  {selected.length} selected
+                </Text>
+              </View>
 
-          <TouchableOpacity
-            style={[styles.submitButton, busy && styles.submitDisabled]}
-            activeOpacity={0.9}
-            onPress={handleSubmit}
-            disabled={busy}
-          >
-            {busy ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <>
-                <Text style={styles.submitButtonText}>Send Request</Text>
-                <MaterialCommunityIcons
-                  name="arrow-right"
-                  size={17}
-                  color={colors.white}
-                />
-              </>
-            )}
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitButton, busy && styles.submitDisabled]}
+                activeOpacity={0.9}
+                onPress={handleSubmit}
+                disabled={busy}
+              >
+                {busy ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <>
+                    <Text style={styles.submitButtonText}>Send Request</Text>
+                    <MaterialCommunityIcons
+                      name="arrow-right"
+                      size={17}
+                      color={colors.white}
+                    />
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       )}
 
@@ -699,5 +734,37 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 14,
     color: colors.white,
+  },
+
+  duplicateInline: {
+    flexDirection: 'row',
+    gap: 10,
+    backgroundColor: '#FFF7E6',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F5D98B',
+    flex: 1,
+  },
+  duplicateInlineText: {
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: '#8A6A10',
+  },
+  duplicateInlineActions: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 8,
+  },
+  duplicateInlineLink: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    color: '#B8860B',
+  },
+  duplicateInlineDismiss: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 12.5,
+    color: '#8A6A10',
   },
 });
