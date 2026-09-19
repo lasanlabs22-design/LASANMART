@@ -51,7 +51,15 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-const formatPrice = (n: number) => '₹' + n.toLocaleString('en-IN');
+/** Compact follower counts, the way Instagram itself shows them */
+function formatCount(value?: string | null): string {
+  if (!value) return '—';
+  const n = Number(String(value).replace(/[^\d.]/g, ''));
+  if (!n) return value;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
 
 export default function InfluencerSelectionScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -109,12 +117,15 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
   }, [all, category, query]);
 
   const selected = all.filter((i) => selectedIds.includes(i.id));
-  const total = selected.reduce((sum, i) => sum + (i.rate_per_post || 0), 0);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  const openProfile = (influencer: ApprovedInfluencer) => {
+    navigation.navigate('InfluencerProfile', { influencer });
   };
 
   const handleSubmit = () => {
@@ -125,21 +136,15 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
 
     submit({
       type: 'influencer',
-      title: `${selected.length} creator${selected.length > 1 ? 's' : ''}${
-        total > 0 ? ` — ${formatPrice(total)}` : ''
-      }`,
+      title: `${selected.length} creator${selected.length > 1 ? 's' : ''}`,
       description:
         'Interested in working with the creators selected in the app.',
       descriptionLabel: 'What they want',
       details: {
         creators: selected.map(
-          (i) =>
-            `${i.name}${i.instagram_id ? ` (@${i.instagram_id})` : ''}${
-              i.rate_per_post ? ` — ${formatPrice(i.rate_per_post)}` : ''
-            }`
+          (i) => `${i.name}${i.instagram_id ? ` (@${i.instagram_id})` : ''}`
         ),
         count: selected.length,
-        estimatedTotal: total > 0 ? formatPrice(total) : 'On request',
       },
     });
   };
@@ -149,79 +154,117 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
     const colour = colourFor(item.name);
 
     return (
-      <TouchableOpacity
-        style={[styles.row, isSelected && styles.rowSelected]}
-        activeOpacity={0.8}
-        onPress={() => toggleSelect(item.id)}
-      >
-        {item.photo_url ? (
-          <Image
-            source={{ uri: item.photo_url }}
-            style={[
-              styles.avatarPhoto,
-              isSelected && { borderColor: colors.primary },
-            ]}
-          />
-        ) : (
-          <View
-            style={[
-              styles.avatar,
-              {
-                backgroundColor: `${colour}1A`,
-                borderColor: isSelected ? colors.primary : `${colour}44`,
-              },
-            ]}
-          >
-            <Text style={[styles.avatarText, { color: colour }]}>
-              {initials(item.name)}
-            </Text>
-          </View>
-        )}
-
-        <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={1}>
-            {item.name}
-          </Text>
-
-          <View style={styles.metaRow}>
-            {item.category && <Text style={styles.meta}>{item.category}</Text>}
-            {item.followers && (
-              <Text style={styles.meta}>· {item.followers} followers</Text>
-            )}
-          </View>
-
-          <View style={styles.bottomRow}>
-            {item.city && (
-              <View style={styles.cityChip}>
-                <MaterialCommunityIcons
-                  name="map-marker-outline"
-                  size={10}
-                  color={colors.textLight}
-                />
-                <Text style={styles.cityText}>{item.city}</Text>
-              </View>
-            )}
-
-            {item.rate_per_post ? (
-              <Text style={styles.price}>
-                {formatPrice(item.rate_per_post)} per post
-              </Text>
-            ) : (
-              <Text style={styles.priceAsk}>Rate on request</Text>
-            )}
-          </View>
-        </View>
-
-        <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-          {isSelected && (
-            <MaterialCommunityIcons
-              name="check"
-              size={15}
-              color={colors.white}
+      <View style={[styles.card, isSelected && styles.cardSelected]}>
+        {/* Tapping the identity opens the profile; the whole card
+            toggling selection would fight with that tap target */}
+        <TouchableOpacity
+          style={styles.cardTop}
+          activeOpacity={0.85}
+          onPress={() => openProfile(item)}
+        >
+          {item.photo_url ? (
+            <Image
+              source={{ uri: item.photo_url }}
+              style={styles.avatarPhoto}
             />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: `${colour}1A` }]}>
+              <Text style={[styles.avatarText, { color: colour }]}>
+                {initials(item.name)}
+              </Text>
+            </View>
           )}
+
+          <View style={styles.info}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name} numberOfLines={1}>
+                {item.name}
+              </Text>
+              {/* Instagram-style verified tick */}
+              <MaterialCommunityIcons
+                name="check-decagram"
+                size={15}
+                color="#3897F0"
+                style={styles.verifiedTick}
+              />
+            </View>
+            {item.instagram_id && (
+              <Text style={styles.handle} numberOfLines={1}>
+                @{item.instagram_id}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.statsRow}>
+          <View style={styles.statCell}>
+            <MaterialCommunityIcons
+              name="account-group-outline"
+              size={16}
+              color={colors.primary}
+            />
+            <Text style={styles.statValue}>{formatCount(item.followers)}</Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCell}>
+            <MaterialCommunityIcons
+              name="tag-outline"
+              size={16}
+              color={colors.primary}
+            />
+            <Text style={styles.statValue} numberOfLines={1}>
+              {item.category || '—'}
+            </Text>
+            <Text style={styles.statLabel}>Posts about</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCell}>
+            <MaterialCommunityIcons
+              name="map-marker-outline"
+              size={16}
+              color={colors.primary}
+            />
+            <Text style={styles.statValue} numberOfLines={1}>
+              {item.city || '—'}
+            </Text>
+            <Text style={styles.statLabel}>City</Text>
+          </View>
         </View>
-      </TouchableOpacity>
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.viewButton}
+            activeOpacity={0.85}
+            onPress={() => openProfile(item)}
+          >
+            <Text style={styles.viewButtonText}>View Profile</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.selectButton,
+              isSelected && styles.selectButtonActive,
+            ]}
+            activeOpacity={0.85}
+            onPress={() => toggleSelect(item.id)}
+          >
+            <MaterialCommunityIcons
+              name={isSelected ? 'check-circle' : 'plus-circle-outline'}
+              size={16}
+              color={isSelected ? colors.white : colors.primary}
+            />
+            <Text
+              style={[
+                styles.selectButtonText,
+                isSelected && styles.selectButtonTextActive,
+              ]}
+            >
+              {isSelected ? 'Selected' : 'Select'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
   };
 
@@ -239,7 +282,7 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
           />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Select Creators</Text>
+          <Text style={styles.headerTitle}>Explore Influencers</Text>
           <Text style={styles.headerSub}>
             {loading ? 'Loading…' : `${all.length} available`}
           </Text>
@@ -317,7 +360,10 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
             data={visible}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              { paddingBottom: 20 + (selected.length > 0 ? 90 : 0) },
+            ]}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -357,32 +403,19 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
         </>
       )}
 
-      {/* Sticky footer */}
-      {!loading && all.length > 0 && (
+      {/* Sticky footer — only appears once something is selected */}
+      {!loading && selected.length > 0 && (
         <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
           <View>
-            <Text style={styles.totalValue}>
-              {selected.length > 0
-                ? total > 0
-                  ? formatPrice(total)
-                  : `${selected.length} picked`
-                : '—'}
-            </Text>
-            <Text style={styles.totalLabel}>
-              {selected.length === 0
-                ? 'Nothing selected'
-                : `${selected.length} selected · estimate`}
-            </Text>
+            <Text style={styles.totalValue}>{selected.length} picked</Text>
+            <Text style={styles.totalLabel}>{selected.length} selected</Text>
           </View>
 
           <TouchableOpacity
-            style={[
-              styles.submitButton,
-              (selected.length === 0 || busy) && styles.submitDisabled,
-            ]}
+            style={[styles.submitButton, busy && styles.submitDisabled]}
             activeOpacity={0.9}
             onPress={handleSubmit}
-            disabled={busy || selected.length === 0}
+            disabled={busy}
           >
             {busy ? (
               <ActivityIndicator color={colors.white} />
@@ -479,106 +512,114 @@ const styles = StyleSheet.create({
   },
   chipTextActive: { color: colors.white },
 
-  listContent: { paddingHorizontal: 16, paddingBottom: 8 },
+  listContent: { paddingHorizontal: 16, gap: 12 },
 
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
+  card: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
     borderWidth: 1.5,
     borderColor: colors.border,
-    backgroundColor: colors.white,
-    marginBottom: 9,
+    padding: 14,
   },
-  rowSelected: {
+  cardSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primarySoft,
   },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 2,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    borderWidth: 2,
+    borderColor: colors.primarySoft,
   },
   avatarText: {
     fontFamily: fonts.display,
-    fontSize: 16,
+    fontSize: 17,
     letterSpacing: -0.3,
   },
   avatarPhoto: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     borderWidth: 2,
-    borderColor: colors.border,
-    marginRight: 12,
+    borderColor: colors.primarySoft,
     backgroundColor: colors.surface,
   },
 
   info: { flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center' },
   name: {
     fontFamily: fonts.displayMedium,
-    fontSize: 15,
+    fontSize: 16,
     color: colors.textDark,
     letterSpacing: -0.2,
+    flexShrink: 1,
   },
-  metaRow: { flexDirection: 'row', gap: 4, marginTop: 2 },
-  meta: {
+  verifiedTick: { marginLeft: 4 },
+  handle: {
     fontFamily: fonts.body,
-    fontSize: 12,
-    color: colors.textLight,
+    fontSize: 12.5,
+    color: '#C13584',
+    marginTop: 2,
   },
 
-  bottomRow: {
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 7,
-  },
-  cityChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
     backgroundColor: colors.surface,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    borderRadius: 14,
+    paddingVertical: 12,
+    marginTop: 12,
   },
-  cityText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 10,
-    color: colors.textLight,
-  },
-  price: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 12.5,
+  statCell: { flex: 1, alignItems: 'center', paddingHorizontal: 4, gap: 3 },
+  statValue: {
+    fontFamily: fonts.displayMedium,
+    fontSize: 13.5,
     color: colors.textDark,
   },
-  priceAsk: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    color: colors.textLight,
-  },
+  statLabel: { fontFamily: fonts.body, fontSize: 10, color: colors.textLight },
+  statDivider: { width: 1, height: 30, backgroundColor: colors.border },
 
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 1.8,
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  viewButton: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1.5,
     borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    paddingVertical: 12,
   },
-  checkboxActive: {
-    backgroundColor: colors.primary,
+  viewButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: colors.textDark,
+  },
+  selectButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 12,
+    borderWidth: 1.5,
     borderColor: colors.primary,
+    backgroundColor: colors.white,
+    paddingVertical: 12,
   },
+  selectButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  selectButtonText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: colors.primary,
+  },
+  selectButtonTextActive: { color: colors.white },
 
   empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 36 },
   emptyIcon: {
@@ -615,6 +656,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.background,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   totalValue: {
     fontFamily: fonts.display,

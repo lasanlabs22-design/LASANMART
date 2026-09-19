@@ -26,6 +26,7 @@ import MyReelsScreen from '../screens/MyReelsScreen';
 import PhoneAuthScreen from '../screens/PhoneAuthScreen';
 import FreelancerRequestScreen from '../screens/FreelancerRequestScreen';
 import OnBoardingScreen from '../screens/OnBoardingScreen';
+import InfluencerProfileScreen from '../screens/InfluencerProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -110,6 +111,10 @@ function RootStack({ initialRoute }: { initialRoute: string }) {
         name="InfluencerSelection"
         component={InfluencerSelectionScreen}
         options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="InfluencerProfile"
+        component={InfluencerProfileScreen}
       />
       <Stack.Screen
         name="PostRequest"
