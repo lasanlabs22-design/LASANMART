@@ -313,6 +313,7 @@ export async function fetchNotifications(): Promise<{
 export async function fetchUnreadCount(): Promise<number> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/notifications/count`);
+    if (!res.ok) return 0;
     const data = await res.json();
     return data?.unread || 0;
   } catch {
@@ -334,17 +335,24 @@ export async function markNotificationsRead(id?: string): Promise<void> {
   }
 }
 
-/** Tells the backend which device belongs to this person */
-export async function registerPushToken(token: string): Promise<void> {
+/**
+ * Tells the backend which device belongs to this person.
+ * True only when it was actually saved — before someone's first
+ * request there is no contact to attach it to, so it's worth retrying.
+ */
+export async function registerPushToken(token: string): Promise<boolean> {
   try {
-    await fetchWithTimeout(`${API_URL}/notifications/token`, {
+    const res = await fetchWithTimeout(`${API_URL}/notifications/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
+    const data = await res.json().catch(() => null);
+    return res.ok && data?.success === true;
   } catch (err: any) {
     // Not worth surfacing — the in-app bell still works
     console.log('Could not register push token:', err?.message);
+    return false;
   }
 }
 
@@ -574,6 +582,7 @@ export async function fetchProgress(
     const res = await fetchWithTimeout(
       `${API_URL}/requests/${requestId}/progress`
     );
+    if (!res.ok) return null;
     const data = await res.json();
     return data?.progress || null;
   } catch {
@@ -697,7 +706,7 @@ export async function fetchApprovedInfluencers(): Promise<{
   categories: string[];
   cities: string[];
 }> {
-  const res = await fetch(`${API_URL}/influencers/approved`);
+  const res = await fetchWithTimeout(`${API_URL}/influencers/approved`);
 
   if (!res.ok) {
     throw new ApiError('Could not load creators.');
@@ -725,6 +734,7 @@ export type VibesAccess = {
 export async function fetchVibesAccess(): Promise<VibesAccess> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/reels/access`);
+    if (!res.ok) return { canPost: false, requested: false, declined: false };
     const data = await res.json();
 
     return {

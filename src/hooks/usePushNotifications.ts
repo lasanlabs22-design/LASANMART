@@ -33,9 +33,10 @@ export function usePushNotifications() {
       if (!token) return;
 
       // The backend attaches this to whoever the verified token says
-      // we are, so there is no phone number to pass
-      await registerPushToken(token);
-      registered.current = true;
+      // we are, so there is no phone number to pass. Only counted as
+      // done once it's saved — before a first request there is no
+      // contact yet, and useSubmitRequest tries again after one.
+      registered.current = await registerPushToken(token);
     })();
   }, [hasContactDetails]);
 
