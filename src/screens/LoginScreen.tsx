@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Platform,
   Animated,
   Easing,
   Dimensions,
@@ -138,12 +137,6 @@ export default function LoginScreen({ navigation }: Props) {
     } finally {
       setGoogleBusy(false);
     }
-  };
-
-  const handleAppleSignIn = () => {
-    updateProfile({ name: 'Rahul Sharma', email: 'rahul.sharma@icloud.com' });
-    setLoginMethod('apple');
-    navigation.replace('Main');
   };
 
   const handleSkip = () => {
@@ -325,13 +318,6 @@ export default function LoginScreen({ navigation }: Props) {
                   </>
                 )}
               </GlassButton>
-
-              {Platform.OS === 'ios' && (
-                <GlassButton onPress={handleAppleSignIn}>
-                  <Ionicons name="logo-apple" size={20} color="#fff" />
-                  <Text style={styles.glassText}>Apple</Text>
-                </GlassButton>
-              )}
             </View>
 
             <View style={styles.dividerRow}>

@@ -16,7 +16,6 @@ import QuotationScreen from '../screens/QuotationScreen';
 import LocationPickerScreen from '../screens/LocationPickerScreen';
 import PlanEnquiryScreen from '../screens/PlanEnquiryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import ToolEnquiryScreen from '../screens/ToolEnquiryScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import SearchScreen from '../screens/SearchScreen';
@@ -163,7 +162,6 @@ function RootStack({ initialRoute }: { initialRoute: string }) {
       {/* Account flows */}
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Help" component={HelpScreen} />
-      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </Stack.Navigator>
   );
 }

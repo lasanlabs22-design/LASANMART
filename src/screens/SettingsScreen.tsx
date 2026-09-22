@@ -12,6 +12,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
@@ -79,7 +80,7 @@ export default function SettingsScreen({ navigation }: any) {
         <Row
           icon="information-outline"
           label="App version"
-          sublabel="1.0.3"
+          sublabel={Constants.expoConfig?.version ?? '—'}
           showChevron={false}
         />
 

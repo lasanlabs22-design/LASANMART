@@ -86,9 +86,11 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
         setCode('');
       }
     } catch (err: any) {
-      // TEMPORARY — shows the raw Firebase error so we can diagnose.
-      // Swap back to the friendly message once this is working.
-      setError(`${err?.code || 'no-code'} — ${err?.message || 'no message'}`);
+      setError(
+        err instanceof PhoneAuthError
+          ? err.message
+          : 'Could not send the code. Please try again.'
+      );
     } finally {
       setBusy(false);
     }
@@ -147,8 +149,11 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
 
       enterApp();
     } catch (err: any) {
-      // TEMPORARY — same as above
-      setError(`${err?.code || 'no-code'} — ${err?.message || 'no message'}`);
+      setError(
+        err instanceof PhoneAuthError
+          ? err.message
+          : 'That code did not work. Please try again.'
+      );
       setCode('');
       codeInput.current?.focus();
     } finally {
