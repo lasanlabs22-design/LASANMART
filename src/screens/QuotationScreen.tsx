@@ -76,7 +76,16 @@ export default function QuotationScreen({ navigation }: any) {
   const getLogoBase64 = async (): Promise<string | null> => {
     if (!profile.companyLogoUri) return null;
     try {
-      return await FileSystem.readAsStringAsync(profile.companyLogoUri, {
+      let uri = profile.companyLogoUri;
+
+      // Once uploaded, the logo is a web URL — which can't be read
+      // straight off the disk, so fetch a local copy first
+      if (uri.startsWith('http')) {
+        const local = `${FileSystem.cacheDirectory}quote-logo`;
+        uri = (await FileSystem.downloadAsync(uri, local)).uri;
+      }
+
+      return await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
     } catch {
