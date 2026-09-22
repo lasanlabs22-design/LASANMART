@@ -17,6 +17,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { requestVibesAccess } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 /** Quick starts, so nobody faces an empty box */
 const PROMPTS = [
@@ -36,6 +37,7 @@ export default function VibesAccessSheet({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const { profile } = useAuth();
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -45,7 +47,7 @@ export default function VibesAccessSheet({
     setBusy(true);
 
     try {
-      await requestVibesAccess(reason.trim());
+      await requestVibesAccess(reason.trim(), profile.name.trim() || undefined);
       setReason('');
       onDone();
     } catch (err: any) {

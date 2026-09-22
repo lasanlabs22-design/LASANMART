@@ -801,12 +801,18 @@ export async function fetchVibesAccess(): Promise<VibesAccess> {
   }
 }
 
-/** Asking to be allowed to post */
-export async function requestVibesAccess(reason: string): Promise<void> {
+/**
+ * Asking to be allowed to post. The name lets the backend start a
+ * contact for someone who hasn't sent a request yet.
+ */
+export async function requestVibesAccess(
+  reason: string,
+  name?: string
+): Promise<void> {
   const res = await fetchWithTimeout(`${API_URL}/reels/access`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason }),
+    body: JSON.stringify({ reason, name }),
   });
 
   if (!res.ok) {
