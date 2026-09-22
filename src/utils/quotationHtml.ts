@@ -67,7 +67,7 @@ export function buildQuotationHtml(
             <div class="svc">${escapeHtml(l.service)}</div>
             ${l.description ? `<div class="desc">${escapeHtml(l.description)}</div>` : ''}
           </td>
-          <td class="right">${l.qty || '1'}</td>
+          <td class="right">${escapeHtml(l.qty || '1')}</td>
           <td class="right">${money(parseFloat(l.rate) || 0)}</td>
           <td class="right bold">${money(amount)}</td>
         </tr>`;
@@ -211,7 +211,7 @@ export function buildQuotationHtml(
       <div class="party">
         <div class="plabel">Valid until</div>
         <div class="pval">${validTill}</div>
-        <div class="psub">${meta.validityDays || 15} days from issue</div>
+        <div class="psub">${escapeHtml(meta.validityDays || '15')} days from issue</div>
       </div>
     </div>
 
@@ -230,7 +230,7 @@ export function buildQuotationHtml(
 
     <div class="totals">
       <div class="trow"><span class="lbl">Subtotal</span><span>${money(subtotal)}</span></div>
-      <div class="trow"><span class="lbl">Tax (${meta.taxPercent || 0}%)</span><span>${money(tax)}</span></div>
+      <div class="trow"><span class="lbl">Tax (${escapeHtml(meta.taxPercent || '0')}%)</span><span>${money(tax)}</span></div>
       <div class="grand">
         <span class="lbl">TOTAL</span>
         <span class="val">${money(total)}</span>
@@ -256,5 +256,7 @@ function escapeHtml(s: string) {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
