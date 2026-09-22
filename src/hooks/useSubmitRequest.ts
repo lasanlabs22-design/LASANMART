@@ -3,12 +3,14 @@ import { Alert } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import {
   submitRequest,
+  registerPushToken,
   ApiError,
   DuplicateRequestError,
   SubmitRequestPayload,
   RequestType,
 } from '../api/client';
 import { events } from '../lib/analytics';
+import { registerForPush } from '../lib/push';
 
 /** Everything a screen supplies about the request itself */
 type RequestBody = {
@@ -93,6 +95,12 @@ export function useSubmitRequest(onSuccess?: () => void) {
     try {
       await submitRequest(payload);
       events.requestSubmitted(body.type, body.title);
+
+      // A first request is what creates the contact, so this is the
+      // moment the device can be tied to it. Fire-and-forget.
+      registerForPush()
+        .then((token) => (token ? registerPushToken(token) : false))
+        .catch(() => {});
 
       Alert.alert(
         'Request Sent',

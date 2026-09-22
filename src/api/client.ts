@@ -313,6 +313,7 @@ export async function fetchNotifications(): Promise<{
 export async function fetchUnreadCount(): Promise<number> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/notifications/count`);
+    if (!res.ok) return 0;
     const data = await res.json();
     return data?.unread || 0;
   } catch {
@@ -334,17 +335,24 @@ export async function markNotificationsRead(id?: string): Promise<void> {
   }
 }
 
-/** Tells the backend which device belongs to this person */
-export async function registerPushToken(token: string): Promise<void> {
+/**
+ * Tells the backend which device belongs to this person.
+ * True only when it was actually saved — before someone's first
+ * request there is no contact to attach it to, so it's worth retrying.
+ */
+export async function registerPushToken(token: string): Promise<boolean> {
   try {
-    await fetchWithTimeout(`${API_URL}/notifications/token`, {
+    const res = await fetchWithTimeout(`${API_URL}/notifications/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
+    const data = await res.json().catch(() => null);
+    return res.ok && data?.success === true;
   } catch (err: any) {
     // Not worth surfacing — the in-app bell still works
     console.log('Could not register push token:', err?.message);
+    return false;
   }
 }
 
@@ -463,15 +471,72 @@ export async function deleteReel(id: string): Promise<void> {
   }
 }
 
+type UploadSignature = {
+  cloudName: string;
+  apiKey: string;
+  folder: string;
+  timestamp: string;
+  signature: string;
+};
+
+/**
+ * Asks our backend to sign an upload, so only people it approves can
+ * put files in our Cloudinary — reels need Vibes access.
+ *
+ * Returns null only when this backend doesn't offer signing yet (an
+ * older deploy), so the upload can fall back to the open preset.
+ * A refusal is thrown, never quietly worked around.
+ */
+async function getUploadSignature(
+  kind: 'reel' | 'photo'
+): Promise<UploadSignature | null> {
+  let res: Response;
+
+  try {
+    res = await fetchWithTimeout(`${API_URL}/uploads/signature`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind }),
+    });
+  } catch {
+    throw new ApiError("Couldn't reach our servers.", true);
+  }
+
+  if (res.status === 404) return null;
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok || !data?.signature) {
+    throw new ApiError(data?.error || 'Upload failed. Please try again.');
+  }
+
+  return data as UploadSignature;
+}
+
+/** Signed fields when we have them, the open preset when we don't */
+function addUploadAuth(form: FormData, sig: UploadSignature | null) {
+  if (sig) {
+    form.append('api_key', sig.apiKey);
+    form.append('timestamp', sig.timestamp);
+    form.append('folder', sig.folder);
+    form.append('signature', sig.signature);
+  } else {
+    form.append('upload_preset', CLOUDINARY_PRESET);
+  }
+}
+
 /**
  * Uploads a video to Cloudinary and reports progress as it goes.
  * XMLHttpRequest rather than fetch, because it's the only way to
  * get upload progress — and a 40MB video needs a progress bar.
  */
-export function uploadVideo(
+export async function uploadVideo(
   uri: string,
   onProgress?: (percent: number) => void
 ): Promise<UploadResult> {
+  const sig = await getUploadSignature('reel');
+  const cloud = sig?.cloudName || CLOUDINARY_CLOUD;
+
   return new Promise((resolve, reject) => {
     const form = new FormData();
 
@@ -481,7 +546,7 @@ export function uploadVideo(
       name: 'reel.mp4',
     } as any);
 
-    form.append('upload_preset', CLOUDINARY_PRESET);
+    addUploadAuth(form, sig);
 
     const xhr = new XMLHttpRequest();
 
@@ -520,10 +585,7 @@ export function uploadVideo(
     xhr.onerror = () =>
       reject(new ApiError('Upload failed. Check your connection.', true));
 
-    xhr.open(
-      'POST',
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/video/upload`
-    );
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloud}/video/upload`);
     xhr.send(form);
   });
 }
@@ -574,6 +636,7 @@ export async function fetchProgress(
     const res = await fetchWithTimeout(
       `${API_URL}/requests/${requestId}/progress`
     );
+    if (!res.ok) return null;
     const data = await res.json();
     return data?.progress || null;
   } catch {
@@ -608,9 +671,12 @@ export async function sendFeedback(
  * XMLHttpRequest rather than fetch — React Native's fetch can't send
  * a file URI in FormData, which is why uploadVideo uses XHR too.
  */
-export function uploadPhoto(uri: string): Promise<string> {
+export async function uploadPhoto(uri: string): Promise<string> {
   // Already a web URL — Google sign-in photos arrive like this
-  if (uri.startsWith('http')) return Promise.resolve(uri);
+  if (uri.startsWith('http')) return uri;
+
+  const sig = await getUploadSignature('photo');
+  const cloud = sig?.cloudName || CLOUDINARY_CLOUD;
 
   return new Promise((resolve, reject) => {
     const form = new FormData();
@@ -621,7 +687,7 @@ export function uploadPhoto(uri: string): Promise<string> {
       name: 'photo.jpg',
     } as any);
 
-    form.append('upload_preset', CLOUDINARY_PRESET);
+    addUploadAuth(form, sig);
 
     const xhr = new XMLHttpRequest();
 
@@ -651,10 +717,7 @@ export function uploadPhoto(uri: string): Promise<string> {
         new ApiError('Could not upload the photo. Check your connection.')
       );
 
-    xhr.open(
-      'POST',
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`
-    );
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloud}/image/upload`);
     xhr.send(form);
   });
 }
@@ -697,7 +760,7 @@ export async function fetchApprovedInfluencers(): Promise<{
   categories: string[];
   cities: string[];
 }> {
-  const res = await fetch(`${API_URL}/influencers/approved`);
+  const res = await fetchWithTimeout(`${API_URL}/influencers/approved`);
 
   if (!res.ok) {
     throw new ApiError('Could not load creators.');
@@ -725,6 +788,7 @@ export type VibesAccess = {
 export async function fetchVibesAccess(): Promise<VibesAccess> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/reels/access`);
+    if (!res.ok) return { canPost: false, requested: false, declined: false };
     const data = await res.json();
 
     return {
