@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,10 +16,13 @@ import Constants from 'expo-constants';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
+import { deleteAccount, ApiError } from '../api/client';
+import { hasVerifiedPhone } from '../lib/phoneAuth';
 
 export default function SettingsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { logout } = useAuth();
+  const [deleting, setDeleting] = useState(false);
 
   const confirmLogout = () => {
     Alert.alert(
@@ -30,9 +33,40 @@ export default function SettingsScreen({ navigation }: any) {
         {
           text: 'Log Out',
           style: 'destructive',
-          onPress: () => {
-            logout();
+          onPress: async () => {
+            await logout();
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          },
+        },
+      ]
+    );
+  };
+
+  /* Two steps on purpose — this can't be undone */
+  const confirmDelete = () => {
+    Alert.alert(
+      'Delete Account',
+      'This permanently deletes your profile, requests, notifications and any videos you posted. It cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteAccount();
+              await logout();
+              Alert.alert('Account deleted', 'Everything we held has been removed.');
+              navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+            } catch (err: any) {
+              Alert.alert(
+                'Could not delete',
+                err instanceof ApiError ? err.message : 'Please try again.'
+              );
+            } finally {
+              setDeleting(false);
+            }
           },
         },
       ]
@@ -102,6 +136,18 @@ export default function SettingsScreen({ navigation }: any) {
           sublabel="Clear your saved details from this device"
           onPress={confirmLogout}
         />
+
+        {/* Only someone with a verified number has anything to delete */}
+        {hasVerifiedPhone() && (
+          <Row
+            icon="account-remove-outline"
+            iconColor="#D93025"
+            label={deleting ? 'Deleting…' : 'Delete Account'}
+            labelColor="#D93025"
+            sublabel="Permanently remove your account and data"
+            onPress={deleting ? undefined : confirmDelete}
+          />
+        )}
 
         <Text style={styles.footNote}>
           Lasan Mart · Your Business. Our Marketplace.
