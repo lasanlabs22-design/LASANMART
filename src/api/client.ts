@@ -820,3 +820,57 @@ export async function requestVibesAccess(
     throw new ApiError(data?.error || 'Could not send your request.');
   }
 }
+
+/* ---------------- Account ---------------- */
+
+/**
+ * Stops this phone getting pushes for the signed-in person.
+ * Called on logout, while the token still says who they are.
+ */
+export async function unregisterPushToken(): Promise<void> {
+  try {
+    await fetchWithTimeout(`${API_URL}/notifications/token`, {
+      method: 'DELETE',
+    });
+  } catch {
+    // Not worth blocking a logout over
+  }
+}
+
+/** Saves what someone edits on My Account against their contact */
+export async function saveContactProfile(payload: {
+  name?: string;
+  email?: string;
+  companyName?: string;
+  companyDescription?: string;
+  sector?: string;
+  city?: string;
+}): Promise<void> {
+  try {
+    await fetchWithTimeout(`${API_URL}/requests/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Still saved on this device; the next request carries it up too
+  }
+}
+
+/** Permanently deletes everything held against the verified number */
+export async function deleteAccount(): Promise<void> {
+  let res: Response;
+
+  try {
+    res = await fetchWithTimeout(`${API_URL}/account`, { method: 'DELETE' });
+  } catch {
+    throw new ApiError("Couldn't reach our servers.", true);
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(
+      data?.error || 'Could not delete your account. Please try again.'
+    );
+  }
+}

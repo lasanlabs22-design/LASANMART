@@ -8,6 +8,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signOutGoogle } from '../lib/googleAuth';
 import { signOutPhone, hasVerifiedPhone } from '../lib/phoneAuth';
+import { unregisterPushToken } from '../api/client';
 
 export type LoginMethod = 'google' | 'apple' | 'phone' | 'skip' | null;
 
@@ -61,7 +62,7 @@ type AuthContextType = {
   setLoginMethod: (method: LoginMethod) => void;
   updateProfile: (partial: Partial<UserProfile>) => void;
   markProfileSaved: () => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -129,9 +130,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(KEYS.profileSaved, 'true').catch(() => {});
   };
 
-  const logout = () => {
-    signOutGoogle();
-    signOutPhone();
+  const logout = async () => {
+    // While still signed in, so the backend knows whose token to drop
+    await unregisterPushToken();
+    await Promise.all([signOutGoogle(), signOutPhone()]);
 
     setLoginMethodState(null);
     setProfile(emptyProfile);
