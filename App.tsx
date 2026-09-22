@@ -14,6 +14,7 @@ import {
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 
 import AppNavigator from './src/navigation/AppNavigator';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import { configureGoogleSignIn } from './src/lib/googleAuth';
 
 configureGoogleSignIn();
@@ -53,7 +54,9 @@ function AppGate({ fontsLoaded }: { fontsLoaded: boolean }) {
 
   return (
     <View style={{ flex: 1 }} onLayout={onLayout}>
-      <AppNavigator />
+      <ErrorBoundary>
+        <AppNavigator />
+      </ErrorBoundary>
     </View>
   );
 }
