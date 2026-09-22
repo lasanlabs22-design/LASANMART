@@ -26,7 +26,12 @@ import { businessSectors } from '../data/businessSectors';
 import ProfileCompletionCard from '../components/ProfileCompletionCard';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import TrustPanel from '../components/TrustPanel';
-import { uploadPhoto, saveContactImages } from '../api/client';
+import {
+  uploadPhoto,
+  saveContactImages,
+  saveContactProfile,
+} from '../api/client';
+import { verifiedPhoneNumber } from '../lib/phoneAuth';
 
 const pickImage = async (onPicked: (uri: string) => void) => {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -94,6 +99,8 @@ export default function MyAccountScreen() {
     markProfileSaved,
   } = useAuth();
 
+  const verifiedPhone = verifiedPhoneNumber();
+
   const [isEditing, setIsEditing] = useState(!isProfileSaved);
   const [form, setForm] = useState<UserProfile>(profile);
   const [focused, setFocused] = useState<string | null>(null);
@@ -130,9 +137,24 @@ export default function MyAccountScreen() {
       return;
     }
 
-    updateProfile(form);
+    const next = verifiedPhone ? { ...form, phone: verifiedPhone } : form;
+
+    updateProfile(next);
     markProfileSaved();
     setIsEditing(false);
+
+    // Keep the team's copy in step, so a new phone gets these back.
+    // Only possible once the number is verified; fire-and-forget.
+    if (verifiedPhone) {
+      saveContactProfile({
+        name: next.name.trim(),
+        email: next.email.trim() || undefined,
+        companyName: next.companyName.trim() || undefined,
+        companyDescription: next.companyDescription.trim() || undefined,
+        sector: next.sector.trim() || undefined,
+        city: next.address.trim() || undefined,
+      });
+    }
   };
 
   const openSettings = () => navigation.getParent()?.navigate('Settings');
@@ -604,9 +626,12 @@ export default function MyAccountScreen() {
 
               <Field
                 id="phone"
-                label="Phone Number"
+                label={verifiedPhone ? 'Phone Number (verified)' : 'Phone Number'}
                 icon="phone-outline"
-                value={form.phone}
+                // A verified number is the account itself — it changes
+                // only by signing in with another one
+                value={verifiedPhone || form.phone}
+                editable={!verifiedPhone}
                 onChangeText={(v: string) =>
                   setField('phone', v.replace(/[^0-9]/g, ''))
                 }
