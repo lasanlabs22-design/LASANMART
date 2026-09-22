@@ -22,8 +22,6 @@ SplashScreen.preventAutoHideAsync();
 
 LogBox.ignoreLogs(['Method moveAsync', 'Method copyAsync']);
 
-SplashScreen.preventAutoHideAsync();
-
 export default function App() {
   const [fontsLoaded] = useFonts({
     BricolageGrotesque_600SemiBold,
