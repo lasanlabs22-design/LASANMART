@@ -12,25 +12,31 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
-import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
-import LasanLogo from '../components/LasanLogo';
 import { signInWithGoogle } from '../lib/googleAuth';
 import { events } from '../lib/analytics';
 
-const { width: W, height: H } = Dimensions.get('window');
+const { width: W } = Dimensions.get('window');
 
-/* Floating particles — position, size and timing baked in */
-const PARTICLES = Array.from({ length: 14 }, () => ({
-  x: Math.random() * W,
-  size: 2 + Math.random() * 3,
-  delay: Math.random() * 6000,
-  duration: 9000 + Math.random() * 7000,
-  drift: (Math.random() - 0.5) * 60,
-}));
+/**
+ * This screen keeps its own palette and type scale rather than the app
+ * theme: it is the one dark screen in the product, and the brand reads
+ * strongest here — deep purple with a single gold accent.
+ */
+const ink = {
+  base: '#120823',
+  mid: '#241041',
+  purple: '#5F259F',
+  purpleLit: '#8B5CF6',
+  gold: '#F2B705',
+  goldLit: '#FFD24A',
+  text: '#FFFFFF',
+  muted: 'rgba(255,255,255,0.62)',
+  faint: 'rgba(255,255,255,0.38)',
+  line: 'rgba(255,255,255,0.14)',
+  surface: 'rgba(255,255,255,0.055)',
+};
 
 type Props = { navigation: any };
 
@@ -38,12 +44,15 @@ export default function LoginScreen({ navigation }: Props) {
   const { setLoginMethod, updateProfile } = useAuth();
   const [googleBusy, setGoogleBusy] = useState(false);
 
-  /* ---------------- Animations ---------------- */
-  const aurora1 = useRef(new Animated.Value(0)).current;
-  const aurora2 = useRef(new Animated.Value(0)).current;
-  const shimmer = useRef(new Animated.Value(0)).current;
+  /* ---------------- Motion ---------------- */
+
+  /* Few moving parts on purpose: two slow lights, one sheen, one rule
+     that draws itself. A sign-in screen should feel composed, and every
+     loop left running keeps the GPU awake behind it. */
+  const lightOne = useRef(new Animated.Value(0)).current;
+  const lightTwo = useRef(new Animated.Value(0)).current;
+  const sheen = useRef(new Animated.Value(0)).current;
   const enter = useRef(new Animated.Value(0)).current;
-  const logoIn = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const drift = (v: Animated.Value, ms: number) =>
@@ -64,56 +73,63 @@ export default function LoginScreen({ navigation }: Props) {
         ])
       );
 
-    drift(aurora1, 12000).start();
-    drift(aurora2, 16000).start();
+    const running = [
+      drift(lightOne, 15000),
+      drift(lightTwo, 19000),
 
-    // Shimmer sweep across the primary button
-    Animated.loop(
-      Animated.sequence([
-        Animated.delay(1800),
-        Animated.timing(shimmer, {
-          toValue: 1,
-          duration: 1100,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmer, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+      // A light crosses the main action every few seconds
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(2800),
+          Animated.timing(sheen, {
+            toValue: 1,
+            duration: 900,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(sheen, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
 
-    Animated.spring(logoIn, {
-      toValue: 1,
-      friction: 6,
-      tension: 45,
-      useNativeDriver: true,
-    }).start();
+      Animated.timing(enter, {
+        toValue: 1,
+        duration: 950,
+        delay: 100,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ];
 
-    Animated.timing(enter, {
-      toValue: 1,
-      duration: 1100,
-      delay: 250,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
+    running.forEach((a) => a.start());
+    return () => running.forEach((a) => a.stop());
   }, []);
 
-  const fadeUp = (offset: number) => ({
-    opacity: enter,
-    transform: [
-      {
-        translateY: enter.interpolate({
-          inputRange: [0, 1],
-          outputRange: [30 + offset, 0],
-        }),
-      },
-    ],
-  });
+  /** Each block settles a beat after the one above it */
+  const rise = (order: number) => {
+    const start = Math.min(0.16 * order, 0.62);
+    return {
+      opacity: enter.interpolate({
+        inputRange: [start, Math.min(start + 0.38, 1)],
+        outputRange: [0, 1],
+        extrapolate: 'clamp' as const,
+      }),
+      transform: [
+        {
+          translateY: enter.interpolate({
+            inputRange: [0, 1],
+            outputRange: [20 + order * 6, 0],
+          }),
+        },
+      ],
+    };
+  };
 
   /* ---------------- Auth ---------------- */
+
   const handleGoogleSignIn = async () => {
     if (googleBusy) return;
     setGoogleBusy(true);
@@ -147,234 +163,174 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* ---------- Cinematic background ---------- */}
       <LinearGradient
-        colors={['#0B0D1A', '#141830', '#0B0D1A']}
+        colors={[ink.base, ink.mid, ink.base]}
+        locations={[0, 0.55, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.aurora,
-          styles.auroraOne,
-          {
-            transform: [
-              {
-                translateX: aurora1.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-40, 50],
-                }),
-              },
-              {
-                translateY: aurora1.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 70],
-                }),
-              },
-              {
-                scale: aurora1.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [1, 1.25],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        <LinearGradient
-          colors={['rgba(255,107,53,0.55)', 'rgba(255,107,53,0)']}
-          style={styles.auroraFill}
-        />
-      </Animated.View>
+      <Light
+        value={lightOne}
+        style={styles.lightTop}
+        colors={['rgba(139,92,246,0.42)', 'rgba(139,92,246,0)']}
+        from={{ x: -30, y: -20, scale: 1 }}
+        to={{ x: 40, y: 45, scale: 1.16 }}
+      />
+      <Light
+        value={lightTwo}
+        style={styles.lightBottom}
+        colors={['rgba(242,183,5,0.22)', 'rgba(242,183,5,0)']}
+        from={{ x: 30, y: 25, scale: 1.12 }}
+        to={{ x: -35, y: -25, scale: 0.94 }}
+      />
 
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.aurora,
-          styles.auroraTwo,
-          {
-            transform: [
-              {
-                translateX: aurora2.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [30, -60],
-                }),
-              },
-              {
-                translateY: aurora2.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, -50],
-                }),
-              },
-              {
-                scale: aurora2.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [1.2, 0.95],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        <LinearGradient
-          colors={['rgba(46,107,232,0.45)', 'rgba(46,107,232,0)']}
-          style={styles.auroraFill}
-        />
-      </Animated.View>
-
-      {/* Rising particles */}
-      {PARTICLES.map((p, i) => (
-        <Particle key={i} {...p} />
-      ))}
-
-      {/* Vignette so content stays readable */}
+      {/* Holds the text legible wherever the lights drift */}
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(11,13,26,0.2)', 'rgba(11,13,26,0.92)']}
-        style={styles.vignette}
+        colors={['rgba(18,8,35,0.3)', 'rgba(18,8,35,0.88)']}
+        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.content}>
-          {/* ---------- Logo ---------- */}
-          <View style={styles.logoStage}>
-            <Animated.View
-              style={{
-                opacity: logoIn,
-                transform: [
-                  {
-                    scale: logoIn.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.5, 1],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <LasanLogo size={132} />
-            </Animated.View>
-          </View>
-
-          <Animated.View style={fadeUp(0)}>
-            <Text style={styles.wordmark}>LASAN MART</Text>
-
-            <View style={styles.dotRow}>
-              <Text style={styles.dotWord}>POST</Text>
-              <View style={[styles.dot, { backgroundColor: '#FF8A3D' }]} />
-              <Text style={styles.dotWord}>FIND</Text>
-              <View style={[styles.dot, { backgroundColor: '#2E6BE8' }]} />
-              <Text style={styles.dotWord}>GROW</Text>
+          {/* ---------- Statement ---------- */}
+          <Animated.View style={rise(0)}>
+            <View style={styles.brandRow}>
+              <View style={styles.brandMark} />
+              <Text style={styles.brand}>LASAN MART</Text>
             </View>
 
-            <Text style={styles.tagline}>Your Business. Our Marketplace.</Text>
+            <Text style={styles.headline}>
+              Everything your{'\n'}business needs,{'\n'}
+              <Text style={styles.headlineAccent}>in one place.</Text>
+            </Text>
+
+            <Animated.View
+              style={[
+                styles.rule,
+                {
+                  transform: [
+                    {
+                      scaleX: enter.interpolate({
+                        inputRange: [0.3, 1],
+                        outputRange: [0, 1],
+                        extrapolate: 'clamp',
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+
+            <View style={styles.pillars}>
+              <Text style={styles.pillar}>POST</Text>
+              <View style={styles.pillarDot} />
+              <Text style={styles.pillar}>FIND</Text>
+              <View style={styles.pillarDot} />
+              <Text style={styles.pillar}>GROW</Text>
+            </View>
           </Animated.View>
 
-          {/* ---------- Actions ---------- */}
-          <Animated.View style={[styles.actions, fadeUp(18)]}>
-            {/* Primary with shimmer */}
-            <TouchableOpacity
-              activeOpacity={0.92}
-              onPress={() => navigation.navigate('PhoneAuth')}
-              style={styles.primaryWrap}
-            >
-              <LinearGradient
-                colors={['#FF8A3D', '#F2542D']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.primary}
+          {/* ---------- Ways in ---------- */}
+          <View style={styles.actions}>
+            <Animated.View style={rise(1)}>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('PhoneAuth')}
+                style={styles.primaryWrap}
               >
-                <Animated.View
-                  pointerEvents="none"
-                  style={[
-                    styles.shimmer,
-                    {
-                      transform: [
-                        {
-                          translateX: shimmer.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [-W, W],
-                          }),
-                        },
-                        { rotate: '18deg' },
-                      ],
-                    },
-                  ]}
-                />
-                <Ionicons name="call" size={19} color="#fff" />
-                <Text style={styles.primaryText}>Continue with Phone</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={[ink.goldLit, ink.gold]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.primary}
+                >
+                  <Animated.View
+                    pointerEvents="none"
+                    style={[
+                      styles.sheen,
+                      {
+                        transform: [
+                          {
+                            translateX: sheen.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-W * 0.6, W],
+                            }),
+                          },
+                          { rotate: '18deg' },
+                        ],
+                      },
+                    ]}
+                  />
+                  <Ionicons name="call" size={18} color={ink.base} />
+                  <Text style={styles.primaryText}>Continue with phone</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
 
-            {/* Glass social row */}
-            <View style={styles.socialRow}>
-              <GlassButton onPress={handleGoogleSignIn}>
+            <Animated.View style={rise(2)}>
+              <TouchableOpacity
+                style={styles.secondary}
+                activeOpacity={0.85}
+                onPress={handleGoogleSignIn}
+                disabled={googleBusy}
+              >
                 {googleBusy ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={ink.text} />
                 ) : (
                   <>
-                    <Ionicons name="logo-google" size={19} color="#fff" />
-                    <Text style={styles.glassText}>Google</Text>
+                    <Ionicons name="logo-google" size={18} color={ink.text} />
+                    <Text style={styles.secondaryText}>
+                      Continue with Google
+                    </Text>
                   </>
                 )}
-              </GlassButton>
-            </View>
+              </TouchableOpacity>
+            </Animated.View>
 
-            <View style={styles.dividerRow}>
-              <LinearGradient
-                colors={['transparent', 'rgba(255,255,255,0.22)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.dividerLine}
-              />
+            <Animated.View style={[styles.dividerRow, rise(3)]}>
+              <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>OR</Text>
-              <LinearGradient
-                colors={['rgba(255,255,255,0.22)', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.dividerLine}
-              />
-            </View>
+              <View style={styles.dividerLine} />
+            </Animated.View>
 
-            <TouchableOpacity
-              style={styles.guest}
-              activeOpacity={0.7}
-              onPress={handleSkip}
-            >
-              <Text style={styles.guestText}>Explore without an account</Text>
-              <MaterialCommunityIcons
-                name="arrow-right"
-                size={16}
-                color="rgba(255,255,255,0.75)"
-              />
-            </TouchableOpacity>
-
-            {/* For anyone coming back on a new phone or after a reinstall.
-                Same OTP flow — the flag only changes the wording and tells
-                the app to look for existing data afterwards. */}
-            <TouchableOpacity
-              style={styles.returning}
-              activeOpacity={0.7}
-              onPress={() =>
-                navigation.navigate('PhoneAuth', { returning: true })
-              }
-            >
-              <MaterialCommunityIcons
-                name="account-check-outline"
-                size={15}
-                color="rgba(255,255,255,0.55)"
-              />
-              <Text style={styles.returningText}>
-                Already have an account?{' '}
-                <Text style={styles.returningLink}>Sign in</Text>
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
+            <Animated.View style={rise(3)}>
+              <TouchableOpacity
+                style={styles.ghost}
+                activeOpacity={0.7}
+                onPress={handleSkip}
+              >
+                <Text style={styles.ghostText}>Explore without an account</Text>
+                <MaterialCommunityIcons
+                  name="arrow-right"
+                  size={16}
+                  color={ink.muted}
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
         </View>
 
-        <Animated.Text style={[styles.legal, { opacity: enter }]}>
-          By continuing you agree to our Terms & Privacy Policy
-        </Animated.Text>
+        {/* ---------- Footer ----------
+            For anyone coming back on a new phone or after a reinstall.
+            Same OTP flow — the flag only changes the wording and tells
+            the app to look for existing data afterwards. */}
+        <Animated.View style={[styles.footer, rise(4)]}>
+          <TouchableOpacity
+            style={styles.returning}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('PhoneAuth', { returning: true })}
+          >
+            <Text style={styles.returningText}>
+              Already have an account?{' '}
+              <Text style={styles.returningLink}>Sign in</Text>
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.legal}>
+            By continuing you agree to our Terms & Privacy Policy
+          </Text>
+        </Animated.View>
       </SafeAreaView>
     </View>
   );
@@ -382,260 +338,194 @@ export default function LoginScreen({ navigation }: Props) {
 
 /* ---------------- Sub-components ---------------- */
 
-function GlassButton({
-  children,
-  onPress,
-}: {
-  children: React.ReactNode;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={styles.glassWrap}
-      activeOpacity={0.8}
-      onPress={onPress}
-    >
-      <BlurView intensity={22} tint="light" style={styles.glass}>
-        <LinearGradient
-          colors={['rgba(255,255,255,0.16)', 'rgba(255,255,255,0.05)']}
-          style={StyleSheet.absoluteFill}
-        />
-        {children}
-      </BlurView>
-    </TouchableOpacity>
-  );
-}
+type Point = { x: number; y: number; scale: number };
 
-function Particle({
-  x,
-  size,
-  delay,
-  duration,
-  drift,
+/** A soft coloured light drifting behind the content */
+function Light({
+  value,
+  style,
+  colors,
+  from,
+  to,
 }: {
-  x: number;
-  size: number;
-  delay: number;
-  duration: number;
-  drift: number;
+  value: Animated.Value;
+  style: any;
+  colors: [string, string];
+  from: Point;
+  to: Point;
 }) {
-  const v = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.delay(delay),
-        Animated.timing(v, {
-          toValue: 1,
-          duration,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
+  const between = (a: number, b: number) =>
+    value.interpolate({ inputRange: [0, 1], outputRange: [a, b] });
 
   return (
     <Animated.View
       pointerEvents="none"
-      style={{
-        position: 'absolute',
-        left: x,
-        bottom: -20,
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: '#FFB347',
-        opacity: v.interpolate({
-          inputRange: [0, 0.15, 0.85, 1],
-          outputRange: [0, 0.7, 0.5, 0],
-        }),
-        transform: [
-          {
-            translateY: v.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -H * 0.9],
-            }),
-          },
-          {
-            translateX: v.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, drift],
-            }),
-          },
-        ],
-      }}
-    />
+      style={[
+        styles.light,
+        style,
+        {
+          transform: [
+            { translateX: between(from.x, to.x) },
+            { translateY: between(from.y, to.y) },
+            { scale: between(from.scale, to.scale) },
+          ],
+        },
+      ]}
+    >
+      <LinearGradient colors={colors} style={styles.lightFill} />
+    </Animated.View>
   );
 }
 
 /* ---------------- Styles ---------------- */
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0B0D1A' },
+  root: { flex: 1, backgroundColor: ink.base },
   safe: { flex: 1 },
 
-  aurora: { position: 'absolute' },
-  auroraFill: { flex: 1, borderRadius: 260 },
-  auroraOne: {
-    width: 420,
-    height: 420,
-    top: -110,
-    left: -120,
-  },
-  auroraTwo: {
-    width: 380,
-    height: 380,
-    bottom: 40,
-    right: -140,
-  },
-  vignette: StyleSheet.absoluteFill,
+  light: { position: 'absolute' },
+  lightFill: { flex: 1, borderRadius: 999 },
+  lightTop: { width: 430, height: 430, top: -150, left: -120 },
+  lightBottom: { width: 400, height: 400, bottom: -100, right: -130 },
 
-  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 26 },
+  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 },
 
-  logoStage: {
-    height: 210,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  brandMark: {
+    width: 22,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: ink.gold,
+  },
+  brand: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    letterSpacing: 4,
+    color: ink.muted,
   },
 
-  wordmark: {
-    fontFamily: fonts.display,
-    fontSize: 32,
-    color: '#fff',
-    textAlign: 'center',
-    letterSpacing: 3,
+  headline: {
+    fontSize: 33,
+    lineHeight: 42,
+    fontWeight: '800',
+    letterSpacing: -0.6,
+    color: ink.text,
+    marginTop: 20,
   },
-  dotRow: {
+  headlineAccent: { color: ink.gold },
+
+  rule: {
+    width: 64,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: ink.purpleLit,
+    marginTop: 22,
+  },
+
+  pillars: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 10,
-    marginTop: 14,
+    marginTop: 18,
   },
-  dotWord: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 2.5,
-    color: 'rgba(255,255,255,0.7)',
+  pillar: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    letterSpacing: 2.4,
+    color: ink.faint,
   },
-  dot: { width: 5, height: 5, borderRadius: 3 },
-  tagline: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.45)',
-    textAlign: 'center',
-    marginTop: 14,
-    marginBottom: 40,
+  pillarDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: ink.purpleLit,
   },
 
-  actions: { gap: 13 },
+  actions: { marginTop: 52, gap: 12 },
 
   primaryWrap: {
-    borderRadius: 16,
-    shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 12,
+    borderRadius: 14,
+    shadowColor: ink.gold,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    elevation: 8,
   },
   primary: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    paddingVertical: 18,
-    borderRadius: 16,
+    paddingVertical: 17,
+    borderRadius: 14,
     overflow: 'hidden',
   },
-  shimmer: {
+  sheen: {
     position: 'absolute',
     top: -40,
-    width: 70,
-    height: 160,
-    backgroundColor: 'rgba(255,255,255,0.35)',
+    width: 60,
+    height: 150,
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
   primaryText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 16,
-    color: '#fff',
+    fontSize: 15.5,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+    color: ink.base,
   },
 
-  socialRow: { flexDirection: 'row', gap: 12 },
-  glassWrap: {
-    flex: 1,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
-  },
-  glass: {
+  secondary: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
     paddingVertical: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: ink.line,
+    backgroundColor: ink.surface,
   },
-  glassText: {
-    fontFamily: fonts.bodyBold,
+  secondaryText: {
     fontSize: 15,
-    color: '#fff',
+    fontWeight: '600',
+    color: ink.text,
   },
 
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginVertical: 6,
+    marginVertical: 2,
   },
-  dividerLine: { flex: 1, height: 1 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: ink.line },
   dividerText: {
-    fontFamily: fonts.bodyBold,
     fontSize: 10,
+    fontWeight: '700',
     letterSpacing: 2,
-    color: 'rgba(255,255,255,0.4)',
+    color: ink.faint,
   },
 
-  guest: {
+  ghost: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
-    paddingVertical: 14,
+    paddingVertical: 15,
   },
-  guestText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.75)',
-  },
+  ghostText: { fontSize: 14, fontWeight: '600', color: ink.muted },
 
-  returning: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    paddingVertical: 14,
-  },
-  returningText: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.55)',
-  },
-  returningLink: {
-    fontFamily: fonts.bodyBold,
-    color: '#FF8A3D',
-  },
+  footer: { paddingHorizontal: 28, paddingBottom: 10 },
+  returning: { alignItems: 'center', paddingVertical: 10 },
+  returningText: { fontSize: 13, color: ink.muted },
+  returningLink: { fontWeight: '700', color: ink.gold },
 
   legal: {
-    fontFamily: fonts.body,
     fontSize: 11,
     lineHeight: 16,
-    color: 'rgba(255,255,255,0.35)',
+    color: ink.faint,
     textAlign: 'center',
-    paddingHorizontal: 40,
-    paddingBottom: 14,
+    paddingHorizontal: 30,
+    paddingTop: 6,
+    paddingBottom: 8,
   },
 });
