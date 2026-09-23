@@ -13,12 +13,30 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { signInWithGoogle } from '../lib/googleAuth';
 import { events } from '../lib/analytics';
 
 const { width: W } = Dimensions.get('window');
+
+/**
+ * This screen keeps its own palette and type scale rather than the app
+ * theme: it is the one dark screen in the product, and the brand reads
+ * strongest here — deep purple with a single gold accent.
+ */
+const ink = {
+  base: '#120823',
+  mid: '#241041',
+  purple: '#5F259F',
+  purpleLit: '#8B5CF6',
+  gold: '#F2B705',
+  goldLit: '#FFD24A',
+  text: '#FFFFFF',
+  muted: 'rgba(255,255,255,0.62)',
+  faint: 'rgba(255,255,255,0.38)',
+  line: 'rgba(255,255,255,0.14)',
+  surface: 'rgba(255,255,255,0.055)',
+};
 
 type Props = { navigation: any };
 
@@ -26,13 +44,13 @@ export default function LoginScreen({ navigation }: Props) {
   const { setLoginMethod, updateProfile } = useAuth();
   const [googleBusy, setGoogleBusy] = useState(false);
 
-  /* ---------------- Animation ---------------- */
+  /* ---------------- Motion ---------------- */
 
-  /* Two slow glows behind the content, and one sheen across the primary
-     button. Deliberately few moving parts — a sign-in screen should feel
-     calm, and every looping animation keeps the GPU awake. */
-  const glowOne = useRef(new Animated.Value(0)).current;
-  const glowTwo = useRef(new Animated.Value(0)).current;
+  /* Few moving parts on purpose: two slow lights, one sheen, one rule
+     that draws itself. A sign-in screen should feel composed, and every
+     loop left running keeps the GPU awake behind it. */
+  const lightOne = useRef(new Animated.Value(0)).current;
+  const lightTwo = useRef(new Animated.Value(0)).current;
   const sheen = useRef(new Animated.Value(0)).current;
   const enter = useRef(new Animated.Value(0)).current;
 
@@ -55,17 +73,17 @@ export default function LoginScreen({ navigation }: Props) {
         ])
       );
 
-    const loops = [drift(glowOne, 14000), drift(glowTwo, 18000)];
+    const running = [
+      drift(lightOne, 15000),
+      drift(lightTwo, 19000),
 
-    // A light passes over the primary button now and then, so the main
-    // action keeps catching the eye without demanding it
-    loops.push(
+      // A light crosses the main action every few seconds
       Animated.loop(
         Animated.sequence([
-          Animated.delay(2600),
+          Animated.delay(2800),
           Animated.timing(sheen, {
             toValue: 1,
-            duration: 950,
+            duration: 900,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
@@ -75,39 +93,40 @@ export default function LoginScreen({ navigation }: Props) {
             useNativeDriver: true,
           }),
         ])
-      )
-    );
+      ),
 
-    loops.push(
       Animated.timing(enter, {
         toValue: 1,
-        duration: 900,
-        delay: 120,
+        duration: 950,
+        delay: 100,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
-      })
-    );
+      }),
+    ];
 
-    loops.forEach((l) => l.start());
-    return () => loops.forEach((l) => l.stop());
+    running.forEach((a) => a.start());
+    return () => running.forEach((a) => a.stop());
   }, []);
 
-  /** Each block arrives a beat after the one above it */
-  const rise = (order: number) => ({
-    opacity: enter.interpolate({
-      inputRange: [Math.min(0.18 * order, 0.6), Math.min(0.18 * order + 0.4, 1)],
-      outputRange: [0, 1],
-      extrapolate: 'clamp' as const,
-    }),
-    transform: [
-      {
-        translateY: enter.interpolate({
-          inputRange: [0, 1],
-          outputRange: [18 + order * 6, 0],
-        }),
-      },
-    ],
-  });
+  /** Each block settles a beat after the one above it */
+  const rise = (order: number) => {
+    const start = Math.min(0.16 * order, 0.62);
+    return {
+      opacity: enter.interpolate({
+        inputRange: [start, Math.min(start + 0.38, 1)],
+        outputRange: [0, 1],
+        extrapolate: 'clamp' as const,
+      }),
+      transform: [
+        {
+          translateY: enter.interpolate({
+            inputRange: [0, 1],
+            outputRange: [20 + order * 6, 0],
+          }),
+        },
+      ],
+    };
+  };
 
   /* ---------------- Auth ---------------- */
 
@@ -145,52 +164,74 @@ export default function LoginScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       <LinearGradient
-        colors={['#0A0C18', '#12162B', '#0A0C18']}
+        colors={[ink.base, ink.mid, ink.base]}
+        locations={[0, 0.55, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      <Glow
-        value={glowOne}
-        style={styles.glowTop}
-        colors={['rgba(255,107,53,0.34)', 'rgba(255,107,53,0)']}
+      <Light
+        value={lightOne}
+        style={styles.lightTop}
+        colors={['rgba(139,92,246,0.42)', 'rgba(139,92,246,0)']}
         from={{ x: -30, y: -20, scale: 1 }}
-        to={{ x: 40, y: 40, scale: 1.18 }}
+        to={{ x: 40, y: 45, scale: 1.16 }}
       />
-      <Glow
-        value={glowTwo}
-        style={styles.glowBottom}
-        colors={['rgba(46,107,232,0.28)', 'rgba(46,107,232,0)']}
-        from={{ x: 30, y: 20, scale: 1.15 }}
-        to={{ x: -40, y: -30, scale: 0.95 }}
+      <Light
+        value={lightTwo}
+        style={styles.lightBottom}
+        colors={['rgba(242,183,5,0.22)', 'rgba(242,183,5,0)']}
+        from={{ x: 30, y: 25, scale: 1.12 }}
+        to={{ x: -35, y: -25, scale: 0.94 }}
       />
 
-      {/* Keeps text legible wherever the glows drift */}
+      {/* Holds the text legible wherever the lights drift */}
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(10,12,24,0.35)', 'rgba(10,12,24,0.9)']}
+        colors={['rgba(18,8,35,0.3)', 'rgba(18,8,35,0.88)']}
         style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.content}>
-          {/* ---------- Headline ---------- */}
+          {/* ---------- Statement ---------- */}
           <Animated.View style={rise(0)}>
-            <Text style={styles.brand}>LASAN MART</Text>
+            <View style={styles.brandRow}>
+              <View style={styles.brandMark} />
+              <Text style={styles.brand}>LASAN MART</Text>
+            </View>
 
             <Text style={styles.headline}>
-              Everything your business{'\n'}needs, in one place.
+              Everything your{'\n'}business needs,{'\n'}
+              <Text style={styles.headlineAccent}>in one place.</Text>
             </Text>
+
+            <Animated.View
+              style={[
+                styles.rule,
+                {
+                  transform: [
+                    {
+                      scaleX: enter.interpolate({
+                        inputRange: [0.3, 1],
+                        outputRange: [0, 1],
+                        extrapolate: 'clamp',
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
 
             <View style={styles.pillars}>
               <Text style={styles.pillar}>POST</Text>
-              <View style={[styles.pillarDot, { backgroundColor: '#FF8A3D' }]} />
+              <View style={styles.pillarDot} />
               <Text style={styles.pillar}>FIND</Text>
-              <View style={[styles.pillarDot, { backgroundColor: '#2E6BE8' }]} />
+              <View style={styles.pillarDot} />
               <Text style={styles.pillar}>GROW</Text>
             </View>
           </Animated.View>
 
-          {/* ---------- Sign in ---------- */}
+          {/* ---------- Ways in ---------- */}
           <View style={styles.actions}>
             <Animated.View style={rise(1)}>
               <TouchableOpacity
@@ -199,7 +240,7 @@ export default function LoginScreen({ navigation }: Props) {
                 style={styles.primaryWrap}
               >
                 <LinearGradient
-                  colors={['#FF8A3D', '#F2542D']}
+                  colors={[ink.goldLit, ink.gold]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.primary}
@@ -221,7 +262,7 @@ export default function LoginScreen({ navigation }: Props) {
                       },
                     ]}
                   />
-                  <Ionicons name="call" size={18} color="#fff" />
+                  <Ionicons name="call" size={18} color={ink.base} />
                   <Text style={styles.primaryText}>Continue with phone</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -235,11 +276,13 @@ export default function LoginScreen({ navigation }: Props) {
                 disabled={googleBusy}
               >
                 {googleBusy ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={ink.text} />
                 ) : (
                   <>
-                    <Ionicons name="logo-google" size={18} color="#fff" />
-                    <Text style={styles.secondaryText}>Continue with Google</Text>
+                    <Ionicons name="logo-google" size={18} color={ink.text} />
+                    <Text style={styles.secondaryText}>
+                      Continue with Google
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -261,7 +304,7 @@ export default function LoginScreen({ navigation }: Props) {
                 <MaterialCommunityIcons
                   name="arrow-right"
                   size={16}
-                  color="rgba(255,255,255,0.8)"
+                  color={ink.muted}
                 />
               </TouchableOpacity>
             </Animated.View>
@@ -297,8 +340,8 @@ export default function LoginScreen({ navigation }: Props) {
 
 type Point = { x: number; y: number; scale: number };
 
-/** A soft coloured light that drifts behind the content */
-function Glow({
+/** A soft coloured light drifting behind the content */
+function Light({
   value,
   style,
   colors,
@@ -318,7 +361,7 @@ function Glow({
     <Animated.View
       pointerEvents="none"
       style={[
-        styles.glow,
+        styles.light,
         style,
         {
           transform: [
@@ -329,7 +372,7 @@ function Glow({
         },
       ]}
     >
-      <LinearGradient colors={colors} style={styles.glowFill} />
+      <LinearGradient colors={colors} style={styles.lightFill} />
     </Animated.View>
   );
 }
@@ -337,34 +380,48 @@ function Glow({
 /* ---------------- Styles ---------------- */
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0A0C18' },
+  root: { flex: 1, backgroundColor: ink.base },
   safe: { flex: 1 },
 
-  glow: { position: 'absolute' },
-  glowFill: { flex: 1, borderRadius: 999 },
-  glowTop: { width: 420, height: 420, top: -140, left: -110 },
-  glowBottom: { width: 400, height: 400, bottom: -90, right: -130 },
+  light: { position: 'absolute' },
+  lightFill: { flex: 1, borderRadius: 999 },
+  lightTop: { width: 430, height: 430, top: -150, left: -120 },
+  lightBottom: { width: 400, height: 400, bottom: -100, right: -130 },
 
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 26,
+  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 },
+
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  brandMark: {
+    width: 22,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: ink.gold,
   },
-
   brand: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
+    fontSize: 11.5,
+    fontWeight: '700',
     letterSpacing: 4,
-    color: 'rgba(255,255,255,0.55)',
+    color: ink.muted,
   },
+
   headline: {
-    fontFamily: fonts.display,
-    fontSize: 30,
-    lineHeight: 39,
-    color: '#fff',
-    letterSpacing: -0.4,
-    marginTop: 16,
+    fontSize: 33,
+    lineHeight: 42,
+    fontWeight: '800',
+    letterSpacing: -0.6,
+    color: ink.text,
+    marginTop: 20,
   },
+  headlineAccent: { color: ink.gold },
+
+  rule: {
+    width: 64,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: ink.purpleLit,
+    marginTop: 22,
+  },
+
   pillars: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -372,21 +429,26 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   pillar: {
-    fontFamily: fonts.bodyBold,
     fontSize: 10.5,
+    fontWeight: '700',
     letterSpacing: 2.4,
-    color: 'rgba(255,255,255,0.6)',
+    color: ink.faint,
   },
-  pillarDot: { width: 4, height: 4, borderRadius: 2 },
+  pillarDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: ink.purpleLit,
+  },
 
-  actions: { marginTop: 54, gap: 12 },
+  actions: { marginTop: 52, gap: 12 },
 
   primaryWrap: {
     borderRadius: 14,
-    shadowColor: '#FF6B35',
+    shadowColor: ink.gold,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.38,
-    shadowRadius: 16,
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
     elevation: 8,
   },
   primary: {
@@ -403,12 +465,13 @@ const styles = StyleSheet.create({
     top: -40,
     width: 60,
     height: 150,
-    backgroundColor: 'rgba(255,255,255,0.28)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
   primaryText: {
-    fontFamily: fonts.bodyBold,
     fontSize: 15.5,
-    color: '#fff',
+    fontWeight: '700',
+    letterSpacing: 0.1,
+    color: ink.base,
   },
 
   secondary: {
@@ -419,13 +482,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderColor: ink.line,
+    backgroundColor: ink.surface,
   },
   secondaryText: {
-    fontFamily: fonts.bodyBold,
     fontSize: 15,
-    color: '#fff',
+    fontWeight: '600',
+    color: ink.text,
   },
 
   dividerRow: {
@@ -434,16 +497,12 @@ const styles = StyleSheet.create({
     gap: 12,
     marginVertical: 2,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: ink.line },
   dividerText: {
-    fontFamily: fonts.bodyBold,
     fontSize: 10,
+    fontWeight: '700',
     letterSpacing: 2,
-    color: 'rgba(255,255,255,0.4)',
+    color: ink.faint,
   },
 
   ghost: {
@@ -453,29 +512,17 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingVertical: 15,
   },
-  ghostText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-  },
+  ghostText: { fontSize: 14, fontWeight: '600', color: ink.muted },
 
-  footer: { paddingHorizontal: 26, paddingBottom: 10 },
+  footer: { paddingHorizontal: 28, paddingBottom: 10 },
   returning: { alignItems: 'center', paddingVertical: 10 },
-  returningText: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  returningLink: {
-    fontFamily: fonts.bodyBold,
-    color: '#FF8A3D',
-  },
+  returningText: { fontSize: 13, color: ink.muted },
+  returningLink: { fontWeight: '700', color: ink.gold },
 
   legal: {
-    fontFamily: fonts.body,
     fontSize: 11,
     lineHeight: 16,
-    color: 'rgba(255,255,255,0.32)',
+    color: ink.faint,
     textAlign: 'center',
     paddingHorizontal: 30,
     paddingTop: 6,
