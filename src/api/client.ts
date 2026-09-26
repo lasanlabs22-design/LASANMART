@@ -9,7 +9,7 @@ import { getAuthToken } from '../lib/phoneAuth';
  * the app claims, so nobody can read or write someone else's data.
  */
 
-const API_URL = 'https://lasanmartapihono-production-a721.up.railway.app';
+const API_URL = 'https://lasanmartapihono-production.up.railway.app';
 
 /** How long to wait before giving up on a request */
 const TIMEOUT_MS = 15000;
