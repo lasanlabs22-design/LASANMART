@@ -106,7 +106,11 @@ export default function HomeScreen() {
         onNotificationsPress={openNotifications}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* Bottom room so the last card clears the raised centre button */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 44 }}
+      >
         <PlansCarousel data={plans} onPlanPress={openPlanEnquiry} />
 
         <BusinessIdeasBanner onPress={openBusinessIdeas} />

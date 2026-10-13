@@ -23,8 +23,16 @@ function ToolsPlaceholder() {
   return <View />;
 }
 
+/** Space kept clear at the bottom even when the system reports none */
+const MIN_BOTTOM_GAP = 14;
+
 export default function BottomTabNavigator({ navigation }: any) {
   const insets = useSafeAreaInsets();
+
+  // Gesture navigation with the bar hidden (common on OnePlus, Xiaomi
+  // and others) reports a zero inset while the swipe-up zone still
+  // covers the bottom edge — so never let the labels sit right on it
+  const bottomGap = Math.max(insets.bottom, MIN_BOTTOM_GAP);
 
   return (
     <Tab.Navigator
@@ -34,8 +42,8 @@ export default function BottomTabNavigator({ navigation }: any) {
         tabBarInactiveTintColor: TAB_INACTIVE,
         tabBarStyle: {
           borderTopColor: colors.border,
-          height: 60 + insets.bottom,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          height: 62 + bottomGap,
+          paddingBottom: bottomGap,
           paddingTop: 6,
         },
         // Five fixed-width slots: the medium weight, held at its design
