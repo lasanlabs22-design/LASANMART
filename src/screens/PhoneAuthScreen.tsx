@@ -28,6 +28,7 @@ import {
 } from '../lib/phoneAuth';
 import { fetchMyContact } from '../api/client';
 import { events } from '../lib/analytics';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
 
 const RESEND_SECONDS = 45;
 const CODE_LENGTH = 6;
@@ -170,6 +171,7 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.root}>
+      <FocusAwareStatusBar style="light" />
       <LinearGradient
         colors={['#120823', '#241041', '#120823']}
         style={StyleSheet.absoluteFill}
@@ -293,13 +295,16 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
                 </View>
 
                 <Text style={styles.title}>Enter the code</Text>
-                <Text style={styles.subtitle}>
-                  Sent to <Text style={styles.phoneEcho}>+91 {phone}</Text>
-                  {'  '}
-                  <Text style={styles.changeLink} onPress={goBackToPhone}>
-                    Change
+                {/* A real button — a tappable word inside a Text
+                    doesn't fire on some Android phones */}
+                <View style={styles.sentRow}>
+                  <Text style={[styles.subtitle, { marginBottom: 0 }]}>
+                    Sent to <Text style={styles.phoneEcho}>+91 {phone}</Text>
                   </Text>
-                </Text>
+                  <TouchableOpacity onPress={goBackToPhone} hitSlop={10}>
+                    <Text style={styles.changeLink}>Change</Text>
+                  </TouchableOpacity>
+                </View>
 
                 {/* Six boxes, backed by one hidden input */}
                 <TouchableOpacity
@@ -457,7 +462,15 @@ const styles = StyleSheet.create({
   },
   changeLink: {
     fontFamily: fonts.bodyBold,
+    fontSize: 14,
     color: '#F2B705',
+  },
+  sentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    columnGap: 10,
+    marginBottom: 30,
   },
 
   /* Phone step */

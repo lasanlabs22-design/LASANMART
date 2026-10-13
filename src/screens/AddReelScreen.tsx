@@ -555,10 +555,11 @@ export default function AddReelScreen({ navigation }: any) {
 
             {/* Play requires people accept the rules before sharing */}
             {!busy && (
-              <View style={styles.agreeRow}>
+              <View style={styles.agreeBlock}>
                 <TouchableOpacity
+                  style={styles.agreeRow}
                   onPress={() => setAgreed((v) => !v)}
-                  hitSlop={8}
+                  activeOpacity={0.8}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: agreed }}
                 >
@@ -567,17 +568,19 @@ export default function AddReelScreen({ navigation }: any) {
                     size={22}
                     color={agreed ? colors.primary : colors.textLight}
                   />
-                </TouchableOpacity>
-                <Text style={styles.agreeText}>
-                  I agree to the{' '}
-                  <Text
-                    style={styles.agreeLink}
-                    onPress={() => navigation.navigate('CommunityGuidelines')}
-                  >
-                    Community Guidelines
+                  <Text style={styles.agreeText}>
+                    I agree to the Community Guidelines and confirm this video
+                    is mine to share.
                   </Text>
-                  {' '}and confirm this video is mine to share.
-                </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.agreeLinkButton}
+                  hitSlop={8}
+                  onPress={() => navigation.navigate('CommunityGuidelines')}
+                >
+                  <Text style={styles.agreeLink}>Read the guidelines</Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -972,11 +975,11 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
 
+  agreeBlock: { marginBottom: 12 },
   agreeRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    marginBottom: 12,
   },
   agreeText: {
     flex: 1,
@@ -985,5 +988,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: colors.textLight,
   },
-  agreeLink: { fontFamily: fonts.bodyBold, color: colors.primary },
+  agreeLinkButton: { marginLeft: 32, marginTop: 4, alignSelf: 'flex-start' },
+  agreeLink: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: colors.primary },
 });

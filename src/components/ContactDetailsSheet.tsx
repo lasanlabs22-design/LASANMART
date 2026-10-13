@@ -433,12 +433,14 @@ export default function ContactDetailsSheet({
                 </View>
 
                 <Text style={styles.title}>Enter the code</Text>
-                <Text style={styles.subtitle}>
-                  Sent to <Text style={styles.phoneEcho}>+91 {phone}</Text>{' '}
-                  <Text style={styles.changeLink} onPress={backToDetails}>
-                    Change
+                <View style={styles.sentRow}>
+                  <Text style={[styles.subtitle, { marginBottom: 0 }]}>
+                    Sent to <Text style={styles.phoneEcho}>+91 {phone}</Text>
                   </Text>
-                </Text>
+                  <TouchableOpacity onPress={backToDetails} hitSlop={10}>
+                    <Text style={styles.changeLink}>Change</Text>
+                  </TouchableOpacity>
+                </View>
 
                 {/* Six boxes over one hidden input */}
                 <TouchableOpacity
@@ -572,7 +574,15 @@ const styles = StyleSheet.create({
   },
   changeLink: {
     fontFamily: fonts.bodyBold,
+    fontSize: 13,
     color: colors.primary,
+  },
+  sentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    columnGap: 8,
+    marginBottom: 8,
   },
 
   label: {
