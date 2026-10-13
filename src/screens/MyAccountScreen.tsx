@@ -287,10 +287,21 @@ export default function MyAccountScreen() {
               </TouchableOpacity>
 
               <View style={styles.bannerText}>
-                <Text style={styles.bannerName} numberOfLines={1}>
+                {/* Shrink rather than cut off — "Add your …" says nothing */}
+                <Text
+                  style={styles.bannerName}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.65}
+                >
                   {profile.name || 'Add your name'}
                 </Text>
-                <Text style={styles.bannerCompany} numberOfLines={1}>
+                <Text
+                  style={styles.bannerCompany}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   {profile.companyName || 'No company added yet'}
                 </Text>
               </View>

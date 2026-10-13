@@ -35,6 +35,13 @@ import { withoutHidden, creatorKey } from '../lib/hiddenVibes';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
+/** Icons are text glyphs, so a text shadow lifts them off light video */
+const actionShadow = {
+  textShadowColor: 'rgba(0,0,0,0.55)',
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 4,
+};
+
 export default function LasanVibesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
@@ -446,6 +453,7 @@ function ReelItem({
         >
           <MaterialCommunityIcons
             name={liked ? 'heart' : 'heart-outline'}
+            style={styles.actionIcon}
             size={32}
             color={liked ? colors.primary : colors.white}
           />
@@ -457,6 +465,7 @@ function ReelItem({
         <View style={styles.action}>
           <MaterialCommunityIcons
             name="eye-outline"
+            style={styles.actionIcon}
             size={26}
             color="rgba(255,255,255,0.85)"
           />
@@ -472,6 +481,7 @@ function ReelItem({
           >
             <MaterialCommunityIcons
               name="flag-outline"
+              style={styles.actionIcon}
               size={26}
               color={colors.white}
             />
@@ -488,6 +498,7 @@ function ReelItem({
             >
               <MaterialCommunityIcons
                 name="pencil-outline"
+                style={styles.actionIcon}
                 size={27}
                 color={colors.white}
               />
@@ -501,6 +512,7 @@ function ReelItem({
             >
               <MaterialCommunityIcons
                 name="trash-can-outline"
+                style={styles.actionIcon}
                 size={27}
                 color="#FF6B6B"
               />
@@ -754,11 +766,14 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   action: { alignItems: 'center', gap: 4, minWidth: 46 },
+  // A soft shadow keeps white labels readable on bright frames
   actionLabel: {
     fontFamily: fonts.bodyBold,
     fontSize: 11,
     color: 'rgba(255,255,255,0.9)',
+    ...actionShadow,
   },
+  actionIcon: actionShadow,
 
   bottomRow: {
     position: 'absolute',
