@@ -52,22 +52,17 @@ export default function HelpScreen({ navigation }: any) {
     setOpenId((current) => (current === id ? null : id));
   };
 
-  const openWhatsApp = async () => {
-    const url = `whatsapp://send?phone=91${SUPPORT_PHONE}&text=${encodeURIComponent(
+  /* wa.me rather than whatsapp:// — Android 11+ hides other apps'
+     custom schemes from canOpenURL, so the old check always said
+     WhatsApp was missing. wa.me opens WhatsApp, or the browser. */
+  const openWhatsApp = () => {
+    const url = `https://wa.me/91${SUPPORT_PHONE}?text=${encodeURIComponent(
       'Hi Lasan Mart, I need help with '
     )}`;
 
-    const supported = await Linking.canOpenURL(url).catch(() => false);
-
-    if (!supported) {
-      Alert.alert(
-        'WhatsApp not found',
-        'Install WhatsApp, or call us instead.'
-      );
-      return;
-    }
-
-    Linking.openURL(url);
+    Linking.openURL(url).catch(() =>
+      Alert.alert('Could not open WhatsApp', 'Please call us instead.')
+    );
   };
 
   const callSupport = () => Linking.openURL(`tel:+91${SUPPORT_PHONE}`);
