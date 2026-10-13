@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: '#FFF1EA',
+    backgroundColor: colors.primarySoft,
   },
   detectText: {
     fontSize: 14,

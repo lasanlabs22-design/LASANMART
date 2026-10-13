@@ -24,7 +24,8 @@ import { faqs, faqCategories, Faq } from '../data/faqs';
 /* Change these to your team's real contact details */
 const SUPPORT_PHONE = '8309074248';
 const SUPPORT_EMAIL = 'admin@lasanlabs.com';
-const ACCENT = '#FF6B35';
+/* Brand gold — reads on the dark support card */
+const ACCENT = '#F2B705';
 
 export default function HelpScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
