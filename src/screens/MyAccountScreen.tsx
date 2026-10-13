@@ -33,17 +33,9 @@ import {
 } from '../api/client';
 import { verifiedPhoneNumber } from '../lib/phoneAuth';
 
+/* The system photo picker hands back only what the person chooses,
+   so no photo library permission is asked for (Play policy, too) */
 const pickImage = async (onPicked: (uri: string) => void) => {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-  if (!permission.granted) {
-    Alert.alert(
-      'Permission Needed',
-      'We need access to your photos to set this image.'
-    );
-    return;
-  }
-
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsEditing: true,

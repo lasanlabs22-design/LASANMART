@@ -266,14 +266,18 @@ export default function AddReelScreen({ navigation }: any) {
   });
 
   const pickVideo = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    // Android's system picker needs no permission. iOS still wants
+    // library access to hand over the original video file.
+    if (Platform.OS === 'ios') {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!permission.granted) {
-      Alert.alert(
-        'Permission needed',
-        'Allow access to your videos so you can pick one to post.'
-      );
-      return;
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission needed',
+          'Allow access to your videos so you can pick one to post.'
+        );
+        return;
+      }
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
