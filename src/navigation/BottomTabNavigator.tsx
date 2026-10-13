@@ -9,6 +9,7 @@ import MyRequestsScreen from '../screens/MyRequestsScreen';
 import MyAccountScreen from '../screens/MyAccountScreen';
 import CenterTabButton from '../components/CenterTabButton';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
 
@@ -37,7 +38,7 @@ export default function BottomTabNavigator({ navigation }: any) {
           paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
           paddingTop: 6,
         },
-        tabBarLabelStyle: { fontSize: 10 },
+        tabBarLabelStyle: { fontSize: 10, fontFamily: fonts.bodyBold },
         tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
 

@@ -1,6 +1,7 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 /**
  * Catches a crash anywhere below it, so a bug in one screen shows a
@@ -48,8 +49,9 @@ const styles = StyleSheet.create({
     padding: 32,
     backgroundColor: colors.background,
   },
-  title: { fontSize: 18, fontWeight: '700', color: colors.textDark },
+  title: { fontFamily: fonts.display, fontSize: 18, color: colors.textDark },
   body: {
+    fontFamily: fonts.body,
     fontSize: 14,
     color: colors.textLight,
     textAlign: 'center',
@@ -63,5 +65,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     borderRadius: 12,
   },
-  buttonText: { color: colors.white, fontSize: 15, fontWeight: '600' },
+  buttonText: { color: colors.white, fontSize: 15, fontFamily: fonts.bodyBold },
 });

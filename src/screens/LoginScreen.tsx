@@ -18,13 +18,17 @@ import { useAuth } from '../context/AuthContext';
 import { signInWithGoogle } from '../lib/googleAuth';
 import { events } from '../lib/analytics';
 import { PRIVACY_POLICY_URL } from '../data/communityGuidelines';
+import { fonts } from '../theme/typography';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
 
 const { width: W } = Dimensions.get('window');
 
 /**
  * This screen keeps its own palette and type scale rather than the app
  * theme: it is the one dark screen in the product, and the brand reads
- * strongest here — deep purple with a single gold accent.
+ * strongest here — deep purple with a single gold accent. The fonts are
+ * the app's bundled ones, though — phones with a custom system font
+ * otherwise show the whole screen in it.
  */
 const ink = {
   base: '#120823',
@@ -165,6 +169,7 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
+      <FocusAwareStatusBar style="light" />
       <LinearGradient
         colors={[ink.base, ink.mid, ink.base]}
         locations={[0, 0.55, 1]}
@@ -329,22 +334,26 @@ export default function LoginScreen({ navigation }: Props) {
             </Text>
           </TouchableOpacity>
 
-          <Text style={styles.legal}>
-            By continuing you agree to our{' '}
-            <Text
-              style={styles.legalLink}
+          {/* Real buttons, not tappable words inside one Text — those
+              never fired on some Android phones */}
+          <Text style={styles.legal}>By continuing you agree to our</Text>
+          <View style={styles.legalLinks}>
+            <TouchableOpacity
+              hitSlop={8}
               onPress={() => Linking.openURL(PRIVACY_POLICY_URL).catch(() => {})}
             >
-              Privacy Policy
-            </Text>{' '}
-            and{' '}
-            <Text
-              style={styles.legalLink}
+              <Text style={[styles.legal, styles.legalLink]}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <Text style={styles.legal}>and</Text>
+            <TouchableOpacity
+              hitSlop={8}
               onPress={() => navigation.navigate('CommunityGuidelines')}
             >
-              Community Guidelines
-            </Text>
-          </Text>
+              <Text style={[styles.legal, styles.legalLink]}>
+                Community Guidelines
+              </Text>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </SafeAreaView>
     </View>
@@ -414,7 +423,7 @@ const styles = StyleSheet.create({
   },
   brand: {
     fontSize: 11.5,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     letterSpacing: 4,
     color: ink.muted,
   },
@@ -422,7 +431,7 @@ const styles = StyleSheet.create({
   headline: {
     fontSize: 33,
     lineHeight: 42,
-    fontWeight: '800',
+    fontFamily: fonts.display,
     letterSpacing: -0.6,
     color: ink.text,
     marginTop: 20,
@@ -445,7 +454,7 @@ const styles = StyleSheet.create({
   },
   pillar: {
     fontSize: 10.5,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     letterSpacing: 2.4,
     color: ink.faint,
   },
@@ -484,7 +493,7 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     fontSize: 15.5,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     letterSpacing: 0.1,
     color: ink.base,
   },
@@ -502,7 +511,7 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonts.bodyBold,
     color: ink.text,
   },
 
@@ -515,7 +524,7 @@ const styles = StyleSheet.create({
   dividerLine: { flex: 1, height: 1, backgroundColor: ink.line },
   dividerText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     letterSpacing: 2,
     color: ink.faint,
   },
@@ -527,21 +536,32 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingVertical: 15,
   },
-  ghostText: { fontSize: 14, fontWeight: '600', color: ink.muted },
+  ghostText: { fontSize: 14, fontFamily: fonts.bodyBold, color: ink.muted },
 
   footer: { paddingHorizontal: 28, paddingBottom: 10 },
   returning: { alignItems: 'center', paddingVertical: 10 },
-  returningText: { fontSize: 13, color: ink.muted },
-  returningLink: { fontWeight: '700', color: ink.gold },
+  returningText: { fontSize: 13, fontFamily: fonts.body, color: ink.muted },
+  returningLink: { fontFamily: fonts.bodyBold, color: ink.gold },
 
   legal: {
+    fontFamily: fonts.body,
     fontSize: 11,
     lineHeight: 16,
     color: ink.faint,
     textAlign: 'center',
-    paddingHorizontal: 30,
     paddingTop: 6,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    columnGap: 4,
     paddingBottom: 8,
   },
-  legalLink: { color: ink.muted, textDecorationLine: 'underline' },
+  legalLink: {
+    paddingTop: 0,
+    color: ink.muted,
+    textDecorationLine: 'underline',
+  },
 });

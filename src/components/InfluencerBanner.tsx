@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 import Shimmer from './Shimmer';
 
 type Props = {
@@ -121,12 +122,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
-    fontWeight: '700',
     color: colors.white,
     marginBottom: 2,
   },
   subtitle: {
+    fontFamily: fonts.body,
     fontSize: 12,
     color: 'rgba(255,255,255,0.85)',
   },

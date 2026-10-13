@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type Props = {
   onSearchPress?: () => void;
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.bodyBold,
     color: colors.textDark,
     flexShrink: 1,
   },
@@ -231,6 +232,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    fontFamily: fonts.body,
     fontSize: 14,
     color: colors.textDark,
     padding: 0,
@@ -259,7 +261,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 9.5,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: colors.white,
   },
   modalOverlay: {
@@ -284,7 +286,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.displayMedium,
     color: colors.textDark,
   },
   detectRow: {
@@ -299,7 +301,7 @@ const styles = StyleSheet.create({
   },
   detectText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.bodyBold,
     color: colors.primary,
   },
   cityRow: {
@@ -313,6 +315,7 @@ const styles = StyleSheet.create({
   },
   cityText: {
     flex: 1,
+    fontFamily: fonts.body,
     fontSize: 14,
     color: colors.textDark,
   },
