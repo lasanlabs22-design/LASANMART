@@ -35,7 +35,7 @@ export async function registerForPush(): Promise<string | null> {
         name: 'Request updates',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF6B35',
+        lightColor: '#5F259F',
       });
     }
 
