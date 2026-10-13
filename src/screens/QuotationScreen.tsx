@@ -165,17 +165,14 @@ export default function QuotationScreen({ navigation }: any) {
       `\n\nTotal: *${money(total)}*` +
       (meta.notes ? `\n\n${meta.notes}` : '');
 
+    // wa.me works on Android 11+, where canOpenURL can't see
+    // WhatsApp's own scheme. No number opens the contact picker.
     const phone = meta.clientPhone.replace(/[^0-9]/g, '');
     const url = phone
-      ? `whatsapp://send?phone=91${phone}&text=${encodeURIComponent(text)}`
-      : `whatsapp://send?text=${encodeURIComponent(text)}`;
+      ? `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
 
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (!supported) {
-        Alert.alert('WhatsApp not found', 'Install WhatsApp to send directly.');
-        return;
-      }
       await Linking.openURL(url);
     } catch {
       Alert.alert('Could not open WhatsApp', 'Try the share button instead.');
@@ -356,7 +353,7 @@ export default function QuotationScreen({ navigation }: any) {
                     <Text style={styles.miniLabel}>Rate (₹)</Text>
                     <TextInput
                       style={styles.miniInput}
-                      keyboardType="number-pad"
+                      keyboardType="decimal-pad"
                       placeholder="0"
                       placeholderTextColor={colors.textLight}
                       value={line.rate}
@@ -387,7 +384,7 @@ export default function QuotationScreen({ navigation }: any) {
               <Text style={styles.miniLabel}>Tax %</Text>
               <TextInput
                 style={styles.miniInput}
-                keyboardType="number-pad"
+                keyboardType="decimal-pad"
                 value={meta.taxPercent}
                 onChangeText={(v) =>
                   setMetaField('taxPercent', v.replace(/[^0-9.]/g, ''))
