@@ -176,6 +176,11 @@ export default function ContactDetailsSheet({
       visible={visible}
       animationType="slide"
       presentationStyle="fullScreen"
+      // Android back mirrors the on-screen arrow
+      onRequestClose={() => {
+        if (busy) return;
+        step === 'code' ? backToDetails() : onClose();
+      }}
     >
       <SafeAreaView style={styles.screen}>
         <KeyboardAvoidingView

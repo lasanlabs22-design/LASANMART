@@ -497,7 +497,12 @@ function ReelItem({
       </View>
 
       {/* Caption editor */}
-      <Modal visible={editing} transparent animationType="slide">
+      <Modal
+        visible={editing}
+        transparent
+        animationType="slide"
+        onRequestClose={() => !saving && setEditing(false)}
+      >
         <KeyboardAvoidingView
           style={styles.editOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
