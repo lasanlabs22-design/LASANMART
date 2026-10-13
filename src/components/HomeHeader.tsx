@@ -36,8 +36,23 @@ export default function HomeHeader({
   const [modalVisible, setModalVisible] = useState(false);
   const [isDetecting, setIsDetecting] = useState(true);
 
+  /* Only look the city up on our own if they've already said yes.
+     Otherwise the first thing a new user sees is a location prompt
+     with no reason given — they ask from the city picker instead. */
   useEffect(() => {
-    detectLocation();
+    Location.getForegroundPermissionsAsync()
+      .then(({ status }) => {
+        if (status === 'granted') {
+          detectLocation();
+        } else {
+          setSelectedCity('Select City');
+          setIsDetecting(false);
+        }
+      })
+      .catch(() => {
+        setSelectedCity('Select City');
+        setIsDetecting(false);
+      });
   }, []);
 
   const detectLocation = async () => {
