@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
 
 export default function ReelPlayerScreen({ route, navigation }: any) {
   const { reel } = route.params;
@@ -46,6 +47,7 @@ export default function ReelPlayerScreen({ route, navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <FocusAwareStatusBar style="light" />
       <TouchableOpacity
         activeOpacity={1}
         onPress={togglePlayback}

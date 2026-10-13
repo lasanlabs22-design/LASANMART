@@ -30,6 +30,7 @@ import {
   ApiReel,
 } from '../api/client';
 import ReportReelSheet from '../components/ReportReelSheet';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
 import { withoutHidden, creatorKey } from '../lib/hiddenVibes';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -145,6 +146,7 @@ export default function LasanVibesScreen({ navigation }: any) {
   if (loading) {
     return (
       <View style={styles.centre}>
+        <FocusAwareStatusBar style="light" />
         <ActivityIndicator color={colors.white} />
       </View>
     );
@@ -153,6 +155,7 @@ export default function LasanVibesScreen({ navigation }: any) {
   if (error || reels.length === 0) {
     return (
       <View style={[styles.centre, { paddingHorizontal: 40 }]}>
+        <FocusAwareStatusBar style="light" />
         <View style={styles.emptyIcon}>
           <MaterialCommunityIcons
             name={error ? 'wifi-off' : 'video-off-outline'}
@@ -191,6 +194,7 @@ export default function LasanVibesScreen({ navigation }: any) {
       style={styles.container}
       onLayout={(e) => setPageHeight(e.nativeEvent.layout.height)}
     >
+      <FocusAwareStatusBar style="light" />
       <FlatList
         data={reels}
         keyExtractor={(item) => item.id}
