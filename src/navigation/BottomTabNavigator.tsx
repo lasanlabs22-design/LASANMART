@@ -9,20 +9,30 @@ import MyRequestsScreen from '../screens/MyRequestsScreen';
 import MyAccountScreen from '../screens/MyAccountScreen';
 import CenterTabButton from '../components/CenterTabButton';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
 
-/** PhonePe-style purple — used only in the tab bar */
+/** PhonePe-style purple — used only in the tab bar. Inactive tabs are
+    grey: the old gold on white was too faint to read (about 2:1). */
 const TAB_ACTIVE = '#5F259F';
-const TAB_INACTIVE = '#E5A800';
+const TAB_INACTIVE = colors.textLight;
 
 // Never rendered — the tab press is intercepted and opens a modal instead
 function ToolsPlaceholder() {
   return <View />;
 }
 
+/** Space kept clear at the bottom even when the system reports none */
+const MIN_BOTTOM_GAP = 14;
+
 export default function BottomTabNavigator({ navigation }: any) {
   const insets = useSafeAreaInsets();
+
+  // Gesture navigation with the bar hidden (common on OnePlus, Xiaomi
+  // and others) reports a zero inset while the swipe-up zone still
+  // covers the bottom edge — so never let the labels sit right on it
+  const bottomGap = Math.max(insets.bottom, MIN_BOTTOM_GAP);
 
   return (
     <Tab.Navigator
@@ -32,11 +42,21 @@ export default function BottomTabNavigator({ navigation }: any) {
         tabBarInactiveTintColor: TAB_INACTIVE,
         tabBarStyle: {
           borderTopColor: colors.border,
-          height: 60 + insets.bottom,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          height: 62 + bottomGap,
+          paddingBottom: bottomGap,
           paddingTop: 6,
         },
-        tabBarLabelStyle: { fontSize: 10 },
+        // Five fixed-width slots: the medium weight, held at its design
+        // size, keeps "My Requests" whole even with large system text
+        // and slim side padding: on a 354dp-wide phone each slot leaves
+        // 60.9dp, and "My Requests" measured 61.2dp — now ~59dp in ~67dp
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontFamily: fonts.body,
+          letterSpacing: -0.2,
+        },
+        tabBarItemStyle: { paddingHorizontal: 2 },
+        tabBarAllowFontScaling: false,
         tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
 

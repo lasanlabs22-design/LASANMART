@@ -158,14 +158,21 @@ export const faqs: Faq[] = [
     id: 'v1',
     question: 'What is Lasan Vibes?',
     answer:
-      'A short-video feed where our team and other businesses share campaigns, shoots and stories from the ground. Watch as much as you like — posting is opening soon.',
+      'A short-video feed where our team and other businesses share campaigns, shoots and stories from the ground. Watch as much as you like, and ask to post your own.',
     category: 'vibes',
   },
   {
     id: 'v2',
-    question: 'Why can I not post a video?',
+    question: 'How do I post a video?',
     answer:
-      'Posting is not open yet. We are putting the finishing touches to it, and it will arrive in an update — you will be able to share what your business is up to with everyone using the app.',
+      'Tap the + on the Vibes row on Home and ask for posting access — tell us what you would share. Our team checks every request, usually within a day, and you get a notification with the answer. Once approved, you can post straight away.',
+    category: 'vibes',
+  },
+  {
+    id: 'v5',
+    question: 'How do I report a video?',
+    answer:
+      'Tap Report on the video in the Vibes feed and choose a reason. Reports are private, and the video disappears from your feed straight away. Our team reviews every report, usually within a day, and removes anything that breaks our Community Guidelines.',
     category: 'vibes',
   },
   {
@@ -177,7 +184,7 @@ export const faqs: Faq[] = [
   },
   {
     id: 'v4',
-    question: 'What will the video limits be?',
+    question: 'What are the video limits?',
     answer:
       'Up to 90 seconds and under 60MB. Portrait videos look best, since the feed is full screen.',
     category: 'vibes',

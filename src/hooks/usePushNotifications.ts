@@ -42,17 +42,34 @@ export function usePushNotifications() {
 
   /* ---- Handle taps ---- */
   useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const data = response.notification.request.content.data as any;
+    const open = (response: Notifications.NotificationResponse) => {
+      const data = response.notification.request.content.data as any;
 
+      if (data?.type === 'status') {
         // Anything about a request takes them to their requests list
-        if (data?.type === 'status') {
-          navigation.navigate('Main', { screen: 'My Requests' });
-        }
+        navigation.navigate('Main', { screen: 'My Requests' });
+      } else if (data?.type === 'vibes') {
+        // A posting decision — that screen shows approved or declined
+        navigation.navigate('AddReel');
       }
-    );
+    };
 
-    return () => subscription.remove();
+    // A tap that launched the app from closed arrives before any
+    // listener exists, so read it once on start, then forget it so
+    // a later remount doesn't route there again
+    const launch = Notifications.getLastNotificationResponse();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (launch) {
+      timer = setTimeout(() => open(launch), 300);
+      Notifications.clearLastNotificationResponse();
+    }
+
+    const subscription =
+      Notifications.addNotificationResponseReceivedListener(open);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      subscription.remove();
+    };
   }, [navigation]);
 }

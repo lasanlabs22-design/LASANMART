@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
@@ -184,6 +185,8 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
 
   return (
     <View style={styles.root}>
+      {/* Shown before navigation exists, so a plain StatusBar */}
+      <StatusBar style="light" />
       {SLIDES.map((s, i) => (
         <Animated.View
           key={s.key}

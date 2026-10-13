@@ -6,9 +6,11 @@ import React, {
   ReactNode,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system/legacy';
 import { signOutGoogle } from '../lib/googleAuth';
 import { signOutPhone, hasVerifiedPhone } from '../lib/phoneAuth';
 import { unregisterPushToken } from '../api/client';
+import { clearHidden } from '../lib/hiddenVibes';
 
 export type LoginMethod = 'google' | 'apple' | 'phone' | 'skip' | null;
 
@@ -66,6 +68,38 @@ type AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/**
+ * Quotations (client names and numbers), the downloaded company logo
+ * and anything picked from the gallery all sit in the cache — left
+ * behind, the next person to sign in on this phone could find them.
+ * Best effort: a file that won't delete never blocks a logout.
+ */
+async function clearPersonalCache() {
+  const cache = FileSystem.cacheDirectory;
+  if (!cache) return;
+
+  try {
+    const entries = await FileSystem.readDirectoryAsync(cache);
+    const personal = entries.filter(
+      (name) =>
+        name.endsWith('.pdf') ||
+        name === 'quote-logo' ||
+        name === 'Print' ||
+        name === 'ImagePicker'
+    );
+
+    await Promise.all(
+      personal.map((name) =>
+        FileSystem.deleteAsync(`${cache}${name}`, { idempotent: true }).catch(
+          () => {}
+        )
+      )
+    );
+  } catch {
+    // Nothing worth surfacing
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [loginMethod, setLoginMethodState] = useState<LoginMethod>(null);
@@ -143,6 +177,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       KEYS.loginMethod,
       KEYS.profileSaved,
     ]).catch(() => {});
+
+    clearPersonalCache();
+    clearHidden();
   };
 
   /* The three fields the backend requires, plus a verified number */

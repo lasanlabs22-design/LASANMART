@@ -117,7 +117,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#4C1D95',
     borderRadius: 18,
-    height: CARD_HEIGHT,
+    // A floor, not a fixed size: on narrow phones or with large text
+    // the subtitle wraps, and the card grows instead of cutting it off
+    minHeight: CARD_HEIGHT,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     overflow: 'hidden',
   },

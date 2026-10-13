@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type Props = {
   onSearchPress?: () => void;
@@ -36,8 +37,23 @@ export default function HomeHeader({
   const [modalVisible, setModalVisible] = useState(false);
   const [isDetecting, setIsDetecting] = useState(true);
 
+  /* Only look the city up on our own if they've already said yes.
+     Otherwise the first thing a new user sees is a location prompt
+     with no reason given — they ask from the city picker instead. */
   useEffect(() => {
-    detectLocation();
+    Location.getForegroundPermissionsAsync()
+      .then(({ status }) => {
+        if (status === 'granted') {
+          detectLocation();
+        } else {
+          setSelectedCity('Select City');
+          setIsDetecting(false);
+        }
+      })
+      .catch(() => {
+        setSelectedCity('Select City');
+        setIsDetecting(false);
+      });
   }, []);
 
   const detectLocation = async () => {
@@ -92,7 +108,11 @@ export default function HomeHeader({
         ) : (
           <Ionicons name="location-sharp" size={16} color={colors.primary} />
         )}
-        <Text style={styles.locationText} numberOfLines={1}>
+        <Text
+          style={styles.locationText}
+          numberOfLines={1}
+          maxFontSizeMultiplier={1.1}
+        >
           {selectedCity}
         </Text>
         {!isDetecting && (
@@ -127,7 +147,12 @@ export default function HomeHeader({
         )}
       </TouchableOpacity>
 
-      <Modal visible={modalVisible} transparent animationType="slide">
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
@@ -190,12 +215,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 10,
     height: 42,
-    maxWidth: 110,
+    maxWidth: 132,
     gap: 3,
   },
   locationText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.body,
     color: colors.textDark,
     flexShrink: 1,
   },
@@ -211,6 +236,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    fontFamily: fonts.body,
     fontSize: 14,
     color: colors.textDark,
     padding: 0,
@@ -239,7 +265,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 9.5,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: colors.white,
   },
   modalOverlay: {
@@ -264,7 +290,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.displayMedium,
     color: colors.textDark,
   },
   detectRow: {
@@ -275,11 +301,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: '#FFF1EA',
+    backgroundColor: colors.primarySoft,
   },
   detectText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.bodyBold,
     color: colors.primary,
   },
   cityRow: {
@@ -293,6 +319,7 @@ const styles = StyleSheet.create({
   },
   cityText: {
     flex: 1,
+    fontFamily: fonts.body,
     fontSize: 14,
     color: colors.textDark,
   },

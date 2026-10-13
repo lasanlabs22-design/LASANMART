@@ -254,6 +254,7 @@ export default function AddReelScreen({ navigation }: any) {
   const [busy, setBusy] = useState(false);
   const [focused, setFocused] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const { canPost, requested, declined, loading, refresh } = useVibesAccess();
   const [asking, setAsking] = useState(false);
@@ -266,14 +267,18 @@ export default function AddReelScreen({ navigation }: any) {
   });
 
   const pickVideo = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    // Android's system picker needs no permission. iOS still wants
+    // library access to hand over the original video file.
+    if (Platform.OS === 'ios') {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!permission.granted) {
-      Alert.alert(
-        'Permission needed',
-        'Allow access to your videos so you can pick one to post.'
-      );
-      return;
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission needed',
+          'Allow access to your videos so you can pick one to post.'
+        );
+        return;
+      }
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -548,11 +553,45 @@ export default function AddReelScreen({ navigation }: any) {
               </View>
             )}
 
+            {/* Play requires people accept the rules before sharing */}
+            {!busy && (
+              <View style={styles.agreeBlock}>
+                <TouchableOpacity
+                  style={styles.agreeRow}
+                  onPress={() => setAgreed((v) => !v)}
+                  activeOpacity={0.8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: agreed }}
+                >
+                  <MaterialCommunityIcons
+                    name={agreed ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                    size={22}
+                    color={agreed ? colors.primary : colors.textLight}
+                  />
+                  <Text style={styles.agreeText}>
+                    I agree to the Community Guidelines and confirm this video
+                    is mine to share.
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.agreeLinkButton}
+                  hitSlop={8}
+                  onPress={() => navigation.navigate('CommunityGuidelines')}
+                >
+                  <Text style={styles.agreeLink}>Read the guidelines</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <TouchableOpacity
-              style={[styles.postButton, busy && styles.postDisabled]}
+              style={[
+                styles.postButton,
+                (busy || !agreed) && styles.postDisabled,
+              ]}
               activeOpacity={0.9}
               onPress={handlePost}
-              disabled={busy}
+              disabled={busy || !agreed}
             >
               {busy ? (
                 <ActivityIndicator color={colors.white} />
@@ -935,4 +974,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.white,
   },
+
+  agreeBlock: { marginBottom: 12 },
+  agreeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  agreeText: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.textLight,
+  },
+  agreeLinkButton: { marginLeft: 32, marginTop: 4, alignSelf: 'flex-start' },
+  agreeLink: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: colors.primary },
 });

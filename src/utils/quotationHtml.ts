@@ -118,13 +118,13 @@ export function buildQuotationHtml(
   .title-row {
     margin-top: 26px;
     padding: 14px 16px;
-    background: #FFF1EA;
+    background: #F0E9F9;
     border-radius: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  .title { font-size: 19px; font-weight: 800; color: #F2542D; letter-spacing: -0.4px; }
+  .title { font-size: 19px; font-weight: 800; color: #5F259F; letter-spacing: -0.4px; }
   .qno { font-size: 11px; color: #767676; text-align: right; line-height: 1.6; }
 
   .parties { display: flex; gap: 28px; margin-top: 22px; }

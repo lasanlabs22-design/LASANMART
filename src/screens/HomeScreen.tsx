@@ -20,6 +20,7 @@ import {
 } from '../data/homeCategories';
 import { plans } from '../data/plans';
 import { events } from '../lib/analytics';
+import { withoutHidden } from '../lib/hiddenVibes';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -43,8 +44,10 @@ export default function HomeScreen() {
         setUnread(0);
       }
 
-      // A failure here just leaves whatever was already on screen
+      // A failure here just leaves whatever was already on screen.
+      // Reels they've reported or hidden stay out of the row too.
       fetchReels()
+        .then(withoutHidden)
         .then(setReels)
         .catch(() => {});
     }, [hasContactDetails])
@@ -103,7 +106,11 @@ export default function HomeScreen() {
         onNotificationsPress={openNotifications}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* Bottom room so the last card clears the raised centre button */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 44 }}
+      >
         <PlansCarousel data={plans} onPlanPress={openPlanEnquiry} />
 
         <BusinessIdeasBanner onPress={openBusinessIdeas} />

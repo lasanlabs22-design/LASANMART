@@ -28,6 +28,7 @@ import {
 } from '../lib/phoneAuth';
 import { fetchMyContact } from '../api/client';
 import { events } from '../lib/analytics';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
 
 const RESEND_SECONDS = 45;
 const CODE_LENGTH = 6;
@@ -170,8 +171,9 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.root}>
+      <FocusAwareStatusBar style="light" />
       <LinearGradient
-        colors={['#0B0D1A', '#141830', '#0B0D1A']}
+        colors={['#120823', '#241041', '#120823']}
         style={StyleSheet.absoluteFill}
       />
 
@@ -207,7 +209,7 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
                   <MaterialCommunityIcons
                     name="cellphone-message"
                     size={26}
-                    color="#FF8A3D"
+                    color="#F2B705"
                   />
                 </View>
 
@@ -257,7 +259,7 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
                   <LinearGradient
                     colors={
                       phoneValid && !busy
-                        ? ['#FF8A3D', '#F2542D']
+                        ? ['#FFD24A', '#F2B705']
                         : ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)']
                     }
                     start={{ x: 0, y: 0 }}
@@ -288,18 +290,21 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
                   <MaterialCommunityIcons
                     name="message-text-lock-outline"
                     size={26}
-                    color="#FF8A3D"
+                    color="#F2B705"
                   />
                 </View>
 
                 <Text style={styles.title}>Enter the code</Text>
-                <Text style={styles.subtitle}>
-                  Sent to <Text style={styles.phoneEcho}>+91 {phone}</Text>
-                  {'  '}
-                  <Text style={styles.changeLink} onPress={goBackToPhone}>
-                    Change
+                {/* A real button — a tappable word inside a Text
+                    doesn't fire on some Android phones */}
+                <View style={styles.sentRow}>
+                  <Text style={[styles.subtitle, { marginBottom: 0 }]}>
+                    Sent to <Text style={styles.phoneEcho}>+91 {phone}</Text>
                   </Text>
-                </Text>
+                  <TouchableOpacity onPress={goBackToPhone} hitSlop={10}>
+                    <Text style={styles.changeLink}>Change</Text>
+                  </TouchableOpacity>
+                </View>
 
                 {/* Six boxes, backed by one hidden input */}
                 <TouchableOpacity
@@ -351,7 +356,7 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
                   <LinearGradient
                     colors={
                       codeValid && !busy
-                        ? ['#FF8A3D', '#F2542D']
+                        ? ['#FFD24A', '#F2B705']
                         : ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)']
                     }
                     start={{ x: 0, y: 0 }}
@@ -387,7 +392,7 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
                     <MaterialCommunityIcons
                       name="refresh"
                       size={15}
-                      color="#FF8A3D"
+                      color="#F2B705"
                     />
                     <Text style={styles.resendText}>Send a new code</Text>
                   </TouchableOpacity>
@@ -402,7 +407,7 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0B0D1A' },
+  root: { flex: 1, backgroundColor: '#120823' },
 
   glow: {
     position: 'absolute',
@@ -411,8 +416,8 @@ const styles = StyleSheet.create({
     width: 340,
     height: 340,
     borderRadius: 170,
-    backgroundColor: '#FF6B35',
-    opacity: 0.16,
+    backgroundColor: '#8B5CF6',
+    opacity: 0.18,
   },
 
   header: { paddingHorizontal: 14, paddingVertical: 10 },
@@ -431,7 +436,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,107,53,0.16)',
+    backgroundColor: 'rgba(242,183,5,0.14)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 22,
@@ -457,7 +462,15 @@ const styles = StyleSheet.create({
   },
   changeLink: {
     fontFamily: fonts.bodyBold,
-    color: '#FF8A3D',
+    fontSize: 14,
+    color: '#F2B705',
+  },
+  sentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    columnGap: 10,
+    marginBottom: 30,
   },
 
   /* Phone step */
@@ -509,10 +522,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   boxFilled: {
-    borderColor: 'rgba(255,138,61,0.7)',
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    borderColor: 'rgba(242,183,5,0.7)',
+    backgroundColor: 'rgba(242,183,5,0.1)',
   },
-  boxActive: { borderColor: '#FF8A3D' },
+  boxActive: { borderColor: '#F2B705' },
   boxText: {
     fontFamily: fonts.display,
     fontSize: 24,
@@ -540,10 +553,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  // Dark on gold, the same as the login screen's main button
   buttonText: {
     fontFamily: fonts.bodyBold,
     fontSize: 16,
-    color: '#fff',
+    color: '#120823',
   },
 
   legal: {
@@ -572,6 +586,6 @@ const styles = StyleSheet.create({
   resendText: {
     fontFamily: fonts.bodyBold,
     fontSize: 14,
-    color: '#FF8A3D',
+    color: '#F2B705',
   },
 });

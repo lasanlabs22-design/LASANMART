@@ -29,8 +29,18 @@ import {
   deleteReel,
   ApiReel,
 } from '../api/client';
+import ReportReelSheet from '../components/ReportReelSheet';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
+import { withoutHidden, creatorKey } from '../lib/hiddenVibes';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+
+/** Icons are text glyphs, so a text shadow lifts them off light video */
+const actionShadow = {
+  textShadowColor: 'rgba(0,0,0,0.55)',
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 4,
+};
 
 export default function LasanVibesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -50,21 +60,42 @@ export default function LasanVibesScreen({ navigation }: any) {
    */
   const [pageHeight, setPageHeight] = useState(SCREEN_HEIGHT);
 
+  /** The reel whose report sheet is open */
+  const [reporting, setReporting] = useState<ApiReel | null>(null);
+
+  /** After the first load, coming back to the tab refreshes quietly
+      instead of blanking the feed behind a spinner */
+  const loadedOnce = useRef(false);
+
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-
-    setError(null);
+    else if (!loadedOnce.current) setLoading(true);
 
     try {
       const data = await fetchReels();
-      setReels(data);
+      setReels(await withoutHidden(data));
+      setError(null);
+      loadedOnce.current = true;
     } catch (err: any) {
-      setError(err?.message || 'Could not load reels.');
+      // A failed quiet refresh keeps what's already on screen
+      if (!loadedOnce.current || isRefresh) {
+        setError(err?.message || 'Could not load reels.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
+  }, []);
+
+  /** A reported reel leaves the feed now — and its creator, if asked */
+  const handleReported = useCallback((reel: ApiReel, hidCreator: boolean) => {
+    setReporting(null);
+    const key = creatorKey(reel);
+    setReels((prev) =>
+      prev.filter(
+        (r) => r.id !== reel.id && !(hidCreator && key && creatorKey(r) === key)
+      )
+    );
   }, []);
 
   // Reload whenever the tab is opened, so new reels appear
@@ -101,12 +132,20 @@ export default function LasanVibesScreen({ navigation }: any) {
       <ReelItem
         reel={item}
         height={pageHeight}
-        isActive={isFocused && index === activeIndex}
+        isActive={isFocused && index === activeIndex && !reporting}
         onDeleted={handleDeleted}
         onCaptionChanged={handleCaptionChanged}
+        onReport={setReporting}
       />
     ),
-    [activeIndex, isFocused, pageHeight, handleDeleted, handleCaptionChanged]
+    [
+      activeIndex,
+      isFocused,
+      pageHeight,
+      reporting,
+      handleDeleted,
+      handleCaptionChanged,
+    ]
   );
 
   /* ---------- States ---------- */
@@ -114,6 +153,7 @@ export default function LasanVibesScreen({ navigation }: any) {
   if (loading) {
     return (
       <View style={styles.centre}>
+        <FocusAwareStatusBar style="light" />
         <ActivityIndicator color={colors.white} />
       </View>
     );
@@ -122,6 +162,7 @@ export default function LasanVibesScreen({ navigation }: any) {
   if (error || reels.length === 0) {
     return (
       <View style={[styles.centre, { paddingHorizontal: 40 }]}>
+        <FocusAwareStatusBar style="light" />
         <View style={styles.emptyIcon}>
           <MaterialCommunityIcons
             name={error ? 'wifi-off' : 'video-off-outline'}
@@ -160,6 +201,7 @@ export default function LasanVibesScreen({ navigation }: any) {
       style={styles.container}
       onLayout={(e) => setPageHeight(e.nativeEvent.layout.height)}
     >
+      <FocusAwareStatusBar style="light" />
       <FlatList
         data={reels}
         keyExtractor={(item) => item.id}
@@ -209,6 +251,12 @@ export default function LasanVibesScreen({ navigation }: any) {
           color={colors.white}
         />
       </TouchableOpacity>
+
+      <ReportReelSheet
+        reel={reporting}
+        onClose={() => setReporting(null)}
+        onReported={handleReported}
+      />
     </View>
   );
 }
@@ -221,12 +269,14 @@ function ReelItem({
   isActive,
   onDeleted,
   onCaptionChanged,
+  onReport,
 }: {
   reel: ApiReel;
   height: number;
   isActive: boolean;
   onDeleted: (id: string) => void;
   onCaptionChanged: (id: string, caption: string) => void;
+  onReport: (reel: ApiReel) => void;
 }) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
@@ -403,6 +453,7 @@ function ReelItem({
         >
           <MaterialCommunityIcons
             name={liked ? 'heart' : 'heart-outline'}
+            style={styles.actionIcon}
             size={32}
             color={liked ? colors.primary : colors.white}
           />
@@ -414,11 +465,29 @@ function ReelItem({
         <View style={styles.action}>
           <MaterialCommunityIcons
             name="eye-outline"
+            style={styles.actionIcon}
             size={26}
             color="rgba(255,255,255,0.85)"
           />
           <Text style={styles.actionLabel}>{reel.view_count}</Text>
         </View>
+
+        {!reel.is_mine && (
+          <TouchableOpacity
+            style={styles.action}
+            onPress={() => onReport(reel)}
+            activeOpacity={0.7}
+            accessibilityLabel="Report this video"
+          >
+            <MaterialCommunityIcons
+              name="flag-outline"
+              style={styles.actionIcon}
+              size={26}
+              color={colors.white}
+            />
+            <Text style={styles.actionLabel}>Report</Text>
+          </TouchableOpacity>
+        )}
 
         {reel.is_mine && (
           <>
@@ -429,6 +498,7 @@ function ReelItem({
             >
               <MaterialCommunityIcons
                 name="pencil-outline"
+                style={styles.actionIcon}
                 size={27}
                 color={colors.white}
               />
@@ -442,6 +512,7 @@ function ReelItem({
             >
               <MaterialCommunityIcons
                 name="trash-can-outline"
+                style={styles.actionIcon}
                 size={27}
                 color="#FF6B6B"
               />
@@ -497,7 +568,12 @@ function ReelItem({
       </View>
 
       {/* Caption editor */}
-      <Modal visible={editing} transparent animationType="slide">
+      <Modal
+        visible={editing}
+        transparent
+        animationType="slide"
+        onRequestClose={() => !saving && setEditing(false)}
+      >
         <KeyboardAvoidingView
           style={styles.editOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -690,11 +766,14 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   action: { alignItems: 'center', gap: 4, minWidth: 46 },
+  // A soft shadow keeps white labels readable on bright frames
   actionLabel: {
     fontFamily: fonts.bodyBold,
     fontSize: 11,
     color: 'rgba(255,255,255,0.9)',
+    ...actionShadow,
   },
+  actionIcon: actionShadow,
 
   bottomRow: {
     position: 'absolute',

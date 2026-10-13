@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { View, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import {
   BricolageGrotesque_600SemiBold,
@@ -54,6 +55,9 @@ function AppGate({ fontsLoaded }: { fontsLoaded: boolean }) {
 
   return (
     <View style={{ flex: 1 }} onLayout={onLayout}>
+      {/* Dark icons for the light screens; the dark ones override this
+          while they're in view (FocusAwareStatusBar) */}
+      <StatusBar style="dark" />
       <ErrorBoundary>
         <AppNavigator />
       </ErrorBoundary>

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 import Shimmer from './Shimmer';
 
 type Props = {
@@ -104,7 +105,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#7B2FF7',
     borderRadius: 14,
-    height: CARD_HEIGHT,
+    // A floor, not a fixed size: on narrow phones or with large text
+    // the subtitle wraps, and the card grows instead of cutting it off
+    minHeight: CARD_HEIGHT,
+    paddingVertical: 12,
     paddingHorizontal: 14,
     overflow: 'hidden',
   },
@@ -121,12 +125,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
-    fontWeight: '700',
     color: colors.white,
     marginBottom: 2,
   },
   subtitle: {
+    fontFamily: fonts.body,
     fontSize: 12,
     color: 'rgba(255,255,255,0.85)',
   },
