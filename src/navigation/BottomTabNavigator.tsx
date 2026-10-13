@@ -38,7 +38,10 @@ export default function BottomTabNavigator({ navigation }: any) {
           paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
           paddingTop: 6,
         },
-        tabBarLabelStyle: { fontSize: 10, fontFamily: fonts.bodyBold },
+        // Five fixed-width slots: the medium weight, held at its design
+        // size, keeps "My Requests" whole even with large system text
+        tabBarLabelStyle: { fontSize: 10, fontFamily: fonts.body },
+        tabBarAllowFontScaling: false,
         tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
 

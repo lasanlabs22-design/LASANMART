@@ -108,7 +108,11 @@ export default function HomeHeader({
         ) : (
           <Ionicons name="location-sharp" size={16} color={colors.primary} />
         )}
-        <Text style={styles.locationText} numberOfLines={1}>
+        <Text
+          style={styles.locationText}
+          numberOfLines={1}
+          maxFontSizeMultiplier={1.1}
+        >
           {selectedCity}
         </Text>
         {!isDetecting && (
@@ -211,12 +215,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 10,
     height: 42,
-    maxWidth: 110,
+    maxWidth: 132,
     gap: 3,
   },
   locationText: {
     fontSize: 12,
-    fontFamily: fonts.bodyBold,
+    fontFamily: fonts.body,
     color: colors.textDark,
     flexShrink: 1,
   },
