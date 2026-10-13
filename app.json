@@ -26,7 +26,7 @@
       },
       "adaptiveIcon": {
         "backgroundColor": "#0B0D1A",
-        "foregroundImage": "./assets/lasan-icon.png"
+        "foregroundImage": "./assets/adaptive-icon-foreground.png"
       },
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
