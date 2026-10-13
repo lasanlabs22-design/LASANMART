@@ -40,10 +40,29 @@ export function usePushNotifications() {
     })();
   }, [hasContactDetails]);
 
-  /* ---- Handle taps ---- */
+  /* ---- Handle taps ----
+     The hook covers both cases: a tap while the app is running, and
+     the tap that launched it from closed. Reading the launch tap once
+     at startup doesn't work — Android hands it over a moment after the
+     JavaScript starts, so it came back empty (seen on device in Hub). */
+  const lastResponse = Notifications.useLastNotificationResponse();
+  const handled = useRef<string | null>(null);
+
   useEffect(() => {
-    const open = (response: Notifications.NotificationResponse) => {
-      const data = response.notification.request.content.data as any;
+    if (!lastResponse) return;
+    if (lastResponse.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) {
+      return;
+    }
+
+    const id = lastResponse.notification.request.identifier;
+    if (handled.current === id) return;
+
+    const data = lastResponse.notification.request.content.data as any;
+
+    // A beat for the stack to finish mounting on a cold start. Marked
+    // handled only once it runs, so a re-render can't swallow the tap.
+    const timer = setTimeout(() => {
+      handled.current = id;
 
       if (data?.type === 'status') {
         // Anything about a request takes them to their requests list
@@ -52,24 +71,11 @@ export function usePushNotifications() {
         // A posting decision — that screen shows approved or declined
         navigation.navigate('AddReel');
       }
-    };
 
-    // A tap that launched the app from closed arrives before any
-    // listener exists, so read it once on start, then forget it so
-    // a later remount doesn't route there again
-    const launch = Notifications.getLastNotificationResponse();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (launch) {
-      timer = setTimeout(() => open(launch), 300);
-      Notifications.clearLastNotificationResponse();
-    }
+      // So a later remount doesn't route there again
+      Notifications.clearLastNotificationResponseAsync().catch(() => {});
+    }, 300);
 
-    const subscription =
-      Notifications.addNotificationResponseReceivedListener(open);
-
-    return () => {
-      if (timer) clearTimeout(timer);
-      subscription.remove();
-    };
-  }, [navigation]);
+    return () => clearTimeout(timer);
+  }, [lastResponse, navigation]);
 }
