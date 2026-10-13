@@ -14,10 +14,9 @@ const API_URL = 'https://lasanmartapihono-production.up.railway.app';
 /** How long to wait before giving up on a request */
 const TIMEOUT_MS = 15000;
 
-/* Cloudinary — the app uploads videos straight there, then tells our
-   backend the URL. The file never passes through our server. */
-const CLOUDINARY_CLOUD = 'tpd2optn';
-const CLOUDINARY_PRESET = 'lasan_reels';
+/* Cloudinary — the app uploads straight there with a signature from
+   our backend, then tells the backend the URL. The file never passes
+   through our server, and nothing unsigned is accepted. */
 
 /* ---------------- Types ---------------- */
 
@@ -482,14 +481,11 @@ type UploadSignature = {
 /**
  * Asks our backend to sign an upload, so only people it approves can
  * put files in our Cloudinary — reels need Vibes access.
- *
- * Returns null only when this backend doesn't offer signing yet (an
- * older deploy), so the upload can fall back to the open preset.
  * A refusal is thrown, never quietly worked around.
  */
 async function getUploadSignature(
   kind: 'reel' | 'photo'
-): Promise<UploadSignature | null> {
+): Promise<UploadSignature> {
   let res: Response;
 
   try {
@@ -502,8 +498,6 @@ async function getUploadSignature(
     throw new ApiError("Couldn't reach our servers.", true);
   }
 
-  if (res.status === 404) return null;
-
   const data = await res.json().catch(() => null);
 
   if (!res.ok || !data?.signature) {
@@ -513,16 +507,12 @@ async function getUploadSignature(
   return data as UploadSignature;
 }
 
-/** Signed fields when we have them, the open preset when we don't */
-function addUploadAuth(form: FormData, sig: UploadSignature | null) {
-  if (sig) {
-    form.append('api_key', sig.apiKey);
-    form.append('timestamp', sig.timestamp);
-    form.append('folder', sig.folder);
-    form.append('signature', sig.signature);
-  } else {
-    form.append('upload_preset', CLOUDINARY_PRESET);
-  }
+/** The signed fields Cloudinary checks before accepting a file */
+function addUploadAuth(form: FormData, sig: UploadSignature) {
+  form.append('api_key', sig.apiKey);
+  form.append('timestamp', sig.timestamp);
+  form.append('folder', sig.folder);
+  form.append('signature', sig.signature);
 }
 
 /**
@@ -535,7 +525,7 @@ export async function uploadVideo(
   onProgress?: (percent: number) => void
 ): Promise<UploadResult> {
   const sig = await getUploadSignature('reel');
-  const cloud = sig?.cloudName || CLOUDINARY_CLOUD;
+  const cloud = sig.cloudName;
 
   return new Promise((resolve, reject) => {
     const form = new FormData();
@@ -676,7 +666,7 @@ export async function uploadPhoto(uri: string): Promise<string> {
   if (uri.startsWith('http')) return uri;
 
   const sig = await getUploadSignature('photo');
-  const cloud = sig?.cloudName || CLOUDINARY_CLOUD;
+  const cloud = sig.cloudName;
 
   return new Promise((resolve, reject) => {
     const form = new FormData();
