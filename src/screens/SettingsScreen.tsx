@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  Linking,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -18,6 +19,7 @@ import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { deleteAccount, ApiError } from '../api/client';
 import { hasVerifiedPhone } from '../lib/phoneAuth';
+import { PRIVACY_POLICY_URL } from '../data/communityGuidelines';
 
 export default function SettingsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -120,9 +122,16 @@ export default function SettingsScreen({ navigation }: any) {
 
         <Row
           icon="shield-check-outline"
-          label="Privacy"
-          sublabel="Your details are used only to contact you about your requests"
-          showChevron={false}
+          label="Privacy Policy"
+          sublabel="What we collect, why, and how to delete it"
+          onPress={() => Linking.openURL(PRIVACY_POLICY_URL).catch(() => {})}
+        />
+
+        <Row
+          icon="account-group-outline"
+          label="Community Guidelines"
+          sublabel="The rules for posting on Lasan Vibes"
+          onPress={() => navigation.navigate('CommunityGuidelines')}
         />
 
         {/* Account */}

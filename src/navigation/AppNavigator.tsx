@@ -26,6 +26,7 @@ import PhoneAuthScreen from '../screens/PhoneAuthScreen';
 import FreelancerRequestScreen from '../screens/FreelancerRequestScreen';
 import OnBoardingScreen from '../screens/OnBoardingScreen';
 import InfluencerProfileScreen from '../screens/InfluencerProfileScreen';
+import CommunityGuidelinesScreen from '../screens/CommunityGuidelinesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -162,6 +163,10 @@ function RootStack({ initialRoute }: { initialRoute: string }) {
       {/* Account flows */}
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Help" component={HelpScreen} />
+      <Stack.Screen
+        name="CommunityGuidelines"
+        component={CommunityGuidelinesScreen}
+      />
     </Stack.Navigator>
   );
 }

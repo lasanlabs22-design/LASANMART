@@ -9,6 +9,7 @@ import {
   Dimensions,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,6 +17,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { signInWithGoogle } from '../lib/googleAuth';
 import { events } from '../lib/analytics';
+import { PRIVACY_POLICY_URL } from '../data/communityGuidelines';
 
 const { width: W } = Dimensions.get('window');
 
@@ -328,7 +330,20 @@ export default function LoginScreen({ navigation }: Props) {
           </TouchableOpacity>
 
           <Text style={styles.legal}>
-            By continuing you agree to our Terms & Privacy Policy
+            By continuing you agree to our{' '}
+            <Text
+              style={styles.legalLink}
+              onPress={() => Linking.openURL(PRIVACY_POLICY_URL).catch(() => {})}
+            >
+              Privacy Policy
+            </Text>{' '}
+            and{' '}
+            <Text
+              style={styles.legalLink}
+              onPress={() => navigation.navigate('CommunityGuidelines')}
+            >
+              Community Guidelines
+            </Text>
           </Text>
         </Animated.View>
       </SafeAreaView>
@@ -528,4 +543,5 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     paddingBottom: 8,
   },
+  legalLink: { color: ink.muted, textDecorationLine: 'underline' },
 });

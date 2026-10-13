@@ -254,6 +254,7 @@ export default function AddReelScreen({ navigation }: any) {
   const [busy, setBusy] = useState(false);
   const [focused, setFocused] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const { canPost, requested, declined, loading, refresh } = useVibesAccess();
   const [asking, setAsking] = useState(false);
@@ -552,11 +553,42 @@ export default function AddReelScreen({ navigation }: any) {
               </View>
             )}
 
+            {/* Play requires people accept the rules before sharing */}
+            {!busy && (
+              <View style={styles.agreeRow}>
+                <TouchableOpacity
+                  onPress={() => setAgreed((v) => !v)}
+                  hitSlop={8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: agreed }}
+                >
+                  <MaterialCommunityIcons
+                    name={agreed ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                    size={22}
+                    color={agreed ? colors.primary : colors.textLight}
+                  />
+                </TouchableOpacity>
+                <Text style={styles.agreeText}>
+                  I agree to the{' '}
+                  <Text
+                    style={styles.agreeLink}
+                    onPress={() => navigation.navigate('CommunityGuidelines')}
+                  >
+                    Community Guidelines
+                  </Text>
+                  {' '}and confirm this video is mine to share.
+                </Text>
+              </View>
+            )}
+
             <TouchableOpacity
-              style={[styles.postButton, busy && styles.postDisabled]}
+              style={[
+                styles.postButton,
+                (busy || !agreed) && styles.postDisabled,
+              ]}
               activeOpacity={0.9}
               onPress={handlePost}
-              disabled={busy}
+              disabled={busy || !agreed}
             >
               {busy ? (
                 <ActivityIndicator color={colors.white} />
@@ -939,4 +971,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.white,
   },
+
+  agreeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 12,
+  },
+  agreeText: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.textLight,
+  },
+  agreeLink: { fontFamily: fonts.bodyBold, color: colors.primary },
 });
