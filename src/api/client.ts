@@ -94,7 +94,16 @@ export type ApiReel = {
   liked_by_me: boolean;
   is_mine: boolean;
   created_at: string;
+  /** Who posted it — null for the team's own reels */
+  contact_id?: string | null;
 };
+
+export type ReportReason =
+  | 'spam'
+  | 'inappropriate'
+  | 'misleading'
+  | 'harassment'
+  | 'other';
 
 export type MyReel = ApiReel & { status: 'live' | 'pending' | 'hidden' };
 
@@ -439,6 +448,33 @@ export async function toggleReelLike(
   }
 
   return { liked: data.liked, likeCount: data.likeCount };
+}
+
+/**
+ * Flags a reel for the team. Works signed out too — anyone who can
+ * watch the feed can report what's in it.
+ */
+export async function reportReel(
+  id: string,
+  reason: ReportReason,
+  details?: string
+): Promise<void> {
+  let res: Response;
+
+  try {
+    res = await fetchWithTimeout(`${API_URL}/reels/${id}/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason, details }),
+    });
+  } catch {
+    throw new ApiError("Couldn't reach our servers.", true);
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(data?.error || 'Could not send your report.');
+  }
 }
 
 /** Edit your own caption */

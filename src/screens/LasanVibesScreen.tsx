@@ -29,6 +29,8 @@ import {
   deleteReel,
   ApiReel,
 } from '../api/client';
+import ReportReelSheet from '../components/ReportReelSheet';
+import { withoutHidden, creatorKey } from '../lib/hiddenVibes';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -50,21 +52,42 @@ export default function LasanVibesScreen({ navigation }: any) {
    */
   const [pageHeight, setPageHeight] = useState(SCREEN_HEIGHT);
 
+  /** The reel whose report sheet is open */
+  const [reporting, setReporting] = useState<ApiReel | null>(null);
+
+  /** After the first load, coming back to the tab refreshes quietly
+      instead of blanking the feed behind a spinner */
+  const loadedOnce = useRef(false);
+
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-
-    setError(null);
+    else if (!loadedOnce.current) setLoading(true);
 
     try {
       const data = await fetchReels();
-      setReels(data);
+      setReels(await withoutHidden(data));
+      setError(null);
+      loadedOnce.current = true;
     } catch (err: any) {
-      setError(err?.message || 'Could not load reels.');
+      // A failed quiet refresh keeps what's already on screen
+      if (!loadedOnce.current || isRefresh) {
+        setError(err?.message || 'Could not load reels.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
+  }, []);
+
+  /** A reported reel leaves the feed now — and its creator, if asked */
+  const handleReported = useCallback((reel: ApiReel, hidCreator: boolean) => {
+    setReporting(null);
+    const key = creatorKey(reel);
+    setReels((prev) =>
+      prev.filter(
+        (r) => r.id !== reel.id && !(hidCreator && key && creatorKey(r) === key)
+      )
+    );
   }, []);
 
   // Reload whenever the tab is opened, so new reels appear
@@ -101,12 +124,20 @@ export default function LasanVibesScreen({ navigation }: any) {
       <ReelItem
         reel={item}
         height={pageHeight}
-        isActive={isFocused && index === activeIndex}
+        isActive={isFocused && index === activeIndex && !reporting}
         onDeleted={handleDeleted}
         onCaptionChanged={handleCaptionChanged}
+        onReport={setReporting}
       />
     ),
-    [activeIndex, isFocused, pageHeight, handleDeleted, handleCaptionChanged]
+    [
+      activeIndex,
+      isFocused,
+      pageHeight,
+      reporting,
+      handleDeleted,
+      handleCaptionChanged,
+    ]
   );
 
   /* ---------- States ---------- */
@@ -209,6 +240,12 @@ export default function LasanVibesScreen({ navigation }: any) {
           color={colors.white}
         />
       </TouchableOpacity>
+
+      <ReportReelSheet
+        reel={reporting}
+        onClose={() => setReporting(null)}
+        onReported={handleReported}
+      />
     </View>
   );
 }
@@ -221,12 +258,14 @@ function ReelItem({
   isActive,
   onDeleted,
   onCaptionChanged,
+  onReport,
 }: {
   reel: ApiReel;
   height: number;
   isActive: boolean;
   onDeleted: (id: string) => void;
   onCaptionChanged: (id: string, caption: string) => void;
+  onReport: (reel: ApiReel) => void;
 }) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
@@ -419,6 +458,22 @@ function ReelItem({
           />
           <Text style={styles.actionLabel}>{reel.view_count}</Text>
         </View>
+
+        {!reel.is_mine && (
+          <TouchableOpacity
+            style={styles.action}
+            onPress={() => onReport(reel)}
+            activeOpacity={0.7}
+            accessibilityLabel="Report this video"
+          >
+            <MaterialCommunityIcons
+              name="flag-outline"
+              size={26}
+              color={colors.white}
+            />
+            <Text style={styles.actionLabel}>Report</Text>
+          </TouchableOpacity>
+        )}
 
         {reel.is_mine && (
           <>

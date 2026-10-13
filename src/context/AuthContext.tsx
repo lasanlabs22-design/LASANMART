@@ -10,6 +10,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { signOutGoogle } from '../lib/googleAuth';
 import { signOutPhone, hasVerifiedPhone } from '../lib/phoneAuth';
 import { unregisterPushToken } from '../api/client';
+import { clearHidden } from '../lib/hiddenVibes';
 
 export type LoginMethod = 'google' | 'apple' | 'phone' | 'skip' | null;
 
@@ -178,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]).catch(() => {});
 
     clearPersonalCache();
+    clearHidden();
   };
 
   /* The three fields the backend requires, plus a verified number */
