@@ -48,7 +48,14 @@ export default function BottomTabNavigator({ navigation }: any) {
         },
         // Five fixed-width slots: the medium weight, held at its design
         // size, keeps "My Requests" whole even with large system text
-        tabBarLabelStyle: { fontSize: 10, fontFamily: fonts.body },
+        // and slim side padding: on a 354dp-wide phone each slot leaves
+        // 60.9dp, and "My Requests" measured 61.2dp — now ~59dp in ~67dp
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontFamily: fonts.body,
+          letterSpacing: -0.2,
+        },
+        tabBarItemStyle: { paddingHorizontal: 2 },
         tabBarAllowFontScaling: false,
         tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
