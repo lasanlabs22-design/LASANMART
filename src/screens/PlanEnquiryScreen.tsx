@@ -73,7 +73,8 @@ export default function PlanEnquiryScreen({ route, navigation }: any) {
 
     submit({
       type: 'plan',
-      title: `${plan.title} Plan — ${plan.price}`,
+      // Plan names already end in "Plan" — "Starter Plan — ₹25,000"
+      title: `${plan.title} — ${plan.price}`,
       description: message.trim() || undefined,
       sector: sector?.label,
       details: {
