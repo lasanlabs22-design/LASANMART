@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,8 +16,6 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
-
-const MIN_DESCRIPTION = 20;
 
 export default function CustomRequirementScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -30,22 +27,14 @@ export default function CustomRequirementScreen({ navigation }: any) {
   const [description, setDescription] = useState('');
   const [focused, setFocused] = useState<string | null>(null);
 
-  const isReady =
-    title.trim().length > 3 && description.trim().length >= MIN_DESCRIPTION;
-
+  /* Both boxes are optional. Someone who can't put their idea into
+     words yet can still ask — that's a call our team makes anyway, and
+     the request arrives with their name and number. */
   const handleSubmit = () => {
-    if (!isReady) {
-      Alert.alert(
-        'Almost there',
-        'Give it a short title and tell us a bit more about what you need.'
-      );
-      return;
-    }
-
     submit({
       type: 'custom',
-      title: title.trim(),
-      description: description.trim(),
+      title: title.trim() || undefined,
+      description: description.trim() || undefined,
     });
   };
 
@@ -94,7 +83,12 @@ export default function CustomRequirementScreen({ navigation }: any) {
           </View>
 
           {/* Title */}
-          <Text style={styles.label}>What do you need?</Text>
+          <Text style={styles.label}>
+            What do you need? <Text style={styles.optional}>(optional)</Text>
+          </Text>
+          <Text style={styles.hint}>
+            Not sure yet? Leave it blank — our team will work it out with you.
+          </Text>
           <View style={[styles.field, focused === 'title' && styles.fieldActive]}>
             <TextInput
               style={styles.input}
@@ -108,17 +102,10 @@ export default function CustomRequirementScreen({ navigation }: any) {
           </View>
 
           {/* Description */}
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>Describe Your Requirement</Text>
-            <Text
-              style={[
-                styles.counter,
-                description.trim().length >= MIN_DESCRIPTION && styles.counterOk,
-              ]}
-            >
-              {description.trim().length}/{MIN_DESCRIPTION}
-            </Text>
-          </View>
+          <Text style={styles.label}>
+            Describe your requirement{' '}
+            <Text style={styles.optional}>(optional)</Text>
+          </Text>
           <View
             style={[
               styles.field,
@@ -155,7 +142,7 @@ export default function CustomRequirementScreen({ navigation }: any) {
           <TouchableOpacity
             style={[
               styles.submitButton,
-              (!isReady || busy) && styles.submitDisabled,
+              busy && styles.submitDisabled,
             ]}
             activeOpacity={0.9}
             onPress={handleSubmit}
@@ -240,11 +227,6 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
 
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   label: {
     fontFamily: fonts.bodyBold,
     fontSize: 13,
@@ -252,13 +234,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 16,
   },
-  counter: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
+  optional: { fontFamily: fonts.body, color: colors.textLight },
+  hint: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 17,
     color: colors.textLight,
-    marginTop: 16,
+    marginTop: -4,
+    marginBottom: 8,
   },
-  counterOk: { color: '#12B3A0' },
 
   field: {
     flexDirection: 'row',
