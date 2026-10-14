@@ -63,14 +63,13 @@ export default function ToolEnquiryScreen({ route, navigation }: any) {
   const [requirement, setRequirement] = useState('');
   const [focused, setFocused] = useState<string | null>(null);
 
-  const isReady = requirement.trim().length >= 15 && !!teamSize && !!timeline;
+  // What they need it to do is optional — the team size and timeline
+  // are quick taps, and the details come out on the call
+  const isReady = !!teamSize && !!timeline;
 
   const handleSubmit = () => {
     if (!isReady) {
-      Alert.alert(
-        'Almost there',
-        'Tell us a bit more about what you need, and pick your team size and timeline.'
-      );
+      Alert.alert('Almost there', 'Pick your team size and timeline.');
       return;
     }
 
@@ -81,7 +80,7 @@ export default function ToolEnquiryScreen({ route, navigation }: any) {
     submit({
       type: 'custom',
       title: `${tool.title} — enquiry`,
-      description: requirement.trim(),
+      description: requirement.trim() || undefined,
       // The email shows this as the heading above their answer,
       // so the question and answer stay together
       descriptionLabel: question.label,
@@ -160,17 +159,12 @@ export default function ToolEnquiryScreen({ route, navigation }: any) {
           </LinearGradient>
 
           {/* Requirement */}
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>{question.label}</Text>
-            <Text
-              style={[
-                styles.counter,
-                requirement.trim().length >= 15 && styles.counterOk,
-              ]}
-            >
-              {requirement.trim().length}/15
-            </Text>
-          </View>
+          <Text style={styles.label}>
+            {question.label} <Text style={styles.optional}>(optional)</Text>
+          </Text>
+          <Text style={styles.hint}>
+            Not sure yet? Leave it blank — our team will work it out with you.
+          </Text>
           <View
             style={[
               styles.field,
@@ -414,27 +408,22 @@ const styles = StyleSheet.create({
   },
 
   /* Form */
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   label: {
     fontFamily: fonts.bodyBold,
     fontSize: 13,
     color: colors.textDark,
     marginTop: 18,
     marginBottom: 8,
-    flex: 1,
-    paddingRight: 10,
   },
-  counter: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
+  optional: { fontFamily: fonts.body, color: colors.textLight },
+  hint: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 17,
     color: colors.textLight,
-    marginTop: 18,
+    marginTop: -4,
+    marginBottom: 8,
   },
-  counterOk: { color: '#12B3A0' },
   groupTitle: {
     fontFamily: fonts.bodyBold,
     fontSize: 11,
