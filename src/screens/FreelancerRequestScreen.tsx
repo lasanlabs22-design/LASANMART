@@ -46,7 +46,9 @@ export default function FreelancerRequestScreen({ navigation }: any) {
   );
 
   const chosen = freelancerServices.filter((s) => picked.includes(s.id));
-  const ready = picked.length > 0 && description.trim().length > 9;
+  // Picking a service is enough — the description is optional, since
+  // plenty of people can't say yet exactly what they want
+  const ready = picked.length > 0;
 
   const toggle = (id: string) => {
     setPicked((prev) =>
@@ -62,7 +64,7 @@ export default function FreelancerRequestScreen({ navigation }: any) {
     submit({
       type: 'custom',
       title: labels.join(', '),
-      description: description.trim(),
+      description: description.trim() || undefined,
       descriptionLabel: 'What they need',
       details: {
         source: 'Freelancers',
@@ -178,7 +180,12 @@ export default function FreelancerRequestScreen({ navigation }: any) {
             </View>
           )}
 
-          <Text style={styles.label}>What do you need?</Text>
+          <Text style={styles.label}>
+            What do you need? <Text style={styles.optional}>(optional)</Text>
+          </Text>
+          <Text style={styles.hint}>
+            Not sure yet? Leave it blank — our team will work it out with you.
+          </Text>
           <View style={[styles.field, focused && styles.fieldActive]}>
             <TextInput
               style={styles.input}
@@ -378,6 +385,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textDark,
     marginTop: 24,
+    marginBottom: 10,
+  },
+  optional: { fontFamily: fonts.body, color: colors.textLight },
+  hint: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textLight,
+    marginTop: -6,
     marginBottom: 10,
   },
 

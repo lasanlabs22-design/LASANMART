@@ -13,10 +13,11 @@ import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
 
-/** PhonePe-style purple — used only in the tab bar. Inactive tabs are
-    grey: the old gold on white was too faint to read (about 2:1). */
+/** PhonePe-style purple for the open tab, brand gold for the rest —
+    used only in the tab bar. The gold is deepened from #E5A800, which
+    was too faint on white (about 2:1); this one is about 5:1. */
 const TAB_ACTIVE = '#5F259F';
-const TAB_INACTIVE = colors.textLight;
+const TAB_INACTIVE = '#8C6A00';
 
 // Never rendered — the tab press is intercepted and opens a modal instead
 function ToolsPlaceholder() {

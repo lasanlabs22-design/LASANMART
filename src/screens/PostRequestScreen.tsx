@@ -54,11 +54,13 @@ export default function PostRequestScreen({ route, navigation }: any) {
   const isOtherSector = sector?.label === 'Other';
   const resolvedSector = isOtherSector ? customSector.trim() : sector?.label ?? '';
 
+  // The description is optional — plenty of people don't know yet what
+  // a campaign should look like, and that's the conversation we have
+  // with them anyway
   const isReady =
     !!service &&
     resolvedSector.length > 1 &&
     title.trim().length > 3 &&
-    description.trim().length >= 20 &&
     !!budget &&
     !!timeline;
 
@@ -66,7 +68,7 @@ export default function PostRequestScreen({ route, navigation }: any) {
     if (!isReady || !service) {
       Alert.alert(
         'Almost there',
-        'Pick a service and your business sector, add a title, describe what you need, and choose a budget and timeline.'
+        'Pick a service and your business sector, add a title, and choose a budget and timeline.'
       );
       return;
     }
@@ -75,7 +77,7 @@ export default function PostRequestScreen({ route, navigation }: any) {
     submit({
       type: 'service',
       title: title.trim(),
-      description: description.trim(),
+      description: description.trim() || undefined,
       sector: resolvedSector,
       city: city.trim() || undefined,
       details: {
@@ -253,17 +255,13 @@ export default function PostRequestScreen({ route, navigation }: any) {
             />
           </View>
 
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>What exactly do you need in service?</Text>
-            <Text
-              style={[
-                styles.counter,
-                description.trim().length >= 20 && styles.counterOk,
-              ]}
-            >
-              {description.trim().length}/20
-            </Text>
-          </View>
+          <Text style={styles.label}>
+            What exactly do you need?{' '}
+            <Text style={styles.optional}>(optional)</Text>
+          </Text>
+          <Text style={styles.hint}>
+            Not sure yet? Leave it blank — our team will work it out with you.
+          </Text>
           <View
             style={[
               styles.field,
@@ -520,11 +518,6 @@ const styles = StyleSheet.create({
   sectorTextActive: { color: colors.white },
   sectorInput: { marginTop: 12 },
 
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   label: {
     fontFamily: fonts.bodyBold,
     fontSize: 13,
@@ -532,13 +525,15 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
-  counter: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
+  optional: { fontFamily: fonts.body, color: colors.textLight },
+  hint: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 17,
     color: colors.textLight,
-    marginTop: 16,
+    marginTop: -4,
+    marginBottom: 8,
   },
-  counterOk: { color: '#12B3A0' },
 
   field: {
     flexDirection: 'row',
