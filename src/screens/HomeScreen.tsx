@@ -8,8 +8,7 @@ import PlansCarousel from '../components/PlansCarousal';
 import CategoryCarousel from '../components/CategoryCarousal';
 import ReelsRow from '../components/ReelsRow';
 import CustomRequirementBanner from '../screens/CustomRequirementBanner';
-import InfluencerBanner from '../components/InfluencerBanner';
-import FreelancerBanner from '../components/FreelancerBanner';
+import HireTalent from '../components/HireTalent';
 import BusinessIdeasBanner from '../components/BusinessIdeasBanner';
 import { useAuth } from '../context/AuthContext';
 import { fetchUnreadCount, fetchReels, ApiReel } from '../api/client';
@@ -111,8 +110,9 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 44 }}
       >
-        <PlansCarousel data={plans} onPlanPress={openPlanEnquiry} />
-
+        {/* Business Ideas leads (a requirement), then catalogue →
+            bundles → social proof → talent → catch-all.
+            Online and Offline Marketing always stay together. */}
         <BusinessIdeasBanner onPress={openBusinessIdeas} />
 
         <CategoryCarousel
@@ -127,12 +127,12 @@ export default function HomeScreen() {
           onItemPress={(item) => openServiceRequest(item, 'offline')}
         />
 
-        <InfluencerBanner onPress={openInfluencerSelection} />
+        {/* Straight after the services they bundle */}
+        <PlansCarousel data={plans} onPlanPress={openPlanEnquiry} />
 
-        <FreelancerBanner onPress={openFreelancers} />
-
-        {/* Hidden entirely when there's nothing to show, rather than
-            an empty row with just the Add tile */}
+        {/* Video breaks up the run of cards. Hidden entirely when
+            there's nothing to show, rather than an empty row with
+            just the Add tile */}
         {reels.length > 0 && (
           <ReelsRow
             data={reels}
@@ -141,6 +141,11 @@ export default function HomeScreen() {
             onAddPress={openAddReel}
           />
         )}
+
+        <HireTalent
+          onInfluencersPress={openInfluencerSelection}
+          onFreelancersPress={openFreelancers}
+        />
 
         <CustomRequirementBanner onPress={openCustomRequirement} />
       </ScrollView>
