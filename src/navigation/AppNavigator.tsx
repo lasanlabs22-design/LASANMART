@@ -25,6 +25,7 @@ import MyReelsScreen from '../screens/MyReelsScreen';
 import PhoneAuthScreen from '../screens/PhoneAuthScreen';
 import FreelancerRequestScreen from '../screens/FreelancerRequestScreen';
 import OnBoardingScreen from '../screens/OnBoardingScreen';
+import PartnerStepScreen from '../screens/PartnerStepScreen';
 import InfluencerProfileScreen from '../screens/InfluencerProfileScreen';
 import CommunityGuidelinesScreen from '../screens/CommunityGuidelinesScreen';
 
@@ -38,6 +39,8 @@ export default function AppNavigator() {
    * someone who hasn't committed hasn't really seen it.
    */
   const [seenIntro, setSeenIntro] = useState(false);
+  /** The optional "are you also a partner?" step, same lifetime as the intro */
+  const [seenPartnerStep, setSeenPartnerStep] = useState(false);
 
   /* Screen tracking. Firebase works out time-on-screen from the gap
      between one screen view and the next, so logging the change is
@@ -48,6 +51,11 @@ export default function AppNavigator() {
   // The pitch, before anything else
   if (!loginMethod && !seenIntro) {
     return <OnBoardingScreen onDone={() => setSeenIntro(true)} />;
+  }
+
+  // Then, before login, point partners at Lasan Hub
+  if (!loginMethod && !seenPartnerStep) {
+    return <PartnerStepScreen onDone={() => setSeenPartnerStep(true)} />;
   }
 
   return (
