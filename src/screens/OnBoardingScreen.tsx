@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
-  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,9 +18,6 @@ import { fonts } from '../theme/typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SLIDE_MS = 4500;
-
-/** Where partners reach us until Lasan Hub is on the store */
-const PARTNER_PHONE = '8309074248';
 
 type Slide = {
   key: string;
@@ -35,8 +31,6 @@ type Slide = {
   /** Deep enough to keep white button text readable */
   button: string;
   points: string[];
-  /** The last slide has a button rather than points alone */
-  action?: 'partner';
 };
 
 const SLIDES: Slide[] = [
@@ -85,23 +79,8 @@ const SLIDES: Slide[] = [
       'Track every request in the app',
     ],
   },
-  {
-    key: 'partner',
-    eyebrow: 'ON THE OTHER SIDE',
-    title: 'Do you provide\nthese services?',
-    body: "There's an app for that too. Creators, vendors and freelancers join our verified network, and we bring them work from businesses who have already paid.",
-    icon: 'handshake-outline',
-    accent: '#F472B6',
-    background: ['#240A20', '#46163D', '#240A20'],
-    button: '#BE185D',
-    points: [
-      'Creators, vendors, freelancers',
-      'Real briefs, already funded',
-      'Free to join',
-    ],
-    action: 'partner',
-  },
 ];
+// Partners are asked on their own step after this (PartnerStepScreen)
 
 export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
   const listRef = useRef<FlatList>(null);
@@ -175,14 +154,6 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
   const isLast = index === SLIDES.length - 1;
   const active = SLIDES[index];
 
-  const callPartners = () => {
-    Linking.openURL(
-      `https://wa.me/91${PARTNER_PHONE}?text=${encodeURIComponent(
-        "Hi Lasan Mart, I'd like to join as a partner."
-      )}`
-    ).catch(() => Linking.openURL(`tel:+91${PARTNER_PHONE}`));
-  };
-
   return (
     <View style={styles.root}>
       {/* Shown before navigation exists, so a plain StatusBar */}
@@ -237,9 +208,7 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
             setIndex(i);
             setPaused(false);
           }}
-          renderItem={({ item }) => (
-            <SlideView slide={item} onPartnerPress={callPartners} />
-          )}
+          renderItem={({ item }) => <SlideView slide={item} />}
         />
 
         {/* Progress dots — the active one stretches and fills */}
@@ -308,13 +277,7 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
 
 /* ---------- One slide ---------- */
 
-function SlideView({
-  slide,
-  onPartnerPress,
-}: {
-  slide: Slide;
-  onPartnerPress: () => void;
-}) {
+function SlideView({ slide }: { slide: Slide }) {
   const rise = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -363,18 +326,6 @@ function SlideView({
             </View>
           ))}
         </View>
-
-        {/* Until Lasan Hub is on the store, partners reach us directly */}
-        {slide.action === 'partner' && (
-          <TouchableOpacity
-            style={styles.partnerButton}
-            activeOpacity={0.85}
-            onPress={onPartnerPress}
-          >
-            <MaterialCommunityIcons name="whatsapp" size={17} color="#25D366" />
-            <Text style={styles.partnerText}>Talk to us about joining</Text>
-          </TouchableOpacity>
-        )}
       </Animated.View>
     </View>
   );
@@ -445,24 +396,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 14.5,
     color: 'rgba(255,255,255,0.82)',
-  },
-
-  partnerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 9,
-    marginTop: 26,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(37,211,102,0.4)',
-    backgroundColor: 'rgba(37,211,102,0.1)',
-  },
-  partnerText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
   },
 
   dots: {
