@@ -63,7 +63,7 @@ export default function CategoryCarousel({ title, data, onItemPress }: Props) {
                 >
                   <MaterialCommunityIcons
                     name={item.icon as any}
-                    size={30}
+                    size={ICON_SIZE}
                     color={item.color}
                   />
                 </View>
@@ -79,7 +79,12 @@ export default function CategoryCarousel({ title, data, onItemPress }: Props) {
   );
 }
 
-const CARD_WIDTH = 88;
+// Label column is wider than the tile: the longest single word,
+// "Optimization", measures 70px in Jakarta Bold 11, so it never splits
+const CARD_WIDTH = 76;
+// Regular app-grid proportions, so 4+ services show per row
+const TILE_SIZE = 60;
+const ICON_SIZE = 26;
 
 const styles = StyleSheet.create({
   section: {
@@ -95,20 +100,20 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    gap: 14,
+    gap: 10,
   },
   column: {
-    gap: 16,
+    gap: 14,
   },
   card: {
     width: CARD_WIDTH,
-    height: CARD_WIDTH + 40,
+    height: TILE_SIZE + 36,
     alignItems: 'center',
   },
   iconTile: {
-    width: CARD_WIDTH,
-    height: CARD_WIDTH,
-    borderRadius: 20,
+    width: TILE_SIZE,
+    height: TILE_SIZE,
+    borderRadius: 18,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',

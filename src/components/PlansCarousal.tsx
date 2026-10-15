@@ -107,43 +107,14 @@ export default function PlansCarousel({ data, onPlanPress }: Props) {
               </View>
               <Text style={styles.planSub}>{item.subtitle}</Text>
 
-              {/* Tier meter — 3 segments, filled to this plan's level */}
-              <View style={styles.meterRow}>
-                {[1, 2, 3].map((n) => (
-                  <View
-                    key={n}
-                    style={[
-                      styles.meterSeg,
-                      n <= item.tier && styles.meterSegFilled,
-                    ]}
-                  />
-                ))}
-                <Text style={styles.meterLabel}>Tier {item.tier}</Text>
-              </View>
-
-              {/* Price block */}
+              {/* Price, with the arrow standing in for a "View details" row */}
               <View style={styles.priceRow}>
                 <Text style={styles.price}>{item.price}</Text>
                 <View style={styles.priceMeta}>
                   <Text style={styles.strike}>{item.strikePrice}</Text>
                   <Text style={styles.duration}>/ {item.duration}</Text>
                 </View>
-              </View>
-
-              {/* Feature chips */}
-              <View style={styles.chipRow}>
-                {item.features.map((f: string) => (
-                  <View key={f} style={styles.chip}>
-                    <Text style={styles.chipText} numberOfLines={1}>
-                      {f}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* CTA */}
-              <View style={styles.ctaRow}>
-                <Text style={styles.ctaText}>View details</Text>
+                <View style={{ flex: 1 }} />
                 <View style={styles.ctaCircle}>
                   <MaterialCommunityIcons
                     name="arrow-right"
@@ -151,6 +122,18 @@ export default function PlansCarousel({ data, onPlanPress }: Props) {
                     color={colors.white}
                   />
                 </View>
+              </View>
+
+              {/* One line of features — the full list is on the enquiry screen */}
+              <View style={styles.featureRow}>
+                <Text style={styles.featureText} numberOfLines={1}>
+                  {item.features.slice(0, 3).join('  ·  ')}
+                </Text>
+                {item.features.length > 3 && (
+                  <Text style={styles.featureMore}>
+                    +{item.features.length - 3} more
+                  </Text>
+                )}
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -171,14 +154,15 @@ export default function PlansCarousel({ data, onPlanPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 18 },
+  // Matches the gap above the category rows it now sits between
+  section: { marginTop: 22 },
 
   listContent: { paddingHorizontal: 16, gap: CARD_SPACING, paddingBottom: 4 },
 
   card: {
     width: CARD_WIDTH,
-    borderRadius: 22,
-    padding: 18,
+    borderRadius: 20,
+    padding: 16,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -234,7 +218,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   planTitle: {
     fontFamily: fonts.display,
-    fontSize: 22,
+    fontSize: 20,
     color: colors.white,
     letterSpacing: -0.6,
   },
@@ -259,40 +243,19 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  meterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 14,
-  },
-  meterSeg: {
-    width: 22,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-  },
-  meterSegFilled: { backgroundColor: 'rgba(255,255,255,0.95)' },
-  meterLabel: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 9,
-    color: 'rgba(255,255,255,0.7)',
-    marginLeft: 4,
-    letterSpacing: 0.3,
-  },
-
   priceRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
-    marginTop: 10,
+    marginTop: 8,
   },
   price: {
     fontFamily: fonts.display,
-    fontSize: 32,
+    fontSize: 26,
     color: colors.white,
-    letterSpacing: -1.2,
+    letterSpacing: -1,
   },
-  priceMeta: { paddingBottom: 6 },
+  priceMeta: { paddingBottom: 4 },
   strike: {
     fontFamily: fonts.body,
     fontSize: 12,
@@ -305,33 +268,32 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
   },
 
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 14 },
-  chip: {
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-  },
-  chipText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 10,
-    color: colors.white,
-  },
-
-  ctaRow: {
+  featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 18,
-    paddingTop: 14,
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.18)',
   },
-  ctaText: {
+  featureText: {
+    flexShrink: 1,
     fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    color: colors.white,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.9)',
   },
+  featureMore: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 10,
+    color: colors.white,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 6,
+    overflow: 'hidden',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+
   ctaCircle: {
     width: 30,
     height: 30,
