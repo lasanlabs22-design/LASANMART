@@ -1,123 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  FlatList,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
+import { useAuth } from '../context/AuthContext';
 
 type Props = {
   onSearchPress?: () => void;
   onNotificationsPress?: () => void;
+  /** Opens the same map picker as My Account → Business Location */
+  onLocationPress?: () => void;
   /** Number of unread notifications — 0 hides the badge */
   unreadCount?: number;
 };
 
-const cities = [
-  'Hyderabad',
-  'Bengaluru',
-  'Chennai',
-  'Tirupati',
-];
+/**
+ * The picker saves "place, street, area, city, PIN" (or whatever they
+ * typed), so the city is the last part that isn't a PIN or the country.
+ */
+function cityFrom(address: string): string {
+  const parts = address
+    .split(',')
+    .map((p) => p.trim())
+    .filter((p) => /[a-z]/i.test(p) && p.toLowerCase() !== 'india');
+  return parts[parts.length - 1] ?? '';
+}
 
 export default function HomeHeader({
   onSearchPress,
   onNotificationsPress,
+  onLocationPress,
   unreadCount = 0,
 }: Props) {
-  const [selectedCity, setSelectedCity] = useState('Detecting...');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [isDetecting, setIsDetecting] = useState(true);
+  const { profile } = useAuth();
 
-  /* Only look the city up on our own if they've already said yes.
-     Otherwise the first thing a new user sees is a location prompt
-     with no reason given — they ask from the city picker instead. */
-  useEffect(() => {
-    Location.getForegroundPermissionsAsync()
-      .then(({ status }) => {
-        if (status === 'granted') {
-          detectLocation();
-        } else {
-          setSelectedCity('Select City');
-          setIsDetecting(false);
-        }
-      })
-      .catch(() => {
-        setSelectedCity('Select City');
-        setIsDetecting(false);
-      });
-  }, []);
-
-  const detectLocation = async () => {
-    setIsDetecting(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status !== 'granted') {
-        setSelectedCity('Select City');
-        setIsDetecting(false);
-        return;
-      }
-
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      const [place] = await Location.reverseGeocodeAsync({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-
-      const cityName = place?.city || place?.subregion || place?.region;
-
-      if (cityName) {
-        setSelectedCity(cityName);
-      } else {
-        setSelectedCity('Select City');
-      }
-    } catch (error) {
-      console.log('Location detection failed:', error);
-      setSelectedCity('Select City');
-    } finally {
-      setIsDetecting(false);
-    }
-  };
-
-  const handleSelectCity = (city: string) => {
-    setSelectedCity(city);
-    setModalVisible(false);
-  };
+  // The business location from My Account — the same one that goes
+  // with every request — rather than a separate, unsaved city choice
+  const city = cityFrom(profile.address);
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.locationButton}
         activeOpacity={0.7}
-        onPress={() => setModalVisible(true)}
+        onPress={onLocationPress}
       >
-        {isDetecting ? (
-          <ActivityIndicator size="small" color={colors.primary} />
-        ) : (
-          <Ionicons name="location-sharp" size={16} color={colors.primary} />
-        )}
+        <Ionicons
+          name={city ? 'location-sharp' : 'location-outline'}
+          size={16}
+          color={colors.primary}
+        />
         <Text
           style={styles.locationText}
           numberOfLines={1}
           maxFontSizeMultiplier={1.1}
         >
-          {selectedCity}
+          {city || 'Set location'}
         </Text>
-        {!isDetecting && (
-          <Ionicons name="chevron-down" size={14} color={colors.textLight} />
-        )}
+        <Ionicons name="chevron-down" size={14} color={colors.textLight} />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -146,56 +92,6 @@ export default function HomeHeader({
           </View>
         )}
       </TouchableOpacity>
-
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Your City</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.textDark} />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.detectRow}
-              onPress={() => {
-                setModalVisible(false);
-                detectLocation();
-              }}
-            >
-              <Ionicons name="navigate" size={18} color={colors.primary} />
-              <Text style={styles.detectText}>Use Current Location</Text>
-            </TouchableOpacity>
-
-            <FlatList
-              data={cities}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.cityRow}
-                  onPress={() => handleSelectCity(item)}
-                >
-                  <Ionicons
-                    name="location-outline"
-                    size={18}
-                    color={colors.textLight}
-                  />
-                  <Text style={styles.cityText}>{item}</Text>
-                  {item === selectedCity && (
-                    <Ionicons name="checkmark" size={18} color={colors.primary} />
-                  )}
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -267,60 +163,5 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontFamily: fonts.bodyBold,
     color: colors.white,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
-    paddingBottom: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontFamily: fonts.displayMedium,
-    color: colors.textDark,
-  },
-  detectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.primarySoft,
-  },
-  detectText: {
-    fontSize: 14,
-    fontFamily: fonts.bodyBold,
-    color: colors.primary,
-  },
-  cityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  cityText: {
-    flex: 1,
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.textDark,
   },
 });

@@ -64,6 +64,10 @@ export default function HomeScreen() {
     navigation.getParent()?.navigate('Notifications');
   };
 
+  const openLocationPicker = () => {
+    navigation.getParent()?.navigate('LocationPicker');
+  };
+
   const openSearch = () => {
     navigation.getParent()?.navigate('Search');
   };
@@ -103,6 +107,7 @@ export default function HomeScreen() {
         unreadCount={unread}
         onSearchPress={openSearch}
         onNotificationsPress={openNotifications}
+        onLocationPress={openLocationPicker}
       />
 
       {/* Bottom room so the last card clears the raised centre button */}
