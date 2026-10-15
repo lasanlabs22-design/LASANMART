@@ -35,8 +35,6 @@ const POINTS = [
 export default function TrustPanel() {
   return (
     <View style={styles.wrap}>
-      <View style={styles.divider} />
-
       <Text style={styles.heading}>Your details, and what we do with them</Text>
 
       <View style={styles.list}>
@@ -45,7 +43,7 @@ export default function TrustPanel() {
             <View style={styles.pointIcon}>
               <MaterialCommunityIcons
                 name={p.icon as any}
-                size={17}
+                size={15}
                 color={colors.primary}
               />
             </View>
@@ -73,11 +71,12 @@ export default function TrustPanel() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginTop: 34 },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginBottom: 26,
+  // A soft card instead of a page section, so it sits quietly at the end
+  wrap: {
+    marginTop: 26,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 16,
   },
   heading: {
     fontFamily: fonts.bodyBold,
@@ -85,39 +84,39 @@ const styles = StyleSheet.create({
     letterSpacing: 0.9,
     color: colors.textLight,
     textTransform: 'uppercase',
-    marginBottom: 20,
+    marginBottom: 14,
   },
 
-  list: { gap: 22 },
-  point: { flexDirection: 'row', gap: 13 },
+  list: { gap: 14 },
+  point: { flexDirection: 'row', gap: 11 },
   pointIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: colors.primarySoft,
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
   },
   pointTitle: {
-    fontFamily: fonts.displayMedium,
-    fontSize: 14.5,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
     color: colors.textDark,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   pointBody: {
     fontFamily: fonts.body,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12,
+    lineHeight: 17,
     color: colors.textLight,
-    marginTop: 3,
+    marginTop: 1,
   },
 
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    marginTop: 26,
-    paddingTop: 18,
+    marginTop: 16,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
