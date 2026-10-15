@@ -51,7 +51,7 @@ export default function PlansCarousel({ data, onPlanPress }: Props) {
     <View style={styles.section}>
       <SectionHeading
         title="Most Popular Plans"
-        subtitle="Bundled packages, billed quarterly"
+        subtitle="Bundled packages, billed monthly"
       />
 
       <FlatList
