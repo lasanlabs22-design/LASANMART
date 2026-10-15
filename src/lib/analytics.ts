@@ -73,4 +73,12 @@ export const events = {
    */
   contactSheetAbandoned: (step: string) =>
     track('contact_sheet_abandoned', { step }),
+
+  /**
+   * What they answered on the partner step before login — influencer,
+   * vendor, freelancer or business — and whether they went to get Hub.
+   * Sizes the Hub audience already landing in Mart.
+   */
+  partnerStepAnswered: (role: string, openedHub: boolean) =>
+    track('partner_step', { role, opened_hub: openedHub ? 'yes' : 'no' }),
 };
