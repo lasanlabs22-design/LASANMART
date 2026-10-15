@@ -44,4 +44,12 @@ export const freelancerServices: FreelancerService[] = [
     colour: '#0EA97A',
     asks: ['Which platforms?', 'Ongoing or a one-off campaign?'],
   },
+  {
+    id: 'fl5',
+    label: 'Software Development',
+    blurb: 'Websites, apps, tools, automation',
+    icon: 'code-tags',
+    colour: '#FF6B35',
+    asks: ['What should it do?', 'Website, app, or something else?'],
+  },
 ];
