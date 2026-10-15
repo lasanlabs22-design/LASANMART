@@ -1,12 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
   Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
@@ -19,54 +19,29 @@ type Props = {
 const CARD_WIDTH = Dimensions.get('window').width - 32;
 const CARD_HEIGHT = 92;
 
+// Same card build as the Bespoke banner, in purple with a gold accent
+const ACCENT = '#FFD166';
+
 export default function BusinessIdeasBanner({ onPress }: Props) {
-  const glowAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 1400,
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0,
-          duration: 1400,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [glowAnim]);
-
-  const glowOpacity = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.25, 0.85],
-  });
-
   return (
     <View style={styles.section}>
-      <View style={styles.glowWrapper}>
-        <Animated.View
-          style={[styles.glowLayer, { opacity: glowOpacity }]}
-          pointerEvents="none"
-        />
-
-        <TouchableOpacity
-          style={styles.card}
-          activeOpacity={0.9}
-          onPress={onPress}
+      <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
+        <LinearGradient
+          colors={['#4C1D95', '#2E1065']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.banner}
         >
+          {/* Decorative shapes */}
           <View pointerEvents="none" style={styles.orb} />
+          <View pointerEvents="none" style={styles.sheen} />
           <Shimmer width={CARD_WIDTH} opacity={0.2} delay={2800} />
 
           <View style={styles.iconTile}>
             <MaterialCommunityIcons
               name="lightbulb-on"
               size={24}
-              color="#FFD166"
+              color={ACCENT}
             />
           </View>
 
@@ -86,43 +61,32 @@ export default function BusinessIdeasBanner({ onPress }: Props) {
             <MaterialCommunityIcons
               name="arrow-right"
               size={17}
-              color={colors.white}
+              color="#2E1065"
             />
           </View>
-        </TouchableOpacity>
-      </View>
+        </LinearGradient>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   section: { marginTop: 24, paddingHorizontal: 16 },
-  glowWrapper: { position: 'relative' },
-  glowLayer: {
-    position: 'absolute',
-    top: -6,
-    left: -6,
-    right: -6,
-    bottom: -6,
-    borderRadius: 24,
-    backgroundColor: '#2E1065',
-    shadowColor: '#4C1D95',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  card: {
+  banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4C1D95',
-    borderRadius: 18,
+    borderRadius: 20,
     // A floor, not a fixed size: on narrow phones or with large text
     // the subtitle wraps, and the card grows instead of cutting it off
     minHeight: CARD_HEIGHT,
     paddingVertical: 12,
     paddingHorizontal: 16,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 6,
   },
   orb: {
     position: 'absolute',
@@ -131,13 +95,24 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
     borderRadius: 65,
-    backgroundColor: 'rgba(255,255,255,0.09)',
+    backgroundColor: 'rgba(255,209,102,0.14)',
+  },
+  sheen: {
+    position: 'absolute',
+    top: -30,
+    left: -40,
+    width: 70,
+    height: 200,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    transform: [{ rotate: '22deg' }],
   },
   iconTile: {
     width: 50,
     height: 50,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,209,102,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,209,102,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -153,12 +128,12 @@ const styles = StyleSheet.create({
   tagText: {
     fontFamily: fonts.bodyBold,
     fontSize: 8,
-    color: '#FFD166',
+    color: ACCENT,
     letterSpacing: 0.8,
   },
   title: {
     fontFamily: fonts.display,
-    fontSize: 18,
+    fontSize: 17,
     color: colors.white,
     letterSpacing: -0.4,
     marginBottom: 2,
@@ -166,13 +141,13 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.72)',
+    color: 'rgba(255,255,255,0.68)',
   },
   arrowCircle: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+    backgroundColor: ACCENT,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 10,
