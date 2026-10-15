@@ -336,7 +336,9 @@ export default function LoginScreen({ navigation }: Props) {
 
           {/* Real buttons, not tappable words inside one Text — those
               never fired on some Android phones */}
-          <Text style={styles.legal}>By continuing you agree to our</Text>
+          <Text style={[styles.legal, styles.legalIntro]}>
+            By continuing you agree to our
+          </Text>
           <View style={styles.legalLinks}>
             <TouchableOpacity
               hitSlop={8}
@@ -543,14 +545,17 @@ const styles = StyleSheet.create({
   returningText: { fontSize: 13, fontFamily: fonts.body, color: ink.muted },
   returningLink: { fontFamily: fonts.bodyBold, color: ink.gold },
 
+  // No padding here: "and" shares this style with the links, and any
+  // padding only it carried pushed it out of line with them
   legal: {
     fontFamily: fonts.body,
     fontSize: 11,
     lineHeight: 16,
     color: ink.faint,
     textAlign: 'center',
-    paddingTop: 6,
+    includeFontPadding: false,
   },
+  legalIntro: { paddingTop: 6, paddingBottom: 2 },
   legalLinks: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -560,7 +565,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   legalLink: {
-    paddingTop: 0,
     color: ink.muted,
     textDecorationLine: 'underline',
   },
