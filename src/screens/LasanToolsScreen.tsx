@@ -118,7 +118,7 @@ export default function LasanToolsScreen({ navigation }: any) {
                 <View style={styles.iconTile}>
                   <MaterialCommunityIcons
                     name={tool.icon as any}
-                    size={24}
+                    size={20}
                     color={colors.white}
                   />
                 </View>
@@ -204,10 +204,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  cardWrap: { marginBottom: 14 },
+  cardWrap: { marginBottom: 12 },
   card: {
-    borderRadius: 22,
-    padding: 18,
+    borderRadius: 20,
+    padding: 14,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -228,57 +228,57 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   iconTile: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   arrowCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: 'rgba(255,255,255,0.22)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cardTitle: {
     fontFamily: fonts.display,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.white,
     letterSpacing: -0.5,
   },
   cardTagline: {
     fontFamily: fonts.bodyBold,
-    fontSize: 12.5,
+    fontSize: 12,
     color: 'rgba(255,255,255,0.85)',
-    marginTop: 3,
+    marginTop: 2,
   },
   cardDetail: {
     fontFamily: fonts.body,
-    fontSize: 12.5,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
     color: 'rgba(255,255,255,0.75)',
-    marginTop: 10,
+    marginTop: 7,
   },
 
-  pointRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 14 },
+  pointRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   point: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
+    borderRadius: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   pointText: {
     fontFamily: fonts.bodyBold,
-    fontSize: 10.5,
+    fontSize: 10,
     color: colors.white,
   },
 
