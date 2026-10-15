@@ -109,7 +109,7 @@ export default function FreelancerRequestScreen({ navigation }: any) {
             person and comes back with a quote.
           </Text>
 
-          {/* The four services */}
+          {/* The services — an odd last tile stretches to full width */}
           <View style={styles.grid}>
             {freelancerServices.map((s) => {
               const active = picked.includes(s.id);

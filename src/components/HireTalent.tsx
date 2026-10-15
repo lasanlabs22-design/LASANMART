@@ -47,7 +47,7 @@ export default function HireTalent({
         <TalentCard
           tag="FREELANCERS"
           title="Shoots & Editors"
-          subtitle="Photo, video, digital marketing"
+          subtitle="Photo, video, marketing, software"
           icon="camera-account"
           gradient={['#3B1782', '#1E0B45']}
           onPress={onFreelancersPress}
