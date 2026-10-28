@@ -22,6 +22,7 @@ import {
   verifyCode,
   hasVerifiedPhone,
   verifiedPhoneNumber,
+  onPhoneVerified,
   Confirmation,
   PhoneAuthError,
 } from '../lib/phoneAuth';
@@ -62,6 +63,10 @@ export default function ContactDetailsSheet({
 
   const codeInput = useRef<TextInput>(null);
 
+  // Typing the code and Android verifying it by itself can both
+  // land — only the first one should complete
+  const verified = useRef(false);
+
   const nameOk = name.trim().length > 1;
   const phoneOk = phone.length === 10;
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -93,6 +98,22 @@ export default function ContactDetailsSheet({
     onComplete(details);
   };
 
+  const finishVerified = () => {
+    if (verified.current) return;
+    verified.current = true;
+
+    Keyboard.dismiss();
+    finish();
+  };
+
+  /* Android can read the SMS and sign in before the code is typed.
+     Only while the sheet is open — it stays mounted when closed, and
+     completing behind the user's back would start their submission. */
+  useEffect(() => {
+    if (!visible || step !== 'code' || !confirmation) return;
+    return onPhoneVerified(confirmation, finishVerified);
+  }, [visible, step, confirmation]);
+
   const handleContinue = async () => {
     if (!detailsOk || busy) return;
 
@@ -107,6 +128,7 @@ export default function ContactDetailsSheet({
 
     try {
       const result = await sendOtp(phone);
+      verified.current = false;
       setConfirmation(result);
       setSecondsLeft(RESEND_SECONDS);
       setStep('code');
@@ -131,7 +153,7 @@ export default function ContactDetailsSheet({
 
     try {
       await verifyCode(confirmation, code);
-      finish();
+      finishVerified();
     } catch (err: any) {
       setError(
         err instanceof PhoneAuthError
@@ -152,7 +174,7 @@ export default function ContactDetailsSheet({
     setError('');
 
     try {
-      const result = await sendOtp(phone);
+      const result = await sendOtp(phone, true);
       setConfirmation(result);
       setSecondsLeft(RESEND_SECONDS);
     } catch (err: any) {
@@ -442,12 +464,11 @@ export default function ContactDetailsSheet({
                   </TouchableOpacity>
                 </View>
 
-                {/* Six boxes over one hidden input */}
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={() => codeInput.current?.focus()}
-                  style={styles.boxRow}
-                >
+                {/* Six boxes with the real input laid invisibly over
+                    them, so a tap always reaches it and opens the
+                    keyboard — focusing it from code is ignored on
+                    Android once it thinks it's already focused */}
+                <View style={styles.boxRow}>
                   {Array.from({ length: 6 }).map((_, i) => {
                     const digit = code[i];
                     const isCurrent = i === code.length;
@@ -465,21 +486,24 @@ export default function ContactDetailsSheet({
                       </View>
                     );
                   })}
-                </TouchableOpacity>
 
-                <TextInput
-                  ref={codeInput}
-                  style={styles.hiddenInput}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  value={code}
-                  onChangeText={(t) => {
-                    setCode(t.replace(/[^0-9]/g, ''));
-                    setError('');
-                  }}
-                  editable={!busy}
-                  caretHidden
-                />
+                  {/* Never disabled — a disabled input can't take
+                      focus, which left the boxes dead after an error */}
+                  <TextInput
+                    ref={codeInput}
+                    style={styles.codeInput}
+                    keyboardType="number-pad"
+                    autoComplete="sms-otp"
+                    textContentType="oneTimeCode"
+                    maxLength={6}
+                    value={code}
+                    onChangeText={(t) => {
+                      setCode(t.replace(/[^0-9]/g, ''));
+                      setError('');
+                    }}
+                    caretHidden
+                  />
+                </View>
 
                 {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -646,7 +670,17 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: colors.textDark,
   },
-  hiddenInput: { position: 'absolute', opacity: 0, height: 1, width: 1 },
+  // Covers the boxes; text this small keeps the cursor at the end
+  codeInput: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.01,
+    color: 'transparent',
+    fontSize: 1,
+  },
 
   error: {
     fontFamily: fonts.body,
