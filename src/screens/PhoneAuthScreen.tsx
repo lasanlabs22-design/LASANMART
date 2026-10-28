@@ -23,6 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   sendOtp,
   verifyCode,
+  onPhoneVerified,
   Confirmation,
   PhoneAuthError,
 } from '../lib/phoneAuth';
@@ -51,6 +52,10 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
 
   const codeInput = useRef<TextInput>(null);
 
+  // Typing the code and Android verifying it by itself can both
+  // land — only the first one should carry on into the app
+  const finished = useRef(false);
+
   const phoneValid = phone.length === 10;
   const codeValid = code.length === CODE_LENGTH;
 
@@ -77,7 +82,7 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
     setError('');
 
     try {
-      const result = await sendOtp(phone);
+      const result = await sendOtp(phone, isResend);
 
       setConfirmation(result);
       setSecondsLeft(RESEND_SECONDS);
@@ -103,16 +108,16 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
     navigation.replace('Main');
   };
 
-  const handleVerify = async () => {
-    if (!codeValid || !confirmation || busy) return;
+  /* Everything after the number is proven */
+  const finishSignIn = async () => {
+    if (finished.current) return;
+    finished.current = true;
 
     Keyboard.dismiss();
     setBusy(true);
     setError('');
 
     try {
-      await verifyCode(confirmation, code);
-
       // The number is now verified — save it regardless of what
       // happens next
       updateProfile({ phone });
@@ -120,7 +125,7 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
       // Bring back whatever we already hold against this number.
       // Returns null for a brand new number (or if the call fails).
       const contact = await fetchMyContact();
-  
+
       if (contact) {
         updateProfile({
           name: contact.name || '',
@@ -149,6 +154,26 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
       }
 
       enterApp();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /* Android can read the SMS and sign in before the code is typed */
+  useEffect(() => {
+    if (!confirmation) return;
+    return onPhoneVerified(confirmation, finishSignIn);
+  }, [confirmation]);
+
+  const handleVerify = async () => {
+    if (!codeValid || !confirmation || busy) return;
+
+    Keyboard.dismiss();
+    setBusy(true);
+    setError('');
+
+    try {
+      await verifyCode(confirmation, code);
     } catch (err: any) {
       setError(
         err instanceof PhoneAuthError
@@ -156,10 +181,12 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
           : 'That code did not work. Please try again.'
       );
       setCode('');
-      codeInput.current?.focus();
-    } finally {
       setBusy(false);
+      codeInput.current?.focus();
+      return;
     }
+
+    await finishSignIn();
   };
 
   const goBackToPhone = () => {
@@ -306,12 +333,12 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
                   </TouchableOpacity>
                 </View>
 
-                {/* Six boxes, backed by one hidden input */}
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={() => codeInput.current?.focus()}
-                  style={styles.boxRow}
-                >
+                {/* Six boxes, with the one real input laid invisibly
+                    over them. A tap has to land on the input itself —
+                    focusing it from code is ignored on Android once it
+                    thinks it's already focused, e.g. after the user
+                    closed the keyboard or left to read the SMS. */}
+                <View style={styles.boxRow}>
                   {Array.from({ length: CODE_LENGTH }).map((_, i) => {
                     const digit = code[i];
                     const isCurrent = i === code.length;
@@ -329,21 +356,24 @@ export default function PhoneAuthScreen({ navigation, route }: any) {
                       </View>
                     );
                   })}
-                </TouchableOpacity>
 
-                <TextInput
-                  ref={codeInput}
-                  style={styles.hiddenInput}
-                  keyboardType="number-pad"
-                  maxLength={CODE_LENGTH}
-                  value={code}
-                  onChangeText={(t) => {
-                    setCode(t.replace(/[^0-9]/g, ''));
-                    setError('');
-                  }}
-                  editable={!busy}
-                  caretHidden
-                />
+                  {/* Never disabled — a disabled input can't take
+                      focus, which left the boxes dead after an error */}
+                  <TextInput
+                    ref={codeInput}
+                    style={styles.codeInput}
+                    keyboardType="number-pad"
+                    autoComplete="sms-otp"
+                    textContentType="oneTimeCode"
+                    maxLength={CODE_LENGTH}
+                    value={code}
+                    onChangeText={(t) => {
+                      setCode(t.replace(/[^0-9]/g, ''));
+                      setError('');
+                    }}
+                    caretHidden
+                  />
+                </View>
 
                 {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -531,11 +561,17 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#fff',
   },
-  hiddenInput: {
+  // Covers the boxes; text this small always puts the cursor at the
+  // end, wherever the row is tapped
+  codeInput: {
     position: 'absolute',
-    opacity: 0,
-    height: 1,
-    width: 1,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.01,
+    color: 'transparent',
+    fontSize: 1,
   },
 
   /* Shared */
