@@ -1,6 +1,6 @@
 {
   "name": "lasanmart",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
