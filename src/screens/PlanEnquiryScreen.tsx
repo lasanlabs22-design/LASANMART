@@ -20,19 +20,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
-import { businessSectors, BusinessSector } from '../data/businessSectors';
+import { BusinessSector } from '../data/businessSectors';
 import { Plan } from '../data/plans';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
 import PlanAssurance from '../components/PlanAssurance';
 import HeaderInset from '../components/HeaderInset';
-
-const START_WHEN = [
-  'Right away',
-  'Within a week',
-  'This month',
-  'Just exploring',
-];
+import SectorDropdown from '../components/SectorDropdown';
 
 export default function PlanEnquiryScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -49,18 +43,14 @@ export default function PlanEnquiryScreen({ route, navigation }: any) {
   );
   const [company, setCompany] = useState(profile.companyName);
   const [sector, setSector] = useState<BusinessSector | null>(null);
-  const [startWhen, setStartWhen] = useState('');
   const [message, setMessage] = useState('');
   const [focused, setFocused] = useState<string | null>(null);
 
-  const isReady = name.trim().length > 1 && phone.length === 10 && !!startWhen;
+  const isReady = name.trim().length > 1 && phone.length === 10;
 
   const handleSubmit = () => {
     if (!isReady) {
-      Alert.alert(
-        'Almost there',
-        'Add your name, a 10-digit phone number, and when you want to start.'
-      );
+      Alert.alert('Almost there', 'Add your name and a 10-digit phone number.');
       return;
     }
 
@@ -83,7 +73,6 @@ export default function PlanEnquiryScreen({ route, navigation }: any) {
         price: plan.price,
         duration: plan.duration,
         tier: plan.tier,
-        startWhen,
       },
     });
   };
@@ -208,58 +197,7 @@ export default function PlanEnquiryScreen({ route, navigation }: any) {
 
           {/* Sector */}
           <Text style={styles.groupTitle}>Business Sector</Text>
-          <View style={styles.chipWrap}>
-            {businessSectors.map((s) => {
-              const active = sector?.id === s.id;
-              return (
-                <TouchableOpacity
-                  key={s.id}
-                  style={[styles.selectChip, active && styles.selectChipActive]}
-                  activeOpacity={0.85}
-                  onPress={() => setSector(active ? null : s)}
-                >
-                  <MaterialCommunityIcons
-                    name={s.icon as any}
-                    size={14}
-                    color={active ? colors.white : colors.textLight}
-                  />
-                  <Text
-                    style={[
-                      styles.selectChipText,
-                      active && styles.selectChipTextActive,
-                    ]}
-                  >
-                    {s.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Timeline */}
-          <Text style={styles.groupTitle}>When do you want to start?</Text>
-          <View style={styles.chipWrap}>
-            {START_WHEN.map((w) => {
-              const active = startWhen === w;
-              return (
-                <TouchableOpacity
-                  key={w}
-                  style={[styles.selectChip, active && styles.selectChipActive]}
-                  activeOpacity={0.85}
-                  onPress={() => setStartWhen(w)}
-                >
-                  <Text
-                    style={[
-                      styles.selectChipText,
-                      active && styles.selectChipTextActive,
-                    ]}
-                  >
-                    {w}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <SectorDropdown value={sector} onChange={setSector} />
 
           {/* Message */}
           <Text style={styles.fieldLabel}>Anything specific? (optional)</Text>
@@ -517,29 +455,6 @@ const styles = StyleSheet.create({
     color: colors.textDark,
   },
   fieldDivider: { width: 1, height: 20, backgroundColor: colors.border },
-
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  selectChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-  },
-  selectChipActive: {
-    backgroundColor: colors.textDark,
-    borderColor: colors.textDark,
-  },
-  selectChipText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    color: colors.textLight,
-  },
-  selectChipTextActive: { color: colors.white },
 
   assureRow: {
     flexDirection: 'row',
