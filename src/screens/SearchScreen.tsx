@@ -14,6 +14,7 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { search, SearchResult, POPULAR_SEARCHES } from '../data/searchIndex';
 import { plans } from '../data/plans';
+import HeaderInset from '../components/HeaderInset';
 
 /** '#FF6B35' -> soft tinted background */
 function tint(hex: string, alpha: number) {
@@ -97,8 +98,9 @@ export default function SearchScreen({ navigation }: any) {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* Search bar */}
+      <HeaderInset />
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -107,7 +109,7 @@ export default function SearchScreen({ navigation }: any) {
           <MaterialCommunityIcons
             name="arrow-left"
             size={21}
-            color={colors.textDark}
+            color={colors.white}
           />
         </TouchableOpacity>
 
@@ -232,13 +234,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
 
   header: {
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   backButton: {
     width: 40,
@@ -250,7 +251,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
-    backgroundColor: colors.surface,
+    // White on the purple header, like the Home search
+    backgroundColor: colors.white,
     borderRadius: 14,
     paddingHorizontal: 14,
     height: 46,

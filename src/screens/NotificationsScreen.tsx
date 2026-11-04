@@ -22,6 +22,7 @@ import {
   markNotificationsRead,
   AppNotification,
 } from '../api/client';
+import HeaderInset from '../components/HeaderInset';
 
 /** Icon and colour per notification kind */
 const META: Record<string, { icon: string; color: string }> = {
@@ -155,7 +156,8 @@ export default function NotificationsScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <HeaderInset />
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -164,7 +166,7 @@ export default function NotificationsScreen({ navigation }: any) {
           <MaterialCommunityIcons
             name="arrow-left"
             size={21}
-            color={colors.textDark}
+            color={colors.white}
           />
         </TouchableOpacity>
 
@@ -229,19 +231,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
 
   header: {
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -249,20 +250,20 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: fonts.displayMedium,
     fontSize: 17,
-    color: colors.textDark,
+    color: colors.white,
     letterSpacing: -0.3,
   },
   headerSub: {
     fontFamily: fonts.body,
     fontSize: 11,
-    color: colors.primary,
+    color: 'rgba(255,255,255,0.78)',
     marginTop: 1,
   },
   markRead: { paddingHorizontal: 4 },
   markReadText: {
     fontFamily: fonts.bodyBold,
     fontSize: 12,
-    color: colors.primary,
+    color: colors.white,
   },
 
   centre: { flex: 1, justifyContent: 'center', alignItems: 'center' },

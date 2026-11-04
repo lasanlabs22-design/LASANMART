@@ -54,7 +54,7 @@ export default function HomeHeader({
         <Ionicons
           name={city ? 'location-sharp' : 'location-outline'}
           size={16}
-          color={colors.primary}
+          color={colors.white}
         />
         <Text
           style={styles.locationText}
@@ -63,7 +63,7 @@ export default function HomeHeader({
         >
           {city || 'Set location'}
         </Text>
-        <Ionicons name="chevron-down" size={14} color={colors.textLight} />
+        <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.8)" />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -82,7 +82,7 @@ export default function HomeHeader({
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.iconButton} onPress={onNotificationsPress}>
-        <Ionicons name="notifications-outline" size={24} color={colors.textDark} />
+        <Ionicons name="notifications-outline" size={24} color={colors.white} />
 
         {unreadCount > 0 && (
           <View style={styles.badge}>
@@ -97,9 +97,11 @@ export default function HomeHeader({
 }
 
 const styles = StyleSheet.create({
+  // Brand purple, same as the page headers and the tab bar
   container: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
@@ -107,7 +109,7 @@ const styles = StyleSheet.create({
   locationButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: 'rgba(255,255,255,0.16)',
     borderRadius: 10,
     paddingHorizontal: 10,
     height: 42,
@@ -117,14 +119,15 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 12,
     fontFamily: fonts.body,
-    color: colors.textDark,
+    color: colors.white,
     flexShrink: 1,
   },
+  // Stays white so search is the clearest thing on the bar
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.white,
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 42,
@@ -141,10 +144,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 10,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  // Gold, since a purple badge would vanish on the purple bar
   badge: {
     position: 'absolute',
     top: 5,
@@ -153,15 +157,15 @@ const styles = StyleSheet.create({
     height: 17,
     borderRadius: 9,
     paddingHorizontal: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: '#FFD166',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#F5F5F5',
+    borderColor: colors.primary,
   },
   badgeText: {
     fontSize: 9.5,
     fontFamily: fonts.bodyBold,
-    color: colors.white,
+    color: '#2E1065',
   },
 });

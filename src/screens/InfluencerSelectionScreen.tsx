@@ -22,6 +22,7 @@ import { fonts } from '../theme/typography';
 import { fetchApprovedInfluencers, ApprovedInfluencer } from '../api/client';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
+import HeaderInset from '../components/HeaderInset';
 
 /** A consistent colour per person, derived from their name */
 const AVATAR_COLOURS = [
@@ -268,7 +269,8 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <HeaderInset />
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -277,7 +279,7 @@ export default function InfluencerSelectionScreen({ navigation }: any) {
           <MaterialCommunityIcons
             name="arrow-left"
             size={21}
-            color={colors.textDark}
+            color={colors.white}
           />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -478,19 +480,18 @@ const styles = StyleSheet.create({
   centre: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   header: {
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -498,13 +499,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: fonts.displayMedium,
     fontSize: 17,
-    color: colors.textDark,
+    color: colors.white,
     letterSpacing: -0.3,
   },
   headerSub: {
     fontFamily: fonts.body,
     fontSize: 11,
-    color: colors.textLight,
+    color: 'rgba(255,255,255,0.78)',
     marginTop: 1,
   },
 

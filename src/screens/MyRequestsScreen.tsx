@@ -25,6 +25,7 @@ import {
   ApiError,
 } from '../api/client';
 import FeedbackSheet from '../components/FeedbackSheet';
+import HeaderInset from '../components/HeaderInset';
 
 const TYPE_META: Record<string, { label: string; icon: string }> = {
   service: { label: 'Service Request', icon: 'monitor-dashboard' },
@@ -276,7 +277,8 @@ export default function MyRequestsScreen() {
   const showEmpty = !loading && !error && requests.length === 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <HeaderInset />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Requests</Text>
         <Text style={styles.headerSub}>
@@ -397,17 +399,21 @@ export default function MyRequestsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
 
-  header: { paddingHorizontal: 16, paddingVertical: 12 },
+  header: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   headerTitle: {
     fontFamily: fonts.display,
     fontSize: 22,
-    color: colors.textDark,
+    color: colors.white,
     letterSpacing: -0.6,
   },
   headerSub: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: colors.textLight,
+    color: 'rgba(255,255,255,0.78)',
     marginTop: 1,
   },
 
