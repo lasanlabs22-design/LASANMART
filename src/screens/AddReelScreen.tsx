@@ -28,6 +28,7 @@ import { uploadVideo, postReel, ApiError } from '../api/client';
 import { useVibesAccess } from '../hooks/useVibesAccess';
 import VibesAccessSheet from '../components/VibesAccessSheet';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
+import HeaderInset from '../components/HeaderInset';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAX_SECONDS = 90;
@@ -351,7 +352,8 @@ export default function AddReelScreen({ navigation }: any) {
   /* Still checking, so show nothing rather than the wrong thing */
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.container} edges={['left', 'right']}>
+        <HeaderInset />
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -360,7 +362,7 @@ export default function AddReelScreen({ navigation }: any) {
             <MaterialCommunityIcons
               name="close"
               size={21}
-              color={colors.textDark}
+              color={colors.white}
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Post a Vibe</Text>
@@ -377,7 +379,8 @@ export default function AddReelScreen({ navigation }: any) {
   /* No access yet — ask, or wait for an answer */
   if (!canPost) {
     return (
-      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.container} edges={['left', 'right']}>
+        <HeaderInset />
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -386,7 +389,7 @@ export default function AddReelScreen({ navigation }: any) {
             <MaterialCommunityIcons
               name="close"
               size={21}
-              color={colors.textDark}
+              color={colors.white}
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Post a Vibe</Text>
@@ -417,12 +420,13 @@ export default function AddReelScreen({ navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Header */}
+        <HeaderInset />
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -432,7 +436,7 @@ export default function AddReelScreen({ navigation }: any) {
             <MaterialCommunityIcons
               name="close"
               size={21}
-              color={colors.textDark}
+              color={colors.white}
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Post a Vibe</Text>
@@ -626,26 +630,25 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
 
   header: {
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontFamily: fonts.displayMedium,
     fontSize: 17,
-    color: colors.textDark,
+    color: colors.white,
     letterSpacing: -0.3,
   },
 

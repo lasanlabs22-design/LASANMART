@@ -22,6 +22,7 @@ import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { fetchMyReels, MyReel } from '../api/client';
 import { useVibesAccess } from '../hooks/useVibesAccess';
+import HeaderInset from '../components/HeaderInset';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GAP = 10;
@@ -141,7 +142,7 @@ export default function MyReelsScreen({ navigation }: any) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.container} edges={['left', 'right']}>
         <Header navigation={navigation} />
         <View style={styles.centre}>
           <ActivityIndicator color={colors.primary} />
@@ -151,7 +152,7 @@ export default function MyReelsScreen({ navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <Header navigation={navigation} />
 
       <FlatList
@@ -291,20 +292,23 @@ export default function MyReelsScreen({ navigation }: any) {
 
 function Header({ navigation }: any) {
   return (
-    <View style={styles.header}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <MaterialCommunityIcons
-          name="arrow-left"
-          size={21}
-          color={colors.textDark}
-        />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>My Vibes</Text>
-      <View style={{ width: 38 }} />
-    </View>
+    <>
+      <HeaderInset />
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={21}
+            color={colors.white}
+          />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Vibes</Text>
+        <View style={{ width: 38 }} />
+      </View>
+    </>
   );
 }
 
@@ -322,26 +326,25 @@ const styles = StyleSheet.create({
   centre: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   header: {
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontFamily: fonts.displayMedium,
     fontSize: 17,
-    color: colors.textDark,
+    color: colors.white,
     letterSpacing: -0.3,
   },
 

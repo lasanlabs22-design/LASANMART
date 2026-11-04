@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import HomeHeader from '../components/HomeHeader';
+import HeaderInset from '../components/HeaderInset';
 import PlansCarousel from '../components/PlansCarousal';
 import CategoryCarousel from '../components/CategoryCarousal';
 import ReelsRow from '../components/ReelsRow';
@@ -102,7 +103,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <HeaderInset />
       <HomeHeader
         unreadCount={unread}
         onSearchPress={openSearch}

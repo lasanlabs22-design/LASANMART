@@ -20,6 +20,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { faqs, faqCategories, Faq } from '../data/faqs';
+import HeaderInset from '../components/HeaderInset';
 
 /* Change these to your team's real contact details */
 const SUPPORT_PHONE = '8309074248';
@@ -74,7 +75,8 @@ export default function HelpScreen({ navigation }: any) {
     );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <HeaderInset />
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -83,7 +85,7 @@ export default function HelpScreen({ navigation }: any) {
           <MaterialCommunityIcons
             name="arrow-left"
             size={21}
-            color={colors.textDark}
+            color={colors.white}
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Help & Support</Text>
@@ -324,26 +326,25 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
 
   header: {
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontFamily: fonts.displayMedium,
     fontSize: 17,
-    color: colors.textDark,
+    color: colors.white,
     letterSpacing: -0.3,
   },
 

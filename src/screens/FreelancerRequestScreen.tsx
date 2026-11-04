@@ -24,6 +24,7 @@ import { fonts } from '../theme/typography';
 import { freelancerServices } from '../data/freelancerServices';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
+import HeaderInset from '../components/HeaderInset';
 
 // The artwork is cropped to ~2.33:1, so at this height the objects are
 // all in frame. Width is the screen less padding and the 2px border.
@@ -94,11 +95,12 @@ export default function FreelancerRequestScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        <HeaderInset />
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.back}
@@ -107,7 +109,7 @@ export default function FreelancerRequestScreen({ navigation }: any) {
             <MaterialCommunityIcons
               name="arrow-left"
               size={21}
-              color={colors.textDark}
+              color={colors.white}
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Hire a Freelancer</Text>
@@ -276,26 +278,25 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
 
   header: {
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   back: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontFamily: fonts.displayMedium,
     fontSize: 17,
-    color: colors.textDark,
+    color: colors.white,
     letterSpacing: -0.3,
   },
 

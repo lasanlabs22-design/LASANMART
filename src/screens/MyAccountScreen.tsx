@@ -31,6 +31,7 @@ import {
   saveContactProfile,
 } from '../api/client';
 import { verifiedPhoneNumber } from '../lib/phoneAuth';
+import HeaderInset from '../components/HeaderInset';
 
 /* The system photo picker hands back only what the person chooses,
    so no photo library permission is asked for (Play policy, too) */
@@ -186,19 +187,20 @@ export default function MyAccountScreen() {
   const hasLocation = profile.latitude != null && profile.longitude != null;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Header */}
+        <HeaderInset />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>My Account</Text>
           <TouchableOpacity style={styles.iconButton} onPress={openSettings}>
             <MaterialCommunityIcons
               name="cog-outline"
               size={21}
-              color={colors.textDark}
+              color={colors.white}
             />
           </TouchableOpacity>
         </View>
@@ -886,25 +888,24 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
 
   header: {
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontFamily: fonts.display,
     fontSize: 22,
-    color: colors.textDark,
+    color: colors.white,
     letterSpacing: -0.6,
   },
   iconButton: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     justifyContent: 'center',
     alignItems: 'center',
   },
