@@ -18,13 +18,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { onlineMarketing, offlineMarketing, CategoryItem } from '../data/homeCategories';
-import { businessSectors, BusinessSector } from '../data/businessSectors';
+import { BusinessSector } from '../data/businessSectors';
 import { useAuth } from '../context/AuthContext';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
-
-const BUDGETS = ['Under ₹25K', '₹25K–50K', '₹50K–1L', '₹1L+', 'Not sure'];
-const TIMELINES = ['ASAP', 'This month', 'Next month', 'Flexible'];
+import SectorDropdown from '../components/SectorDropdown';
+import { cityFrom } from '../components/HomeHeader';
 
 export default function PostRequestScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -43,33 +42,31 @@ export default function PostRequestScreen({ route, navigation }: any) {
   const [service, setService] = useState<CategoryItem | null>(preset ?? null);
   const [sector, setSector] = useState<BusinessSector | null>(null);
   const [customSector, setCustomSector] = useState('');
-  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [budget, setBudget] = useState('');
-  const [timeline, setTimeline] = useState('');
-  const [city, setCity] = useState('');
   const [focused, setFocused] = useState<string | null>(null);
+  // Arriving from Home shows just the chosen service; "Change" opens
+  // the full picker. Without a preset (e.g. from My Requests) the
+  // picker is always shown.
+  const [changingService, setChangingService] = useState(false);
+  const showPicker = !preset || changingService;
 
   const list = tab === 'online' ? onlineMarketing : offlineMarketing;
 
   const isOtherSector = sector?.label === 'Other';
   const resolvedSector = isOtherSector ? customSector.trim() : sector?.label ?? '';
 
-  // The description is optional — plenty of people don't know yet what
-  // a campaign should look like, and that's the conversation we have
-  // with them anyway
+  // From the saved business location (set with the map / GPS picker),
+  // the same one the Home header shows — no separate city to type
+  const city = cityFrom(profile.address);
+
   const isReady =
-    !!service &&
-    resolvedSector.length > 1 &&
-    title.trim().length > 3 &&
-    !!budget &&
-    !!timeline;
+    !!service && resolvedSector.length > 1 && description.trim().length > 3;
 
   const handleSubmit = () => {
     if (!isReady || !service) {
       Alert.alert(
         'Almost there',
-        'Pick a service and your business sector, add a title, and choose a budget and timeline.'
+        'Pick a service and your business sector, and tell us what you need.'
       );
       return;
     }
@@ -77,15 +74,13 @@ export default function PostRequestScreen({ route, navigation }: any) {
     // Send to the backend — stored in the database and emailed to the team
     submit({
       type: 'service',
-      title: title.trim(),
-      description: description.trim() || undefined,
+      title: service.label,
+      description: description.trim(),
       sector: resolvedSector,
-      city: city.trim() || undefined,
+      city: city || undefined,
       details: {
         service: service.label,
         category: tab === 'online' ? 'Online Marketing' : 'Offline Marketing',
-        budget,
-        timeline,
       },
     });
   };
@@ -118,71 +113,115 @@ export default function PostRequestScreen({ route, navigation }: any) {
           showsVerticalScrollIndicator={false}
         >
           {/* Step 1 — Service */}
-          <StepLabel n={1} text="What service do you need?" />
-
-          <View style={styles.tabs}>
-            {(['online', 'offline'] as const).map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[styles.tab, tab === t && styles.tabActive]}
-                activeOpacity={0.8}
-                onPress={() => setTab(t)}
-              >
-                <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-                  {t === 'online' ? 'Online Marketing' : 'Offline Marketing'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <FlatList
-            data={list}
-            keyExtractor={(i) => i.id}
-            numColumns={2}
-            scrollEnabled={false}
-            columnWrapperStyle={{ gap: 10 }}
-            contentContainerStyle={{ gap: 10 }}
-            renderItem={({ item }) => {
-              const active = service?.id === item.id;
-              return (
-                <TouchableOpacity
-                  style={[styles.serviceCard, active && styles.serviceCardActive]}
-                  activeOpacity={0.85}
-                  onPress={() => setService(item)}
-                >
-                  <View
-                    style={[
-                      styles.serviceIcon,
-                      { backgroundColor: `${item.color}1A` },
-                    ]}
-                  >
-                    {item.image ? (
-                      <Image source={item.image} style={styles.serviceArt} />
-                    ) : (
-                      <MaterialCommunityIcons
-                        name={item.icon as any}
-                        size={18}
-                        color={item.color}
-                      />
-                    )}
-                  </View>
-                  <Text
-                    style={[styles.serviceLabel, active && styles.serviceLabelActive]}
-                    numberOfLines={2}
-                  >
-                    {item.label}
-                  </Text>
-                  {active && (
-                    <MaterialCommunityIcons
-                      name="check-circle"
-                      size={16}
-                      color={colors.primary}
-                    />
-                  )}
-                </TouchableOpacity>
-              );
-            }}
+          <StepLabel
+            n={1}
+            text={showPicker ? 'What service do you need?' : 'Your selected service'}
           />
+
+          {!showPicker && service && (
+            <View style={styles.selectedCard}>
+              <View
+                style={[
+                  styles.selectedArt,
+                  { backgroundColor: `${service.color}1A` },
+                ]}
+              >
+                {service.image ? (
+                  <Image source={service.image} style={styles.selectedImage} />
+                ) : (
+                  <MaterialCommunityIcons
+                    name={service.icon as any}
+                    size={26}
+                    color={service.color}
+                  />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.selectedLabel}>{service.label}</Text>
+                <Text style={styles.selectedCategory}>
+                  {tab === 'online' ? 'Online Marketing' : 'Offline Marketing'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setChangingService(true)}
+                hitSlop={10}
+              >
+                <Text style={styles.changeText}>Change</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {showPicker && (
+            <>
+              <View style={styles.tabs}>
+                {(['online', 'offline'] as const).map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.tab, tab === t && styles.tabActive]}
+                    activeOpacity={0.8}
+                    onPress={() => setTab(t)}
+                  >
+                    <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
+                      {t === 'online' ? 'Online Marketing' : 'Offline Marketing'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <FlatList
+                data={list}
+                keyExtractor={(i) => i.id}
+                numColumns={2}
+                scrollEnabled={false}
+                columnWrapperStyle={{ gap: 10 }}
+                contentContainerStyle={{ gap: 10 }}
+                renderItem={({ item }) => {
+                  const active = service?.id === item.id;
+                  return (
+                    <TouchableOpacity
+                      style={[styles.serviceCard, active && styles.serviceCardActive]}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        setService(item);
+                        // Back to the single selected-service card
+                        if (preset) setChangingService(false);
+                      }}
+                    >
+                      <View
+                        style={[
+                          styles.serviceIcon,
+                          { backgroundColor: `${item.color}1A` },
+                        ]}
+                      >
+                        {item.image ? (
+                          <Image source={item.image} style={styles.serviceArt} />
+                        ) : (
+                          <MaterialCommunityIcons
+                            name={item.icon as any}
+                            size={18}
+                            color={item.color}
+                          />
+                        )}
+                      </View>
+                      <Text
+                        style={[styles.serviceLabel, active && styles.serviceLabelActive]}
+                        numberOfLines={2}
+                      >
+                        {item.label}
+                      </Text>
+                      {active && (
+                        <MaterialCommunityIcons
+                          name="check-circle"
+                          size={16}
+                          color={colors.primary}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            </>
+          )}
 
           {/* Step 2 — Business sector */}
           <StepLabel n={2} text="What's your business sector?" />
@@ -191,33 +230,13 @@ export default function PostRequestScreen({ route, navigation }: any) {
             This helps our team tailor the campaign to your industry
           </Text>
 
-          <View style={styles.sectorWrap}>
-            {businessSectors.map((s) => {
-              const active = sector?.id === s.id;
-              return (
-                <TouchableOpacity
-                  key={s.id}
-                  style={[styles.sectorChip, active && styles.sectorChipActive]}
-                  activeOpacity={0.85}
-                  onPress={() => {
-                    setSector(s);
-                    if (s.label !== 'Other') setCustomSector('');
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name={s.icon as any}
-                    size={15}
-                    color={active ? colors.white : colors.textLight}
-                  />
-                  <Text
-                    style={[styles.sectorText, active && styles.sectorTextActive]}
-                  >
-                    {s.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <SectorDropdown
+            value={sector}
+            onChange={(s) => {
+              setSector(s);
+              if (s.label !== 'Other') setCustomSector('');
+            }}
+          />
 
           {isOtherSector && (
             <View
@@ -247,25 +266,9 @@ export default function PostRequestScreen({ route, navigation }: any) {
           {/* Step 3 — Details */}
           <StepLabel n={3} text="Tell us about it" />
 
-          <Text style={styles.label}>Request Service Name</Text>
-          <View style={[styles.field, focused === 'title' && styles.fieldActive]}>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Diwali campaign for my showroom"
-              placeholderTextColor={colors.textLight}
-              value={title}
-              onChangeText={setTitle}
-              onFocus={() => setFocused('title')}
-              onBlur={() => setFocused(null)}
-            />
-          </View>
-
-          <Text style={styles.label}>
-            What exactly do you need?{' '}
-            <Text style={styles.optional}>(optional)</Text>
-          </Text>
+          <Text style={styles.label}>What do you need?</Text>
           <Text style={styles.hint}>
-            Not sure yet? Leave it blank — our team will work it out with you.
+            A line or two is enough — our team will work out the rest with you.
           </Text>
           <View
             style={[
@@ -276,7 +279,7 @@ export default function PostRequestScreen({ route, navigation }: any) {
           >
             <TextInput
               style={[styles.input, styles.inputMultiline]}
-              placeholder="Describe your goal, target audience, locations, anything specific…"
+              placeholder="e.g. A Diwali campaign for my showroom — goal, audience, anything specific…"
               placeholderTextColor={colors.textLight}
               multiline
               textAlignVertical="top"
@@ -287,58 +290,23 @@ export default function PostRequestScreen({ route, navigation }: any) {
             />
           </View>
 
-          <Text style={styles.label}>City / Area</Text>
-          <View style={[styles.field, focused === 'city' && styles.fieldActive]}>
+          {/* City comes from the saved location; tapping opens the same
+              map / GPS picker as the Home header */}
+          <TouchableOpacity
+            style={styles.locationRow}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('LocationPicker')}
+          >
             <MaterialCommunityIcons
-              name="map-marker-outline"
+              name={city ? 'map-marker' : 'map-marker-outline'}
               size={18}
-              color={focused === 'city' ? colors.primary : colors.textLight}
+              color={city ? colors.primary : colors.textLight}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Guntur"
-              placeholderTextColor={colors.textLight}
-              value={city}
-              onChangeText={setCity}
-              onFocus={() => setFocused('city')}
-              onBlur={() => setFocused(null)}
-            />
-          </View>
-
-          {/* Step 4 — Budget & timeline */}
-          <StepLabel n={4} text="Budget & timeline" />
-
-          <Text style={styles.label}>Approximate Budget</Text>
-          <View style={styles.chipWrap}>
-            {BUDGETS.map((b) => (
-              <TouchableOpacity
-                key={b}
-                style={[styles.chip, budget === b && styles.chipActive]}
-                activeOpacity={0.8}
-                onPress={() => setBudget(b)}
-              >
-                <Text style={[styles.chipText, budget === b && styles.chipTextActive]}>
-                  {b}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={[styles.label, { marginTop: 18 }]}>When do you need it?</Text>
-          <View style={styles.chipWrap}>
-            {TIMELINES.map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[styles.chip, timeline === t && styles.chipActive]}
-                activeOpacity={0.8}
-                onPress={() => setTimeline(t)}
-              >
-                <Text style={[styles.chipText, timeline === t && styles.chipTextActive]}>
-                  {t}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+            <Text style={styles.locationText} numberOfLines={1}>
+              {city ? `Location: ${city}` : 'Set your location'}
+            </Text>
+            <Text style={styles.changeText}>{city ? 'Change' : 'Set'}</Text>
+          </TouchableOpacity>
 
           <View style={styles.assureRow}>
             <MaterialCommunityIcons
@@ -503,28 +471,42 @@ const styles = StyleSheet.create({
   },
   serviceLabelActive: { fontFamily: fonts.bodyBold },
 
-  sectorWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  sectorChip: {
+  /* The service picked on Home */
+  selectedCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 12,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: colors.primary,
+    borderRadius: 16,
+    backgroundColor: colors.primarySoft,
+    padding: 12,
   },
-  sectorChipActive: {
-    backgroundColor: colors.textDark,
-    borderColor: colors.textDark,
+  selectedArt: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sectorText: {
+  selectedImage: { width: 46, height: 46 },
+  selectedLabel: {
     fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    color: colors.textDark,
+  },
+  selectedCategory: {
+    fontFamily: fonts.body,
     fontSize: 12,
     color: colors.textLight,
+    marginTop: 2,
   },
-  sectorTextActive: { color: colors.white },
+  changeText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    color: colors.primary,
+  },
+
   sectorInput: { marginTop: 12 },
 
   label: {
@@ -534,7 +516,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
-  optional: { fontFamily: fonts.body, color: colors.textLight },
   hint: {
     fontFamily: fonts.body,
     fontSize: 12,
@@ -566,18 +547,22 @@ const styles = StyleSheet.create({
   },
   inputMultiline: { height: '100%', lineHeight: 20 },
 
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 20,
-    backgroundColor: colors.white,
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
     paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
   },
-  chipActive: { backgroundColor: colors.textDark, borderColor: colors.textDark },
-  chipText: { fontFamily: fonts.bodyBold, fontSize: 12.5, color: colors.textLight },
-  chipTextActive: { color: colors.white },
+  locationText: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 13.5,
+    color: colors.textDark,
+  },
 
   assureRow: {
     flexDirection: 'row',
