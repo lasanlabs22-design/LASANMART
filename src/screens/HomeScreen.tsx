@@ -115,8 +115,9 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 44 }}
       >
-        {/* Business Ideas leads (a requirement), then catalogue →
-            bundles → social proof → talent → catch-all.
+        {/* Business Ideas leads (a requirement), then everything you
+            can hire — catalogue → bundles → talent — then social proof
+            right before the catch-all ask.
             Online and Offline Marketing always stay together. */}
         <BusinessIdeasBanner onPress={openBusinessIdeas} />
 
@@ -137,9 +138,15 @@ export default function HomeScreen() {
         {/* Straight after the services they bundle */}
         <PlansCarousel data={plans} onPlanPress={openPlanEnquiry} />
 
-        {/* Video breaks up the run of cards. Hidden entirely when
-            there's nothing to show, rather than an empty row with
-            just the Add tile */}
+        <HireTalent
+          onInfluencersPress={openInfluencerSelection}
+          onFreelancersPress={openFreelancers}
+        />
+
+        {/* Our work, just before "tell us your idea" — and it keeps the
+            dark Hire Talent cards and Bespoke banner apart. Hidden
+            entirely when there's nothing to show, rather than an empty
+            row with just the Add tile */}
         {reels.length > 0 && (
           <ReelsRow
             data={reels}
@@ -148,11 +155,6 @@ export default function HomeScreen() {
             onAddPress={openAddReel}
           />
         )}
-
-        <HireTalent
-          onInfluencersPress={openInfluencerSelection}
-          onFreelancersPress={openFreelancers}
-        />
 
         <CustomRequirementBanner onPress={openCustomRequirement} />
       </ScrollView>
