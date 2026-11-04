@@ -6,6 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ImageBackground,
+  ImageSourcePropType,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,7 +25,17 @@ type Tool = {
   icon: string;
   gradient: [string, string];
   points: string[];
+  /** Artwork for the top of the card: objects right, plain space left */
+  image: ImageSourcePropType;
+  /** The artwork's bottom-edge colour, so the lower half continues it */
+  base: string;
+  /** How it's offered: free to use now, or set up on request */
+  badge: string;
+  free?: boolean;
 };
+
+// The artwork is cropped to 2.2:1; at this height it's all in frame
+const IMAGE_HEIGHT = Math.round((Dimensions.get('window').width - 32) / 2.2);
 
 const TOOLS: Tool[] = [
   {
@@ -34,6 +47,10 @@ const TOOLS: Tool[] = [
     icon: 'file-document-edit-outline',
     gradient: ['#FF8A3D', '#F2542D'],
     points: ['Branded templates', 'GST-ready', 'Share instantly'],
+    image: require('../../assets/tools/quotation.jpg'),
+    base: '#B0290C',
+    badge: 'FREE TOOL',
+    free: true,
   },
   {
     id: 'attendance',
@@ -44,6 +61,9 @@ const TOOLS: Tool[] = [
     icon: 'account-clock-outline',
     gradient: ['#12B3A0', '#0B6E63'],
     points: ['One-tap marking', 'Leave tracking', 'Monthly reports'],
+    image: require('../../assets/tools/attendance.jpg'),
+    base: '#017270',
+    badge: 'SUBSCRIPTION · ON REQUEST',
   },
   {
     id: 'crm',
@@ -54,6 +74,9 @@ const TOOLS: Tool[] = [
     icon: 'view-dashboard-outline',
     gradient: ['#7B2FF7', '#4C1D95'],
     points: ['Your workflow', 'Your fields', 'Fully supported'],
+    image: require('../../assets/tools/crm.jpg'),
+    base: '#4B0A98',
+    badge: 'CUSTOM-BUILT · ON REQUEST',
   },
 ];
 
@@ -97,8 +120,9 @@ export default function LasanToolsScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.intro}>
-          Software built for how small businesses actually run — set up and
-          supported by our team.
+          Quotation Generation is free to use right away. Attendance
+          Management (subscription plans) and Customised CRM (built for you)
+          are set up on request — tap one to enquire.
         </Text>
 
         {TOOLS.map((tool) => (
@@ -108,48 +132,66 @@ export default function LasanToolsScreen({ navigation }: any) {
             onPress={() => handleToolPress(tool)}
             style={styles.cardWrap}
           >
-            <LinearGradient
-              colors={tool.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.card}
-            >
-              <View pointerEvents="none" style={styles.orb} />
-
-              <View style={styles.cardTop}>
-                <View style={styles.iconTile}>
-                  <MaterialCommunityIcons
-                    name={tool.icon as any}
-                    size={20}
-                    color={colors.white}
-                  />
-                </View>
-                <View style={styles.arrowCircle}>
-                  <MaterialCommunityIcons
-                    name="arrow-right"
-                    size={16}
-                    color={colors.white}
-                  />
-                </View>
-              </View>
-
-              <Text style={styles.cardTitle}>{tool.title}</Text>
-              <Text style={styles.cardTagline}>{tool.tagline}</Text>
-              <Text style={styles.cardDetail}>{tool.detail}</Text>
-
-              <View style={styles.pointRow}>
-                {tool.points.map((p) => (
-                  <View key={p} style={styles.point}>
-                    <MaterialCommunityIcons
-                      name="check"
-                      size={11}
-                      color={colors.white}
-                    />
-                    <Text style={styles.pointText}>{p}</Text>
+            <View style={[styles.card, { backgroundColor: tool.base }]}>
+              {/* Artwork with the name over its plain left side */}
+              <ImageBackground
+                source={tool.image}
+                resizeMode="cover"
+                style={styles.cardImage}
+              >
+                <LinearGradient
+                  pointerEvents="none"
+                  colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0.6, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.cardHead}>
+                  <View
+                    style={[styles.badge, tool.free && styles.badgeFree]}
+                  >
+                    <Text
+                      style={[
+                        styles.badgeText,
+                        tool.free && styles.badgeTextFree,
+                      ]}
+                    >
+                      {tool.badge}
+                    </Text>
                   </View>
-                ))}
+                  <Text style={styles.cardTitle}>{tool.title}</Text>
+                  <Text style={styles.cardTagline}>{tool.tagline}</Text>
+                </View>
+              </ImageBackground>
+
+              {/* The rest in the artwork's own colour, full width, so the
+                  longer copy never has to sit over the objects */}
+              <View style={styles.cardBody}>
+                <Text style={styles.cardDetail}>{tool.detail}</Text>
+
+                <View style={styles.pointRow}>
+                  {tool.points.map((p) => (
+                    <View key={p} style={styles.point}>
+                      <MaterialCommunityIcons
+                        name="check"
+                        size={11}
+                        color={colors.white}
+                      />
+                      <Text style={styles.pointText}>{p}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </LinearGradient>
+
+              {/* Pinned to the corner; the chips leave room for it */}
+              <View style={styles.arrowCircle}>
+                <MaterialCommunityIcons
+                  name="arrow-right"
+                  size={16}
+                  color={colors.white}
+                />
+              </View>
+            </View>
           </TouchableOpacity>
         ))}
 
@@ -208,7 +250,6 @@ const styles = StyleSheet.create({
   cardWrap: { marginBottom: 12 },
   card: {
     borderRadius: 20,
-    padding: 14,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -216,30 +257,35 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  orb: {
-    position: 'absolute',
-    top: -60,
-    right: -40,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-  },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  iconTile: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  cardImage: {
+    minHeight: IMAGE_HEIGHT,
     justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
+  // The artwork's objects start a little past halfway across
+  cardHead: { width: '52%' },
+  cardBody: { paddingHorizontal: 14, paddingBottom: 14 },
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginBottom: 6,
+  },
+  badgeFree: { backgroundColor: '#FFD166' },
+  badgeText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 8.5,
+    letterSpacing: 0.8,
+    color: colors.white,
+  },
+  badgeTextFree: { color: '#2E1065' },
   arrowCircle: {
+    position: 'absolute',
+    right: 14,
+    bottom: 14,
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -250,25 +296,36 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: fonts.display,
     fontSize: 18,
+    lineHeight: 22,
     color: colors.white,
     letterSpacing: -0.5,
   },
   cardTagline: {
     fontFamily: fonts.bodyBold,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
+    lineHeight: 16,
+    color: 'rgba(255,255,255,0.88)',
+    marginTop: 4,
   },
   cardDetail: {
     fontFamily: fonts.body,
     fontSize: 12,
     lineHeight: 17,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 7,
+    color: 'rgba(255,255,255,0.82)',
   },
 
-  pointRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  // Margins rather than gap: a wrapping row doesn't count gap when it
+  // decides where to break, so the chips would push the arrow off
+  pointRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 4,
+    // Keeps the last chip clear of the corner arrow
+    paddingRight: 40,
+  },
   point: {
+    marginRight: 6,
+    marginTop: 6,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
