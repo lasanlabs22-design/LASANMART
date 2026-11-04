@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ImageBackground,
+  ImageSourcePropType,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
@@ -15,10 +22,16 @@ type TalentCardProps = {
   tag: string;
   title: string;
   subtitle: string;
-  icon: string; // MaterialCommunityIcons name
+  // 2:3 artwork with the subject in the lower half and a plain top
+  // for the copy
+  image: ImageSourcePropType;
   gradient: [string, string];
   onPress: () => void;
 };
+
+// Matte black, matching the artwork's backdrop, so white copy always
+// has full contrast
+const CARD_BLACK: [string, string] = ['#1E1E24', '#111114'];
 
 /**
  * Influencers and freelancers side by side — both are "hire a person"
@@ -40,16 +53,16 @@ export default function HireTalent({
           tag="CREATORS"
           title="Influencer Marketing"
           subtitle="Top creators to promote your brand"
-          icon="star"
-          gradient={['#7B2FF7', '#4C1D95']}
+          image={require('../../assets/talent/influencers.jpg')}
+          gradient={CARD_BLACK}
           onPress={onInfluencersPress}
         />
         <TalentCard
           tag="FREELANCERS"
           title="Shoots & Editors"
           subtitle="Photo, video, marketing, software"
-          icon="camera-account"
-          gradient={['#3B1782', '#1E0B45']}
+          image={require('../../assets/talent/freelancers.jpg')}
+          gradient={CARD_BLACK}
           onPress={onFreelancersPress}
         />
       </View>
@@ -61,7 +74,7 @@ function TalentCard({
   tag,
   title,
   subtitle,
-  icon,
+  image,
   gradient,
   onPress,
 }: TalentCardProps) {
@@ -71,24 +84,22 @@ function TalentCard({
       activeOpacity={0.9}
       onPress={onPress}
     >
-      <LinearGradient
-        colors={gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.card}
+      <ImageBackground
+        source={image}
+        resizeMode="cover"
+        style={[styles.card, { backgroundColor: gradient[1] }]}
+        imageStyle={styles.cardImage}
       >
-        {/* Decorative shapes, as on the Bespoke banner */}
-        <View pointerEvents="none" style={styles.orb} />
-        <View pointerEvents="none" style={styles.sheen} />
+        {/* Darkens the top so the copy reads over the artwork */}
+        <LinearGradient
+          pointerEvents="none"
+          colors={['rgba(0,0,0,0.28)', 'rgba(0,0,0,0)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 0.6 }}
+          style={StyleSheet.absoluteFill}
+        />
 
         <View style={styles.topRow}>
-          <View style={styles.iconTile}>
-            <MaterialCommunityIcons
-              name={icon as any}
-              size={22}
-              color={colors.white}
-            />
-          </View>
           <View style={styles.tag}>
             <Text style={styles.tagText}>{tag}</Text>
           </View>
@@ -107,7 +118,7 @@ function TalentCard({
             color={gradient[1]}
           />
         </View>
-      </LinearGradient>
+      </ImageBackground>
     </TouchableOpacity>
   );
 }
@@ -123,7 +134,9 @@ const styles = StyleSheet.create({
   cardTouch: { flex: 1 },
   card: {
     flex: 1,
-    minHeight: 168,
+    // The artwork's subject starts halfway down; at this height that's
+    // just below the copy, so the two never overlap
+    minHeight: 250,
     borderRadius: 20,
     padding: 14,
     overflow: 'hidden',
@@ -133,39 +146,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  orb: {
-    position: 'absolute',
-    top: -45,
-    right: -35,
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-  },
-  sheen: {
-    position: 'absolute',
-    top: -30,
-    left: -40,
-    width: 60,
-    height: 240,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    transform: [{ rotate: '22deg' }],
-  },
+  cardImage: { borderRadius: 20 },
   topRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  iconTile: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginBottom: 8,
   },
   tag: {
     backgroundColor: 'rgba(255,255,255,0.14)',
@@ -190,7 +174,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 11,
     lineHeight: 15,
-    color: 'rgba(255,255,255,0.72)',
+    color: 'rgba(255,255,255,0.82)',
     marginTop: 4,
   },
   arrowCircle: {
