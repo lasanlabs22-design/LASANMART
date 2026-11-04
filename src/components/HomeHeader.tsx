@@ -24,7 +24,7 @@ type Props = {
  * The picker saves "place, street, area, city, PIN" (or whatever they
  * typed), so the city is the last part that isn't a PIN or the country.
  */
-function cityFrom(address: string): string {
+export function cityFrom(address: string): string {
   const parts = address
     .split(',')
     .map((p) => p.trim())
