@@ -51,7 +51,7 @@ export default function HireTalent({
       <View style={styles.row}>
         <TalentCard
           tag="CREATORS"
-          title="Influencer Marketing"
+          title="Creators & Influencers"
           subtitle="Top creators to promote your brand"
           image={require('../../assets/talent/influencers.jpg')}
           gradient={CARD_BLACK}
