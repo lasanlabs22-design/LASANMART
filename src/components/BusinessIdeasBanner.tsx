@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  ImageBackground,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,54 +18,54 @@ type Props = {
 };
 
 const CARD_WIDTH = Dimensions.get('window').width - 32;
-const CARD_HEIGHT = 92;
+// Matches the artwork's 2.6:1 crop, so the bulb and everything around
+// it is in frame on a typical phone
+const CARD_HEIGHT = Math.round(CARD_WIDTH / 2.6);
 
-// Same card build as the Bespoke banner, in purple with a gold accent
+// Gold picked up from the bulb's glow
 const ACCENT = '#FFD166';
 
 export default function BusinessIdeasBanner({ onPress }: Props) {
   return (
     <View style={styles.section}>
       <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
-        <LinearGradient
-          colors={['#4C1D95', '#2E1065']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <ImageBackground
+          source={require('../../assets/banners/business-ideas.jpg')}
+          resizeMode="cover"
           style={styles.banner}
+          imageStyle={styles.bannerImage}
         >
-          {/* Decorative shapes */}
-          <View pointerEvents="none" style={styles.orb} />
-          <View pointerEvents="none" style={styles.sheen} />
+          {/* Darkens the left so the copy reads over any part of the art */}
+          <LinearGradient
+            pointerEvents="none"
+            colors={['rgba(46,16,101,0.85)', 'rgba(46,16,101,0)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.65, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
           <Shimmer width={CARD_WIDTH} opacity={0.2} delay={2800} />
-
-          <View style={styles.iconTile}>
-            <MaterialCommunityIcons
-              name="lightbulb-on"
-              size={24}
-              color={ACCENT}
-            />
-          </View>
 
           <View style={styles.textArea}>
             <View style={styles.tagRow}>
               <View style={styles.tag}>
-                <Text style={styles.tagText}>FREE</Text>
+                <Text style={styles.tagText}>FREE · 20+ SECTORS</Text>
               </View>
             </View>
             <Text style={styles.title}>Business Ideas</Text>
             <Text style={styles.subtitle}>
-              What works for your sector — pick yours
+              See what's working for businesses like yours
             </Text>
-          </View>
 
-          <View style={styles.arrowCircle}>
-            <MaterialCommunityIcons
-              name="arrow-right"
-              size={17}
-              color="#2E1065"
-            />
+            <View style={styles.cta}>
+              <Text style={styles.ctaText}>Explore ideas</Text>
+              <MaterialCommunityIcons
+                name="arrow-right"
+                size={14}
+                color="#2E1065"
+              />
+            </View>
           </View>
-        </LinearGradient>
+        </ImageBackground>
       </TouchableOpacity>
     </View>
   );
@@ -73,52 +74,25 @@ export default function BusinessIdeasBanner({ onPress }: Props) {
 const styles = StyleSheet.create({
   section: { marginTop: 24, paddingHorizontal: 16 },
   banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 20,
     // A floor, not a fixed size: on narrow phones or with large text
-    // the subtitle wraps, and the card grows instead of cutting it off
+    // the copy wraps, and the card grows instead of cutting it off
     minHeight: CARD_HEIGHT,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     overflow: 'hidden',
+    backgroundColor: '#3B0A78',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
     elevation: 6,
   },
-  orb: {
-    position: 'absolute',
-    top: -50,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: 'rgba(255,209,102,0.14)',
-  },
-  sheen: {
-    position: 'absolute',
-    top: -30,
-    left: -40,
-    width: 70,
-    height: 200,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    transform: [{ rotate: '22deg' }],
-  },
-  iconTile: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,209,102,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,209,102,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  textArea: { flex: 1 },
-  tagRow: { flexDirection: 'row', marginBottom: 5 },
+  bannerImage: { borderRadius: 20 },
+  // The artwork starts a little past halfway across
+  textArea: { width: '56%' },
+  tagRow: { flexDirection: 'row', marginBottom: 6 },
   tag: {
     backgroundColor: 'rgba(255,209,102,0.22)',
     borderRadius: 5,
@@ -133,23 +107,31 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fonts.display,
-    fontSize: 17,
+    fontSize: 19,
     color: colors.white,
     letterSpacing: -0.4,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   subtitle: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.68)',
+    lineHeight: 16,
+    color: 'rgba(255,255,255,0.78)',
   },
-  arrowCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: ACCENT,
-    justifyContent: 'center',
+  cta: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 10,
+    alignSelf: 'flex-start',
+    gap: 4,
+    marginTop: 10,
+    backgroundColor: ACCENT,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  ctaText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11.5,
+    color: '#2E1065',
   },
 });
