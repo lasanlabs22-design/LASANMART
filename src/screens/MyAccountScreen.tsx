@@ -109,6 +109,7 @@ export default function MyAccountScreen() {
   const [customSector, setCustomSector] = useState(
     !!profile.sector && !businessSectors.some((s) => s.label === profile.sector)
   );
+  const [sectorOpen, setSectorOpen] = useState(false);
 
   const setField = (key: keyof UserProfile, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -530,71 +531,114 @@ export default function MyAccountScreen() {
                 setFocused={setFocused}
               />
 
-              {/* Sector — tap to select, tap again to clear */}
+              {/* Sector — a dropdown with every sector; picking the
+                  selected one again clears it */}
               <View style={styles.fieldWrapper}>
                 <Text style={styles.fieldLabel}>Business Sector</Text>
-                <View style={styles.sectorWrap}>
-                  {businessSectors
-                    .filter((s) => s.label.toLowerCase() !== 'other')
-                    .map((s) => {
-                      const active = !customSector && form.sector === s.label;
-                      return (
-                        <TouchableOpacity
-                          key={s.id}
-                          style={[
-                            styles.sectorChip,
-                            active && styles.sectorChipActive,
-                          ]}
-                          activeOpacity={0.85}
-                          onPress={() => {
-                            setCustomSector(false);
-                            setField('sector', active ? '' : s.label);
-                          }}
-                        >
-                          <MaterialCommunityIcons
-                            name={s.icon as any}
-                            size={14}
-                            color={active ? colors.white : colors.textLight}
-                          />
-                          <Text
-                            style={[
-                              styles.sectorChipText,
-                              active && styles.sectorChipTextActive,
-                            ]}
-                          >
-                            {s.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
 
-                  {/* For anything the list doesn't cover */}
-                  <TouchableOpacity
-                    style={[
-                      styles.sectorChip,
-                      customSector && styles.sectorChipActive,
-                    ]}
-                    activeOpacity={0.85}
-                    onPress={() => {
-                      setCustomSector(!customSector);
-                      setField('sector', '');
-                    }}
-                  >
-                    <MaterialCommunityIcons
-                      name="dots-horizontal"
-                      size={14}
-                      color={customSector ? colors.white : colors.textLight}
-                    />
-                    <Text
+                {(() => {
+                  const selected = customSector
+                    ? businessSectors.find(
+                        (s) => s.label.toLowerCase() === 'other'
+                      )
+                    : businessSectors.find((s) => s.label === form.sector);
+
+                  return (
+                    <TouchableOpacity
                       style={[
-                        styles.sectorChipText,
-                        customSector && styles.sectorChipTextActive,
+                        styles.fieldBox,
+                        sectorOpen && styles.fieldBoxActive,
                       ]}
+                      activeOpacity={0.85}
+                      onPress={() => setSectorOpen(!sectorOpen)}
                     >
-                      Other
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                      <MaterialCommunityIcons
+                        name={(selected?.icon ?? 'tag-outline') as any}
+                        size={18}
+                        color={
+                          sectorOpen || selected
+                            ? colors.primary
+                            : colors.textLight
+                        }
+                      />
+                      <Text
+                        style={[
+                          styles.fieldInput,
+                          !selected && styles.sectorPlaceholder,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {selected?.label ?? 'Select your business sector'}
+                      </Text>
+                      <MaterialCommunityIcons
+                        name={sectorOpen ? 'chevron-up' : 'chevron-down'}
+                        size={20}
+                        color={colors.textLight}
+                      />
+                    </TouchableOpacity>
+                  );
+                })()}
+
+                {sectorOpen && (
+                  <View style={styles.sectorMenu}>
+                    {/* Scrolls inside the page so the whole list fits */}
+                    <ScrollView
+                      nestedScrollEnabled
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator
+                    >
+                      {businessSectors.map((s, i) => {
+                        const isOther = s.label.toLowerCase() === 'other';
+                        const active = isOther
+                          ? customSector
+                          : !customSector && form.sector === s.label;
+                        return (
+                          <TouchableOpacity
+                            key={s.id}
+                            style={[
+                              styles.sectorOption,
+                              i > 0 && styles.sectorOptionDivider,
+                              active && styles.sectorOptionActive,
+                            ]}
+                            activeOpacity={0.7}
+                            onPress={() => {
+                              setSectorOpen(false);
+                              if (isOther) {
+                                // Typed in the box below instead
+                                setCustomSector(!customSector);
+                                setField('sector', '');
+                              } else {
+                                setCustomSector(false);
+                                setField('sector', active ? '' : s.label);
+                              }
+                            }}
+                          >
+                            <MaterialCommunityIcons
+                              name={s.icon as any}
+                              size={18}
+                              color={active ? colors.primary : colors.textLight}
+                            />
+                            <Text
+                              style={[
+                                styles.sectorOptionText,
+                                active && styles.sectorOptionTextActive,
+                              ]}
+                            >
+                              {s.label}
+                            </Text>
+                            {active && (
+                              <MaterialCommunityIcons
+                                name="check"
+                                size={18}
+                                color={colors.primary}
+                              />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                )}
 
                 {customSector && (
                   <View style={styles.otherBox}>
@@ -1247,29 +1291,40 @@ const styles = StyleSheet.create({
   },
   fieldInputMultiline: { height: '100%', lineHeight: 20 },
 
-  /* Sector chips */
-  sectorWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  sectorChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  /* Sector dropdown */
+  sectorPlaceholder: { color: colors.textLight },
+  sectorMenu: {
+    // About six rows show at once; the rest scroll
+    maxHeight: 290,
+    marginTop: 6,
     borderWidth: 1.5,
     borderColor: colors.border,
-    borderRadius: 20,
+    borderRadius: 14,
     backgroundColor: colors.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    overflow: 'hidden',
   },
-  sectorChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+  sectorOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    height: 46,
   },
-  sectorChipText: {
+  sectorOptionDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  sectorOptionActive: { backgroundColor: colors.surface },
+  sectorOptionText: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: colors.textDark,
+  },
+  sectorOptionTextActive: {
     fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    color: colors.textLight,
+    color: colors.primary,
   },
-  sectorChipTextActive: { color: colors.white },
 
   otherBox: {
     flexDirection: 'row',
