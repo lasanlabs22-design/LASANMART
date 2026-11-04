@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  ImageBackground,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,7 +18,8 @@ type Props = {
 };
 
 const CARD_WIDTH = Dimensions.get('window').width - 32;
-const CARD_HEIGHT = 96;
+// Matches the artwork's 2.6:1 crop, same as the Business Ideas banner
+const CARD_HEIGHT = Math.round(CARD_WIDTH / 2.6);
 
 /**
  * This banner deliberately keeps the original orange, rather than
@@ -30,24 +32,21 @@ export default function CustomRequirementBanner({ onPress }: Props) {
   return (
     <View style={styles.section}>
       <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
-        <LinearGradient
-          colors={['#2B2D42', '#14151F']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <ImageBackground
+          source={require('../../assets/banners/custom-requirement.jpg')}
+          resizeMode="cover"
           style={styles.banner}
+          imageStyle={styles.bannerImage}
         >
-          {/* Decorative shapes */}
-          <View pointerEvents="none" style={styles.orb} />
-          <View pointerEvents="none" style={styles.sheen} />
+          {/* Darkens the left so the copy reads over any part of the art */}
+          <LinearGradient
+            pointerEvents="none"
+            colors={['rgba(20,21,31,0.85)', 'rgba(20,21,31,0)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.65, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
           <Shimmer width={CARD_WIDTH} opacity={0.2} delay={2800} />
-
-          <View style={styles.iconTile}>
-            <MaterialCommunityIcons
-              name="hammer-wrench"
-              size={24}
-              color={ACCENT}
-            />
-          </View>
 
           <View style={styles.textArea}>
             <View style={styles.tagRow}>
@@ -55,20 +54,28 @@ export default function CustomRequirementBanner({ onPress }: Props) {
                 <Text style={styles.tagText}>BESPOKE</Text>
               </View>
             </View>
-            <Text style={styles.title}>Something else in mind?</Text>
-            <Text style={styles.subtitle}>
-              Describe it and our team builds it for you
+            <Text
+              style={styles.title}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              Something else in mind?
             </Text>
-          </View>
+            <Text style={styles.subtitle}>
+              Describe it — our team plans and builds it for you
+            </Text>
 
-          <View style={styles.arrowCircle}>
-            <MaterialCommunityIcons
-              name="arrow-right"
-              size={17}
-              color={colors.white}
-            />
+            <View style={styles.cta}>
+              <Text style={styles.ctaText}>Tell us your idea</Text>
+              <MaterialCommunityIcons
+                name="arrow-right"
+                size={14}
+                color={colors.white}
+              />
+            </View>
           </View>
-        </LinearGradient>
+        </ImageBackground>
       </TouchableOpacity>
     </View>
   );
@@ -81,54 +88,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 20,
     // A floor, not a fixed size: on narrow phones or with large text
-    // the subtitle wraps, and the card grows instead of cutting it off
+    // the copy wraps, and the card grows instead of cutting it off
     minHeight: CARD_HEIGHT,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     overflow: 'hidden',
+    backgroundColor: '#1D1E2C',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
     elevation: 6,
   },
-  orb: {
-    position: 'absolute',
-    top: -50,
-    right: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: 'rgba(255,107,53,0.14)',
-  },
-  sheen: {
-    position: 'absolute',
-    top: -30,
-    left: -40,
-    width: 70,
-    height: 200,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    transform: [{ rotate: '22deg' }],
-  },
-  iconTile: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,107,53,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  textArea: { flex: 1 },
-  tagRow: { flexDirection: 'row', marginBottom: 5 },
+  bannerImage: { borderRadius: 20 },
+  // The artwork starts a little past halfway across. The title shrinks
+  // slightly to stay on one line: a second line makes the card taller,
+  // and the image then crops the tools off the right edge
+  textArea: { width: '60%' },
+  tagRow: { flexDirection: 'row', marginBottom: 6 },
   tag: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,107,53,0.22)',
     borderRadius: 5,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -136,28 +118,36 @@ const styles = StyleSheet.create({
   tagText: {
     fontFamily: fonts.bodyBold,
     fontSize: 8,
-    color: 'rgba(255,255,255,0.8)',
+    color: '#FFB08F',
     letterSpacing: 0.8,
   },
   title: {
     fontFamily: fonts.display,
-    fontSize: 17,
+    fontSize: 18,
     color: colors.white,
     letterSpacing: -0.4,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   subtitle: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.62)',
+    lineHeight: 16,
+    color: 'rgba(255,255,255,0.72)',
   },
-  arrowCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: ACCENT,
-    justifyContent: 'center',
+  cta: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 10,
+    alignSelf: 'flex-start',
+    gap: 4,
+    marginTop: 10,
+    backgroundColor: ACCENT,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  ctaText: {
+    fontFamily: fonts.bodyBold,
+    fontSize: 11.5,
+    color: colors.white,
   },
 });
