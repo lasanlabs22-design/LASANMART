@@ -122,6 +122,7 @@ export default function HomeScreen() {
 
         <CategoryCarousel
           title="Online Marketing"
+          subtitle="Get found, followed and chosen online"
           data={onlineMarketing}
           onItemPress={(item) => openServiceRequest(item, 'online')}
         />

@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -155,11 +156,15 @@ export default function PostRequestScreen({ route, navigation }: any) {
                       { backgroundColor: `${item.color}1A` },
                     ]}
                   >
-                    <MaterialCommunityIcons
-                      name={item.icon as any}
-                      size={18}
-                      color={item.color}
-                    />
+                    {item.image ? (
+                      <Image source={item.image} style={styles.serviceArt} />
+                    ) : (
+                      <MaterialCommunityIcons
+                        name={item.icon as any}
+                        size={18}
+                        color={item.color}
+                      />
+                    )}
                   </View>
                   <Text
                     style={[styles.serviceLabel, active && styles.serviceLabelActive]}
@@ -484,6 +489,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  serviceArt: {
+    width: 24,
+    height: 24,
   },
   serviceLabel: {
     flex: 1,

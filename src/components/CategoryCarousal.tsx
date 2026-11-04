@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { CategoryItem } from '../data/homeCategories';
@@ -8,6 +8,7 @@ import { type } from '../theme/typography';
 
 type Props = {
   title: string;
+  subtitle?: string;
   data: CategoryItem[];
   onItemPress?: (item: CategoryItem) => void;
 };
@@ -30,12 +31,17 @@ function tint(hex: string, alpha: number) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-export default function CategoryCarousel({ title, data, onItemPress }: Props) {
+export default function CategoryCarousel({
+  title,
+  subtitle,
+  data,
+  onItemPress,
+}: Props) {
   const columns = chunkIntoPairs(data);
 
   return (
     <View style={styles.section}>
-          <SectionHeading title={title} />
+      <SectionHeading title={title} subtitle={subtitle} />
 
       <FlatList
         data={columns}
@@ -48,26 +54,35 @@ export default function CategoryCarousel({ title, data, onItemPress }: Props) {
             {column.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={styles.card}
+                style={[styles.card, !!item.image && styles.artCard]}
                 activeOpacity={0.7}
                 onPress={() => onItemPress?.(item)}
               >
-                <View
-                  style={[
-                    styles.iconTile,
-                    {
-                      backgroundColor: tint(item.color, 0.12),
-                      borderColor: tint(item.color, 0.22),
-                    },
-                  ]}
+                {item.image ? (
+                  // Product-shot style: the object stands on its own,
+                  // no tile, so it reads like a real thing on the page
+                  <Image source={item.image} style={styles.art} />
+                ) : (
+                  <View
+                    style={[
+                      styles.iconTile,
+                      {
+                        backgroundColor: tint(item.color, 0.12),
+                        borderColor: tint(item.color, 0.22),
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={item.icon as any}
+                      size={ICON_SIZE}
+                      color={item.color}
+                    />
+                  </View>
+                )}
+                <Text
+                  style={[styles.cardLabel, !!item.image && styles.artLabel]}
+                  numberOfLines={2}
                 >
-                  <MaterialCommunityIcons
-                    name={item.icon as any}
-                    size={ICON_SIZE}
-                    color={item.color}
-                  />
-                </View>
-                <Text style={styles.cardLabel} numberOfLines={2}>
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -85,6 +100,10 @@ const CARD_WIDTH = 76;
 // Regular app-grid proportions, so 4+ services show per row
 const TILE_SIZE = 60;
 const ICON_SIZE = 26;
+// Artwork cards are wider with no tile, so the picture can be the hero;
+// "Optimization" in Jakarta Bold 12.5 is ~80px, still one line at 86
+const ART_CARD_WIDTH = 86;
+const ART_SIZE = 72;
 
 const styles = StyleSheet.create({
   section: {
@@ -118,6 +137,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  artCard: {
+    width: ART_CARD_WIDTH,
+    height: ART_SIZE + 42,
+  },
+  art: {
+    width: ART_SIZE,
+    height: ART_SIZE,
+    resizeMode: 'contain',
+    marginBottom: 6,
+  },
+  artLabel: {
+    fontSize: 12.5,
+    lineHeight: 16,
+    height: 32,
   },
   cardLabel: {
     ...type.label,
