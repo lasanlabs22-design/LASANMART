@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ImageBackground,
+  Dimensions,
+  LayoutAnimation,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -22,38 +25,55 @@ import { freelancerServices } from '../data/freelancerServices';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
 
-const BUDGETS = [
-  'Under ₹10,000',
-  '₹10,000 – ₹25,000',
-  '₹25,000 – ₹50,000',
-  'Above ₹50,000',
-  'Not sure yet',
-];
-
-const TIMELINES = ['This week', 'Within a month', 'Flexible'];
+// The artwork is cropped to ~2.33:1, so at this height the objects are
+// all in frame. Width is the screen less padding and the 2px border.
+const BANNER_HEIGHT = Math.round(
+  (Dimensions.get('window').width - 32 - 4) / 2.33
+);
 
 export default function FreelancerRequestScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
 
   const [picked, setPicked] = useState<string[]>([]);
   const [description, setDescription] = useState('');
-  const [budget, setBudget] = useState('');
-  const [timeline, setTimeline] = useState('');
   const [focused, setFocused] = useState(false);
 
   const { submit, busy, sheetProps } = useSubmitRequest(() =>
     navigation.goBack()
   );
 
+  // Where things sit, so a newly picked card can be scrolled into view
+  // together with the panel that opens under it
+  const scrollRef = useRef<ScrollView>(null);
+  const listY = useRef(0);
+  const cardY = useRef<Record<string, number>>({});
+
   const chosen = freelancerServices.filter((s) => picked.includes(s.id));
   // Picking a service is enough — the description is optional, since
   // plenty of people can't say yet exactly what they want
   const ready = picked.length > 0;
 
+  // The details panel hangs under the most recently picked card
+  const anchorId = picked[picked.length - 1];
+  const anchor = freelancerServices.find((s) => s.id === anchorId);
+
   const toggle = (id: string) => {
+    const adding = !picked.includes(id);
+
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setPicked((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+
+    // Once the panel has opened, bring the card and its panel into view
+    if (adding) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({
+          y: Math.max(0, listY.current + (cardY.current[id] ?? 0) - 8),
+          animated: true,
+        });
+      }, 320);
+    }
   };
 
   const handleSubmit = () => {
@@ -69,8 +89,6 @@ export default function FreelancerRequestScreen({ navigation }: any) {
       details: {
         source: 'Freelancers',
         services: labels,
-        budget: budget || undefined,
-        timeline: timeline || undefined,
       },
     });
   };
@@ -97,6 +115,7 @@ export default function FreelancerRequestScreen({ navigation }: any) {
         </View>
 
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={[
             styles.content,
             { paddingBottom: 40 + insets.bottom },
@@ -109,173 +128,147 @@ export default function FreelancerRequestScreen({ navigation }: any) {
             person and comes back with a quote.
           </Text>
 
-          {/* The services — an odd last tile stretches to full width */}
-          <View style={styles.grid}>
+          {/* The services as image banners — tap to pick, more than one
+              is fine */}
+          <View
+            style={styles.list}
+            onLayout={(e) => (listY.current = e.nativeEvent.layout.y)}
+          >
             {freelancerServices.map((s) => {
               const active = picked.includes(s.id);
 
               return (
-                <TouchableOpacity
-                  key={s.id}
-                  style={[
-                    styles.tile,
-                    active && {
-                      borderColor: s.colour,
-                      backgroundColor: `${s.colour}0F`,
-                    },
-                  ]}
-                  activeOpacity={0.85}
-                  onPress={() => toggle(s.id)}
-                >
-                  <View
-                    style={[
-                      styles.tileIcon,
-                      { backgroundColor: active ? s.colour : `${s.colour}1A` },
-                    ]}
+                <React.Fragment key={s.id}>
+                  <TouchableOpacity
+                    style={[styles.banner, active && { borderColor: s.colour }]}
+                    activeOpacity={0.88}
+                    onPress={() => toggle(s.id)}
+                    onLayout={(e) =>
+                      (cardY.current[s.id] = e.nativeEvent.layout.y)
+                    }
                   >
-                    <MaterialCommunityIcons
-                      name={s.icon as any}
-                      size={22}
-                      color={active ? colors.white : s.colour}
-                    />
-                  </View>
-
-                  <Text
-                    style={[styles.tileLabel, active && { color: s.colour }]}
-                  >
-                    {s.label}
-                  </Text>
-                  <Text style={styles.tileBlurb}>{s.blurb}</Text>
-
-                  {active && (
-                    <View style={[styles.tick, { backgroundColor: s.colour }]}>
-                      <MaterialCommunityIcons
-                        name="check"
-                        size={11}
-                        color={colors.white}
+                    <ImageBackground
+                      source={s.image}
+                      resizeMode="cover"
+                      style={styles.bannerInner}
+                      imageStyle={styles.bannerImage}
+                    >
+                      {/* Darkens the left so the copy reads over the art */}
+                      <LinearGradient
+                        pointerEvents="none"
+                        colors={['rgba(14,14,18,0.85)', 'rgba(14,14,18,0)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0.6, y: 0 }}
+                        style={StyleSheet.absoluteFill}
                       />
+
+                      <View style={styles.bannerText}>
+                        <Text style={styles.bannerLabel}>{s.label}</Text>
+                        <Text style={styles.bannerBlurb}>{s.blurb}</Text>
+                      </View>
+
+                      {/* Empty ring until picked, so it reads as selectable */}
+                      <View
+                        style={[
+                          styles.tick,
+                          active
+                            ? { backgroundColor: s.colour, borderColor: s.colour }
+                            : null,
+                        ]}
+                      >
+                        {active && (
+                          <MaterialCommunityIcons
+                            name="check"
+                            size={13}
+                            color={colors.white}
+                          />
+                        )}
+                      </View>
+                    </ImageBackground>
+                  </TouchableOpacity>
+
+                  {/* Opens out of the card: prompts, the brief and the
+                      button, so nothing waits at the bottom of the page */}
+                  {anchor?.id === s.id && (
+                    <View style={[styles.panel, { borderColor: s.colour }]}>
+                      <View style={styles.prompts}>
+                        <Text style={styles.promptTitle}>Worth telling us</Text>
+                        {chosen.flatMap((c) =>
+                          c.asks.map((a) => (
+                            <View key={`${c.id}-${a}`} style={styles.promptRow}>
+                              <MaterialCommunityIcons
+                                name="circle-small"
+                                size={18}
+                                color={colors.textLight}
+                              />
+                              <Text style={styles.promptText}>{a}</Text>
+                            </View>
+                          ))
+                        )}
+                      </View>
+
+                      <Text style={styles.label}>
+                        What do you need?{' '}
+                        <Text style={styles.optional}>(optional)</Text>
+                      </Text>
+                      <Text style={styles.hint}>
+                        Not sure yet? Leave it blank — our team will work it
+                        out with you.
+                      </Text>
+                      <View
+                        style={[styles.field, focused && styles.fieldActive]}
+                      >
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Tell us about the work — the more detail, the better the quote"
+                          placeholderTextColor={colors.textLight}
+                          value={description}
+                          onChangeText={setDescription}
+                          onFocus={() => setFocused(true)}
+                          onBlur={() => setFocused(false)}
+                          multiline
+                          maxLength={800}
+                          textAlignVertical="top"
+                        />
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.submit}
+                        activeOpacity={0.9}
+                        onPress={handleSubmit}
+                        disabled={busy}
+                      >
+                        {busy ? (
+                          <ActivityIndicator color={colors.white} />
+                        ) : (
+                          <>
+                            <Text style={styles.submitText}>
+                              Send Request · {picked.length} selected
+                            </Text>
+                            <MaterialCommunityIcons
+                              name="arrow-right"
+                              size={17}
+                              color={colors.white}
+                            />
+                          </>
+                        )}
+                      </TouchableOpacity>
+
+                      <Text style={styles.note}>
+                        Nothing is booked or charged. We'll call you to talk
+                        it through before anything is agreed.
+                      </Text>
                     </View>
                   )}
-                </TouchableOpacity>
+                </React.Fragment>
               );
             })}
           </View>
-
-          {/* Prompts, so the brief is actually useful */}
-          {chosen.length > 0 && (
-            <View style={styles.prompts}>
-              <Text style={styles.promptTitle}>Worth telling us</Text>
-              {chosen.flatMap((s) =>
-                s.asks.map((a) => (
-                  <View key={`${s.id}-${a}`} style={styles.promptRow}>
-                    <MaterialCommunityIcons
-                      name="circle-small"
-                      size={18}
-                      color={colors.textLight}
-                    />
-                    <Text style={styles.promptText}>{a}</Text>
-                  </View>
-                ))
-              )}
-            </View>
-          )}
-
-          <Text style={styles.label}>
-            What do you need? <Text style={styles.optional}>(optional)</Text>
-          </Text>
-          <Text style={styles.hint}>
-            Not sure yet? Leave it blank — our team will work it out with you.
-          </Text>
-          <View style={[styles.field, focused && styles.fieldActive]}>
-            <TextInput
-              style={styles.input}
-              placeholder="Tell us about the work — the more detail, the better the quote"
-              placeholderTextColor={colors.textLight}
-              value={description}
-              onChangeText={setDescription}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              multiline
-              maxLength={800}
-              textAlignVertical="top"
-            />
-          </View>
-
-          <Text style={styles.label}>Budget</Text>
-          <View style={styles.chipWrap}>
-            {BUDGETS.map((b) => (
-              <Chip
-                key={b}
-                label={b}
-                active={budget === b}
-                onPress={() => setBudget(budget === b ? '' : b)}
-              />
-            ))}
-          </View>
-
-          <Text style={styles.label}>When do you need it?</Text>
-          <View style={styles.chipWrap}>
-            {TIMELINES.map((t) => (
-              <Chip
-                key={t}
-                label={t}
-                active={timeline === t}
-                onPress={() => setTimeline(timeline === t ? '' : t)}
-              />
-            ))}
-          </View>
-
-          <TouchableOpacity
-            style={[styles.submit, !ready && styles.submitOff]}
-            activeOpacity={0.9}
-            onPress={handleSubmit}
-            disabled={!ready || busy}
-          >
-            {busy ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <>
-                <Text style={styles.submitText}>Send Request</Text>
-                <MaterialCommunityIcons
-                  name="arrow-right"
-                  size={17}
-                  color={colors.white}
-                />
-              </>
-            )}
-          </TouchableOpacity>
-
-          <Text style={styles.note}>
-            Nothing is booked or charged. We'll call you to talk it through
-            before anything is agreed.
-          </Text>
         </ScrollView>
 
         <ContactDetailsSheet {...sheetProps} />
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-}
-
-function Chip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={[styles.chip, active && styles.chipActive]}
-      activeOpacity={0.85}
-      onPress={onPress}
-    >
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
   );
 }
 
@@ -316,53 +309,72 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tile: {
-    width: '47.5%',
-    flexGrow: 1,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    padding: 14,
+  list: { gap: 12 },
+  banner: {
+    // Sits over the top of its panel, so the panel looks like it
+    // slides out from under the card
+    zIndex: 2,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    overflow: 'hidden',
+    backgroundColor: '#0E0E12',
   },
-  tileIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 15,
+  bannerInner: {
+    minHeight: BANNER_HEIGHT,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  tileLabel: {
-    fontFamily: fonts.displayMedium,
-    fontSize: 14.5,
-    color: colors.textDark,
-    letterSpacing: -0.2,
+  bannerImage: { borderRadius: 18 },
+  // The artwork starts about halfway across
+  bannerText: { width: '48%' },
+  bannerLabel: {
+    fontFamily: fonts.display,
+    fontSize: 17,
+    lineHeight: 21,
+    color: colors.white,
+    letterSpacing: -0.3,
   },
-  tileBlurb: {
+  bannerBlurb: {
     fontFamily: fonts.body,
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
-    color: colors.textLight,
-    marginTop: 3,
+    color: 'rgba(255,255,255,0.78)',
+    marginTop: 4,
   },
   tick: {
     position: 'absolute',
     top: 12,
     right: 12,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  // Tucks 20px up behind the card's rounded bottom (on top of the
+  // list's 12px gap), and shares the card's border colour
+  panel: {
+    zIndex: 1,
+    marginTop: -32,
+    paddingTop: 34,
+    paddingHorizontal: 14,
+    paddingBottom: 16,
+    borderWidth: 2,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    backgroundColor: colors.white,
   },
 
   prompts: {
     backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
-    marginTop: 18,
   },
   promptTitle: {
     fontFamily: fonts.bodyBold,
@@ -384,7 +396,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 13,
     color: colors.textDark,
-    marginTop: 24,
+    marginTop: 18,
     marginBottom: 10,
   },
   optional: { fontFamily: fonts.body, color: colors.textLight },
@@ -416,26 +428,6 @@ const styles = StyleSheet.create({
     padding: 0,
   },
 
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 12.5,
-    color: colors.textLight,
-  },
-  chipTextActive: { color: colors.white },
-
   submit: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -444,18 +436,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 17,
     borderRadius: 14,
-    marginTop: 28,
+    marginTop: 16,
     minHeight: 56,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.28,
     shadowRadius: 12,
     elevation: 6,
-  },
-  submitOff: {
-    backgroundColor: colors.border,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   submitText: {
     fontFamily: fonts.bodyBold,
@@ -469,6 +456,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: colors.textLight,
     textAlign: 'center',
-    marginTop: 14,
+    marginTop: 12,
   },
 });
