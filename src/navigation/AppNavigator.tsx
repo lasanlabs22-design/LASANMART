@@ -28,6 +28,7 @@ import OnBoardingScreen from '../screens/OnBoardingScreen';
 import PartnerStepScreen from '../screens/PartnerStepScreen';
 import InfluencerProfileScreen from '../screens/InfluencerProfileScreen';
 import CommunityGuidelinesScreen from '../screens/CommunityGuidelinesScreen';
+import AllServicesScreen from '../screens/AllServicesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -129,6 +130,7 @@ function RootStack({ initialRoute }: { initialRoute: string }) {
         component={PostRequestScreen}
         options={{ presentation: 'modal' }}
       />
+      <Stack.Screen name="AllServices" component={AllServicesScreen} />
       <Stack.Screen
         name="BusinessIdeas"
         component={BusinessIdeasScreen}
