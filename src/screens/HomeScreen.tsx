@@ -102,6 +102,10 @@ export default function HomeScreen() {
     navigation.getParent()?.navigate('PostRequest', { service, category });
   };
 
+  const openAllServices = (category: 'online' | 'offline') => {
+    navigation.getParent()?.navigate('AllServices', { category });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <HeaderInset />
@@ -128,6 +132,7 @@ export default function HomeScreen() {
           subtitle="Get found, followed and chosen online"
           data={onlineMarketing}
           onItemPress={(item) => openServiceRequest(item, 'online')}
+          onViewAll={() => openAllServices('online')}
         />
 
         <CategoryCarousel
@@ -135,6 +140,7 @@ export default function HomeScreen() {
           subtitle="Be seen on every street and screen"
           data={offlineMarketing}
           onItemPress={(item) => openServiceRequest(item, 'offline')}
+          onViewAll={() => openAllServices('offline')}
         />
 
         {/* Straight after the services they bundle */}

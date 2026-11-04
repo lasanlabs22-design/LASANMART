@@ -11,6 +11,8 @@ type Props = {
   subtitle?: string;
   data: CategoryItem[];
   onItemPress?: (item: CategoryItem) => void;
+  /** Shows "View all" in the heading — the row only fits a few at once */
+  onViewAll?: () => void;
 };
 
 // Groups a flat list into pairs: [1,2,3,4,5] -> [[1,2],[3,4],[5]]
@@ -36,12 +38,18 @@ export default function CategoryCarousel({
   subtitle,
   data,
   onItemPress,
+  onViewAll,
 }: Props) {
   const columns = chunkIntoPairs(data);
 
   return (
     <View style={styles.section}>
-      <SectionHeading title={title} subtitle={subtitle} />
+      <SectionHeading
+        title={title}
+        subtitle={subtitle}
+        actionLabel={onViewAll ? 'View all ›' : undefined}
+        onActionPress={onViewAll}
+      />
 
       <FlatList
         data={columns}
