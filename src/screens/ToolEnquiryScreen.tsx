@@ -17,13 +17,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
-import { businessSectors, BusinessSector } from '../data/businessSectors';
+import { BusinessSector } from '../data/businessSectors';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
 import HeaderInset from '../components/HeaderInset';
+import SectorDropdown from '../components/SectorDropdown';
 
 const TEAM_SIZES = ['Just me', '2–10', '11–50', '51–200', '200+'];
-const TIMELINES = ['Right away', 'Within a month', 'Next quarter', 'Just exploring'];
 
 /** Questions that only make sense for a particular tool */
 const TOOL_QUESTIONS: Record<string, { label: string; placeholder: string }> = {
@@ -60,17 +60,16 @@ export default function ToolEnquiryScreen({ route, navigation }: any) {
   const [company, setCompany] = useState(profile.companyName);
   const [sector, setSector] = useState<BusinessSector | null>(null);
   const [teamSize, setTeamSize] = useState('');
-  const [timeline, setTimeline] = useState('');
   const [requirement, setRequirement] = useState('');
   const [focused, setFocused] = useState<string | null>(null);
 
-  // What they need it to do is optional — the team size and timeline
-  // are quick taps, and the details come out on the call
-  const isReady = !!teamSize && !!timeline;
+  // What they need it to do is optional — the team size is a quick
+  // tap, and the details come out on the call
+  const isReady = !!teamSize;
 
   const handleSubmit = () => {
     if (!isReady) {
-      Alert.alert('Almost there', 'Pick your team size and timeline.');
+      Alert.alert('Almost there', 'Pick how many people will use it.');
       return;
     }
 
@@ -89,7 +88,6 @@ export default function ToolEnquiryScreen({ route, navigation }: any) {
       details: {
         tool: tool.title,
         teamSize,
-        timeline,
       },
     });
   };
@@ -208,28 +206,7 @@ export default function ToolEnquiryScreen({ route, navigation }: any) {
 
           {/* Sector */}
           <Text style={styles.groupTitle}>Business Sector</Text>
-          <View style={styles.chipWrap}>
-            {businessSectors.map((s) => {
-              const active = sector?.id === s.id;
-              return (
-                <TouchableOpacity
-                  key={s.id}
-                  style={[styles.chip, active && styles.chipActive]}
-                  activeOpacity={0.85}
-                  onPress={() => setSector(active ? null : s)}
-                >
-                  <MaterialCommunityIcons
-                    name={s.icon as any}
-                    size={14}
-                    color={active ? colors.white : colors.textLight}
-                  />
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                    {s.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <SectorDropdown value={sector} onChange={setSector} />
 
           {/* Team size */}
           <Text style={styles.groupTitle}>How many people will use it?</Text>
@@ -242,26 +219,6 @@ export default function ToolEnquiryScreen({ route, navigation }: any) {
                   style={[styles.chip, active && styles.chipActive]}
                   activeOpacity={0.85}
                   onPress={() => setTeamSize(t)}
-                >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                    {t}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Timeline */}
-          <Text style={styles.groupTitle}>When do you need it?</Text>
-          <View style={styles.chipWrap}>
-            {TIMELINES.map((t) => {
-              const active = timeline === t;
-              return (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.chip, active && styles.chipActive]}
-                  activeOpacity={0.85}
-                  onPress={() => setTimeline(t)}
                 >
                   <Text style={[styles.chipText, active && styles.chipTextActive]}>
                     {t}
