@@ -129,6 +129,7 @@ export default function HomeScreen() {
 
         <CategoryCarousel
           title="Offline Marketing"
+          subtitle="Be seen on every street and screen"
           data={offlineMarketing}
           onItemPress={(item) => openServiceRequest(item, 'offline')}
         />
