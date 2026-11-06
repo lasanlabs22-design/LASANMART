@@ -41,6 +41,7 @@ export default function CategoryCarousel({
   onViewAll,
 }: Props) {
   const columns = chunkIntoPairs(data);
+  const hasArt = data.some((item) => !!item.image);
 
   return (
     <View style={styles.section}>
@@ -56,9 +57,9 @@ export default function CategoryCarousel({
         keyExtractor={(_, index) => `col-${index}`}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, hasArt && styles.artListContent]}
         renderItem={({ item: column }) => (
-          <View style={styles.column}>
+          <View style={[styles.column, hasArt && styles.artColumn]}>
             {column.map((item) => (
               <TouchableOpacity
                 key={item.id}
@@ -108,10 +109,11 @@ const CARD_WIDTH = 76;
 // Regular app-grid proportions, so 4+ services show per row
 const TILE_SIZE = 60;
 const ICON_SIZE = 26;
-// Artwork cards are wider with no tile, so the picture can be the hero;
-// "Optimization" in Jakarta Bold 12.5 is ~80px, still one line at 86
-const ART_CARD_WIDTH = 86;
-const ART_SIZE = 72;
+// Artwork cards: sized so 5 columns show on a ~400dp phone with the
+// 6th peeking; "Optimization" in Jakarta Bold 10.5 is ~67px, one line at 70
+const ART_CARD_WIDTH = 70;
+const ART_SIZE = 56;
+const ART_GAP = 6;
 
 const styles = StyleSheet.create({
   section: {
@@ -129,8 +131,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 10,
   },
+  artListContent: {
+    gap: ART_GAP,
+  },
   column: {
     gap: 14,
+  },
+  artColumn: {
+    gap: 10,
   },
   card: {
     width: CARD_WIDTH,
@@ -148,18 +156,18 @@ const styles = StyleSheet.create({
   },
   artCard: {
     width: ART_CARD_WIDTH,
-    height: ART_SIZE + 42,
+    height: ART_SIZE + 34,
   },
   art: {
     width: ART_SIZE,
     height: ART_SIZE,
     resizeMode: 'contain',
-    marginBottom: 6,
+    marginBottom: 5,
   },
   artLabel: {
-    fontSize: 12.5,
-    lineHeight: 16,
-    height: 32,
+    fontSize: 10.5,
+    lineHeight: 14,
+    height: 28,
   },
   cardLabel: {
     ...type.label,
