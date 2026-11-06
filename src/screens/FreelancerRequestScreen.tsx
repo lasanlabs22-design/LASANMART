@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  ImageBackground,
+  Image,
   Dimensions,
   LayoutAnimation,
 } from 'react-native';
@@ -25,12 +25,28 @@ import { freelancerServices } from '../data/freelancerServices';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
 import HeaderInset from '../components/HeaderInset';
+import ServiceBox, { BoxTick, BOX_BLACK } from '../components/ServiceBox';
 
-// The artwork is cropped to ~2.33:1, so at this height the objects are
-// all in frame. Width is the screen less padding and the 2px border.
-const BANNER_HEIGHT = Math.round(
-  (Dimensions.get('window').width - 32 - 4) / 2.33
-);
+// Two boxes per row: the screen less the page padding and the gap
+const GRID_GAP = 10;
+const BOX_WIDTH = (Dimensions.get('window').width - 32 - GRID_GAP) / 2;
+const PAGE_PADDING = 16;
+const INTRO_GAP = 14;
+// The whole grid fits on screen: box height comes from the space left
+// under the intro, kept within sensible bounds on very small/large phones
+const MIN_BOX_HEIGHT = 112;
+const MAX_BOX_HEIGHT = Math.round(BOX_WIDTH * 1.15);
+// The banner artwork is 1100x472 with the objects in its right half on a
+// plain dark backdrop. The wide box shows that right part: the picture
+// is drawn at the box's height and pinned to the right edge.
+const BANNER_RATIO = 1100 / 472;
+
+// [a, b, c, d, e] -> [[a, b], [c, d], [e]]
+function inRows<T>(items: T[]): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
+  return rows;
+}
 
 export default function FreelancerRequestScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -39,6 +55,28 @@ export default function FreelancerRequestScreen({ navigation }: any) {
   const [description, setDescription] = useState('');
   const [focused, setFocused] = useState(false);
 
+  // Measured so the grid can be sized to fit without scrolling
+  const [viewportH, setViewportH] = useState(0);
+  const [introH, setIntroH] = useState(0);
+  const rowCount = Math.ceil(freelancerServices.length / 2);
+  const bottomPad = PAGE_PADDING + insets.bottom;
+  const boxH =
+    viewportH > 0
+      ? Math.max(
+          MIN_BOX_HEIGHT,
+          Math.min(
+            MAX_BOX_HEIGHT,
+            Math.floor(
+              (viewportH -
+                PAGE_PADDING -
+                introH -
+                bottomPad -
+                GRID_GAP * (rowCount - 1)) /
+                rowCount
+            )
+          )
+        )
+      : MIN_BOX_HEIGHT;
   const { submit, busy, sheetProps } = useSubmitRequest(() =>
     navigation.goBack()
   );
@@ -118,81 +156,123 @@ export default function FreelancerRequestScreen({ navigation }: any) {
 
         <ScrollView
           ref={scrollRef}
+          onLayout={(e) => setViewportH(e.nativeEvent.layout.height)}
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: 40 + insets.bottom },
+            { paddingBottom: bottomPad },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.intro}>
+          <Text
+            style={styles.intro}
+            onLayout={(e) =>
+              // The layout height leaves out the margin under the text
+              setIntroH(e.nativeEvent.layout.height + INTRO_GAP)
+            }
+          >
             Pick what you need — more than one is fine. Our team finds the right
             person and comes back with a quote.
           </Text>
 
-          {/* The services as image banners — tap to pick, more than one
-              is fine */}
+          {/* The services as a 2-column grid of image boxes — tap to
+              pick, more than one is fine */}
           <View
             style={styles.list}
             onLayout={(e) => (listY.current = e.nativeEvent.layout.y)}
           >
-            {freelancerServices.map((s) => {
-              const active = picked.includes(s.id);
-
-              return (
-                <React.Fragment key={s.id}>
-                  <TouchableOpacity
-                    style={[styles.banner, active && { borderColor: s.colour }]}
-                    activeOpacity={0.88}
-                    onPress={() => toggle(s.id)}
-                    onLayout={(e) =>
-                      (cardY.current[s.id] = e.nativeEvent.layout.y)
+            {inRows(freelancerServices).map((row) => (
+              <React.Fragment key={row[0].id}>
+                <View
+                  style={styles.row}
+                  onLayout={(e) => {
+                    for (const s of row) {
+                      cardY.current[s.id] = e.nativeEvent.layout.y;
                     }
-                  >
-                    <ImageBackground
-                      source={s.image}
-                      resizeMode="cover"
-                      style={styles.bannerInner}
-                      imageStyle={styles.bannerImage}
-                    >
-                      {/* Darkens the left so the copy reads over the art */}
-                      <LinearGradient
-                        pointerEvents="none"
-                        colors={['rgba(14,14,18,0.85)', 'rgba(14,14,18,0)']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0.6, y: 0 }}
-                        style={StyleSheet.absoluteFill}
-                      />
+                  }}
+                >
+                  {row.map((s) => {
+                    const active = picked.includes(s.id);
 
-                      <View style={styles.bannerText}>
-                        <Text style={styles.bannerLabel}>{s.label}</Text>
-                        <Text style={styles.bannerBlurb}>{s.blurb}</Text>
-                      </View>
-
-                      {/* Empty ring until picked, so it reads as selectable */}
-                      <View
-                        style={[
-                          styles.tick,
-                          active
-                            ? { backgroundColor: s.colour, borderColor: s.colour }
-                            : null,
-                        ]}
-                      >
-                        {active && (
-                          <MaterialCommunityIcons
-                            name="check"
-                            size={13}
-                            color={colors.white}
+                    // A lone last service runs full width as a banner:
+                    // art on the right, copy over the dark left side
+                    if (row.length === 1 && s.bannerImage) {
+                      return (
+                        <TouchableOpacity
+                          key={s.id}
+                          style={[
+                            styles.box,
+                            styles.wideBox,
+                            { height: boxH },
+                            active && { borderColor: s.colour },
+                          ]}
+                          activeOpacity={0.88}
+                          onPress={() => toggle(s.id)}
+                        >
+                          <Image
+                            source={s.bannerImage}
+                            style={[
+                              styles.bannerImage,
+                              { width: boxH * BANNER_RATIO, height: boxH },
+                            ]}
                           />
-                        )}
-                      </View>
-                    </ImageBackground>
-                  </TouchableOpacity>
+                          <LinearGradient
+                            pointerEvents="none"
+                            colors={['rgba(14,14,18,0.85)', 'rgba(14,14,18,0)']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0.6, y: 0 }}
+                            style={StyleSheet.absoluteFill}
+                          />
+                          <View style={styles.wideText}>
+                            <Text style={styles.wideLabel}>{s.label}</Text>
+                            <Text style={styles.wideBlurb}>{s.blurb}</Text>
+                          </View>
+                          <BoxTick active={active} colour={s.colour} />
+                        </TouchableOpacity>
+                      );
+                    }
 
-                  {/* Opens out of the card: prompts, the brief and the
-                      button, so nothing waits at the bottom of the page */}
-                  {anchor?.id === s.id && (
-                    <View style={[styles.panel, { borderColor: s.colour }]}>
+                    return (
+                      <ServiceBox
+                        key={s.id}
+                        service={s}
+                        width={BOX_WIDTH}
+                        height={boxH}
+                        active={active}
+                        onPress={() => toggle(s.id)}
+                      />
+                    );
+                  })}
+                </View>
+
+                {/* Opens under the row of the box just picked: prompts,
+                    the brief and the button, so nothing waits at the
+                    bottom of the page */}
+                {row.map((s) =>
+                  anchor?.id === s.id ? (
+                    <View
+                      key={`panel-${s.id}`}
+                      style={[styles.panel, { borderColor: s.colour }]}
+                    >
+                      {/* Package prices of the picked services that
+                          have one */}
+                      {chosen.some((c) => c.price) && (
+                        <View style={styles.prices}>
+                          {chosen
+                            .filter((c) => c.price)
+                            .map((c) => (
+                              <View key={`price-${c.id}`} style={styles.priceRow}>
+                                <Text style={styles.priceLabel} numberOfLines={1}>
+                                  {c.label}
+                                </Text>
+                                <Text style={[styles.priceValue, { color: c.colour }]}>
+                                  {c.price}
+                                </Text>
+                              </View>
+                            ))}
+                        </View>
+                      )}
+
                       <View style={styles.prompts}>
                         <Text style={styles.promptTitle}>Worth telling us</Text>
                         {chosen.flatMap((c) =>
@@ -261,10 +341,10 @@ export default function FreelancerRequestScreen({ navigation }: any) {
                         it through before anything is agreed.
                       </Text>
                     </View>
-                  )}
-                </React.Fragment>
-              );
-            })}
+                  ) : null
+                )}
+              </React.Fragment>
+            ))}
           </View>
         </ScrollView>
 
@@ -307,69 +387,76 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     lineHeight: 20,
     color: colors.textLight,
-    marginBottom: 18,
+    marginBottom: INTRO_GAP,
   },
 
-  list: { gap: 12 },
-  banner: {
-    // Sits over the top of its panel, so the panel looks like it
-    // slides out from under the card
-    zIndex: 2,
-    borderRadius: 20,
+  list: { gap: GRID_GAP },
+  row: { flexDirection: 'row', gap: GRID_GAP },
+  // Same frame as ServiceBox, for the full-width banner
+  box: {
+    borderRadius: 18,
     borderWidth: 2,
     borderColor: 'transparent',
     overflow: 'hidden',
-    backgroundColor: '#0E0E12',
+    backgroundColor: BOX_BLACK,
   },
-  bannerInner: {
-    minHeight: BANNER_HEIGHT,
+  // Pinned right, so the objects (right half of the art) fill the banner
+  bannerImage: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+  },
+  wideBox: {
+    width: BOX_WIDTH * 2 + GRID_GAP,
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
   },
-  bannerImage: { borderRadius: 18 },
-  // The artwork starts about halfway across
-  bannerText: { width: '48%' },
-  bannerLabel: {
+  // The banner art's objects start about halfway across
+  wideText: { width: '48%', paddingHorizontal: 16 },
+  wideLabel: {
     fontFamily: fonts.display,
     fontSize: 17,
     lineHeight: 21,
     color: colors.white,
     letterSpacing: -0.3,
   },
-  bannerBlurb: {
+  wideBlurb: {
     fontFamily: fonts.body,
     fontSize: 12,
     lineHeight: 16,
     color: 'rgba(255,255,255,0.78)',
     marginTop: 4,
   },
-  tick: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Tucks 20px up behind the card's rounded bottom (on top of the
-  // list's 12px gap), and shares the card's border colour
+  // Full width under the row, in the picked box's border colour
   panel: {
-    zIndex: 1,
-    marginTop: -32,
-    paddingTop: 34,
+    paddingTop: 14,
     paddingHorizontal: 14,
     paddingBottom: 16,
     borderWidth: 2,
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderRadius: 20,
     backgroundColor: colors.white,
+  },
+
+  prices: {
+    gap: 8,
+    marginBottom: 12,
+    paddingHorizontal: 2,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  priceLabel: {
+    flex: 1,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    color: colors.textDark,
+  },
+  priceValue: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    letterSpacing: -0.2,
   },
 
   prompts: {
