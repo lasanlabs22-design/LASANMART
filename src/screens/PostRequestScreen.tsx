@@ -12,6 +12,7 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,12 +20,24 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { onlineMarketing, offlineMarketing, CategoryItem } from '../data/homeCategories';
 import { BusinessSector } from '../data/businessSectors';
+import { freelancerServices } from '../data/freelancerServices';
 import { useAuth } from '../context/AuthContext';
 import { useSubmitRequest } from '../hooks/useSubmitRequest';
 import ContactDetailsSheet from '../components/ContactDetailsSheet';
 import SectorDropdown from '../components/SectorDropdown';
 import { cityFrom } from '../components/HomeHeader';
 import HeaderInset from '../components/HeaderInset';
+import ServiceBox from '../components/ServiceBox';
+
+// Flash Shoot asks which kind of shoot; the choices (art, price) are the
+// same packages as on Hire a Freelancer
+const FLASH_SHOOT_ID = 'om11';
+const SHOOT_TYPES = freelancerServices.filter((s) =>
+  ['fl6', 'fl2'].includes(s.id)
+);
+// Two side by side: the screen less the page padding and the gap
+const SHOOT_CARD_WIDTH = (Dimensions.get('window').width - 32 - 10) / 2;
+const SHOOT_CARD_HEIGHT = Math.round(SHOOT_CARD_WIDTH * 0.9);
 
 export default function PostRequestScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -44,6 +57,7 @@ export default function PostRequestScreen({ route, navigation }: any) {
   const [sector, setSector] = useState<BusinessSector | null>(null);
   const [customSector, setCustomSector] = useState('');
   const [description, setDescription] = useState('');
+  const [shootType, setShootType] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
   // Arriving from Home shows just the chosen service; "Change" opens
   // the full picker. Without a preset (e.g. from My Requests) the
@@ -60,14 +74,22 @@ export default function PostRequestScreen({ route, navigation }: any) {
   // the same one the Home header shows — no separate city to type
   const city = cityFrom(profile.address);
 
+  const isFlashShoot = service?.id === FLASH_SHOOT_ID;
+  const pickedShoot = SHOOT_TYPES.find((s) => s.label === shootType);
+
   const isReady =
-    !!service && resolvedSector.length > 1 && description.trim().length > 3;
+    !!service &&
+    (!isFlashShoot || !!shootType) &&
+    resolvedSector.length > 1 &&
+    description.trim().length > 3;
 
   const handleSubmit = () => {
     if (!isReady || !service) {
       Alert.alert(
         'Almost there',
-        'Pick a service and your business sector, and tell us what you need.'
+        isFlashShoot && !shootType
+          ? 'Pick the kind of shoot, your business sector, and tell us what you need.'
+          : 'Pick a service and your business sector, and tell us what you need.'
       );
       return;
     }
@@ -82,6 +104,8 @@ export default function PostRequestScreen({ route, navigation }: any) {
       details: {
         service: service.label,
         category: tab === 'online' ? 'Online Marketing' : 'Offline Marketing',
+        // Shows as "Shoot Type" in the team email and the admin console
+        ...(isFlashShoot && shootType ? { shootType } : {}),
       },
     });
   };
@@ -222,6 +246,35 @@ export default function PostRequestScreen({ route, navigation }: any) {
                   );
                 }}
               />
+            </>
+          )}
+
+          {/* Flash Shoot only: which kind of shoot */}
+          {isFlashShoot && (
+            <>
+              <Text style={styles.label}>What kind of shoot?</Text>
+              <View style={styles.shootRow}>
+                {SHOOT_TYPES.map((s) => (
+                  <ServiceBox
+                    key={s.id}
+                    service={s}
+                    width={SHOOT_CARD_WIDTH}
+                    height={SHOOT_CARD_HEIGHT}
+                    active={shootType === s.label}
+                    onPress={() => setShootType(s.label)}
+                  />
+                ))}
+              </View>
+
+              {/* The package price, once a shoot is picked */}
+              {pickedShoot?.price && (
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>{pickedShoot.label}</Text>
+                  <Text style={[styles.priceValue, { color: pickedShoot.colour }]}>
+                    {pickedShoot.price}
+                  </Text>
+                </View>
+              )}
             </>
           )}
 
@@ -506,6 +559,31 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 13,
     color: colors.primary,
+  },
+
+  /* Flash Shoot: kind of shoot */
+  shootRow: { flexDirection: 'row', gap: 10 },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+  },
+  priceLabel: {
+    flex: 1,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+    color: colors.textDark,
+  },
+  priceValue: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    letterSpacing: -0.2,
   },
 
   sectorInput: { marginTop: 12 },
