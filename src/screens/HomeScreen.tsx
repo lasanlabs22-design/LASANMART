@@ -18,6 +18,7 @@ import {
   onlineMarketing,
   offlineMarketing,
   CategoryItem,
+  serviceRoute,
 } from '../data/homeCategories';
 import { plans } from '../data/plans';
 import { events } from '../lib/analytics';
@@ -100,7 +101,7 @@ export default function HomeScreen() {
     category: 'online' | 'offline'
   ) => {
     events.serviceOpened(service.label, category);
-    navigation.getParent()?.navigate('PostRequest', { service, category });
+    navigation.getParent()?.navigate(...serviceRoute(service, category));
   };
 
   const openAllServices = (category: 'online' | 'offline') => {

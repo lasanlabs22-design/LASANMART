@@ -18,6 +18,7 @@ import {
   onlineMarketing,
   offlineMarketing,
   CategoryItem,
+  serviceRoute,
 } from '../data/homeCategories';
 import { events } from '../lib/analytics';
 import HeaderInset from '../components/HeaderInset';
@@ -47,7 +48,7 @@ export default function AllServicesScreen({ route, navigation }: any) {
 
   const openService = (service: CategoryItem) => {
     events.serviceOpened(service.label, category);
-    navigation.navigate('PostRequest', { service, category });
+    navigation.navigate(...serviceRoute(service, category));
   };
 
   return (

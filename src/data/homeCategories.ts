@@ -10,6 +10,20 @@ export type CategoryItem = {
   image?: ImageSourcePropType;
 };
 
+/**
+ * Where tapping a service goes. Influencer Marketing opens the creators
+ * list (pick creators, then send the request from there); everything
+ * else opens the Post a Request form with the service filled in.
+ * Shared by Home, All Services and Search so they always agree.
+ */
+export function serviceRoute(
+  service: CategoryItem,
+  category: 'online' | 'offline'
+): [string, Record<string, unknown> | undefined] {
+  if (service.id === 'om9') return ['InfluencerSelection', undefined];
+  return ['PostRequest', { service, category }];
+}
+
 export const onlineMarketing: CategoryItem[] = [
   { id: 'om1',  label: 'Digital Marketing',    icon: 'bullhorn-variant',        color: '#FF6B35', image: require('../../assets/services/online/digital-marketing.png') },
   { id: 'om2',  label: 'Website & CRM',        icon: 'laptop',                  color: '#2D6CDF', image: require('../../assets/services/online/website-crm.png') },
