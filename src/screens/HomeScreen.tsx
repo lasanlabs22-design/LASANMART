@@ -11,6 +11,7 @@ import ReelsRow from '../components/ReelsRow';
 import CustomRequirementBanner from '../screens/CustomRequirementBanner';
 import HireTalent from '../components/HireTalent';
 import BusinessIdeasBanner from '../components/BusinessIdeasBanner';
+import HomeGreeting from '../components/HomeGreeting';
 import { useAuth } from '../context/AuthContext';
 import { fetchUnreadCount, fetchReels, ApiReel } from '../api/client';
 import {
@@ -125,6 +126,8 @@ export default function HomeScreen() {
             can hire — catalogue → bundles → talent — then social proof
             right before the catch-all ask.
             Online and Offline Marketing always stay together. */}
+        <HomeGreeting onAvatarPress={() => navigation.navigate('My Account')} />
+
         <BusinessIdeasBanner onPress={openBusinessIdeas} />
 
         <CategoryCarousel
