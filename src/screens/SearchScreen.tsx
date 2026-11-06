@@ -14,6 +14,7 @@ import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { search, SearchResult, POPULAR_SEARCHES } from '../data/searchIndex';
 import { plans } from '../data/plans';
+import { serviceRoute } from '../data/homeCategories';
 import HeaderInset from '../components/HeaderInset';
 
 /** '#FF6B35' -> soft tinted background */
@@ -44,10 +45,7 @@ export default function SearchScreen({ navigation }: any) {
     const a = item.action;
 
     if (a.type === 'service') {
-      navigation.replace('PostRequest', {
-        service: a.service,
-        category: a.category,
-      });
+      navigation.replace(...serviceRoute(a.service, a.category));
     } else if (a.type === 'plan') {
       const plan = plans.find((p) => p.id === a.planId);
       if (plan) navigation.replace('PlanEnquiry', { plan });
