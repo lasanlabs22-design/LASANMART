@@ -9,7 +9,12 @@ import { getAuthToken } from '../lib/phoneAuth';
  * the app claims, so nobody can read or write someone else's data.
  */
 
-const API_URL = 'https://lasanmartapihono-production.up.railway.app';
+const PRODUCTION_API = 'https://lasanmartapihono-production.up.railway.app';
+
+/* Development builds can point at an API running on the laptop
+   (EXPO_PUBLIC_API_URL=http://localhost:3000 with `adb reverse`), to try
+   backend changes before they ship. Release builds always use production. */
+const API_URL = (__DEV__ && process.env.EXPO_PUBLIC_API_URL) || PRODUCTION_API;
 
 /** How long to wait before giving up on a request */
 const TIMEOUT_MS = 15000;
@@ -797,6 +802,54 @@ export async function fetchApprovedInfluencers(): Promise<{
   return {
     influencers: data.influencers || [],
     categories: data.categories || [],
+    cities: data.cities || [],
+  };
+}
+
+/** A hoarding the team listed from the admin console */
+export type Hoarding = {
+  id: string;
+  title: string;
+  media_type: string;
+  city: string;
+  area: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  width_ft: number | null;
+  height_ft: number | null;
+  illumination: string | null;
+  facing: string | null;
+  traffic: string | null;
+  price_per_month: number | null;
+  min_months: number | null;
+  availability: 'available' | 'booked';
+  /** YYYY-MM-DD, when a booked one frees up */
+  available_from: string | null;
+  photos: string[];
+  description: string | null;
+};
+
+export type HoardingCity = { city: string; areas: string[] };
+
+/**
+ * Live hoardings and the cities/areas they're in.
+ * Public — someone browsing may not have signed in yet.
+ */
+export async function fetchHoardings(): Promise<{
+  hoardings: Hoarding[];
+  cities: HoardingCity[];
+}> {
+  const res = await fetchWithTimeout(`${API_URL}/hoardings`);
+
+  if (!res.ok) {
+    throw new ApiError('Could not load hoardings.');
+  }
+
+  const data = await res.json();
+
+  return {
+    hoardings: data.hoardings || [],
     cities: data.cities || [],
   };
 }
