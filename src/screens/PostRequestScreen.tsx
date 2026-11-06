@@ -28,10 +28,12 @@ import SectorDropdown from '../components/SectorDropdown';
 import { cityFrom } from '../components/HomeHeader';
 import HeaderInset from '../components/HeaderInset';
 import ServiceBox from '../components/ServiceBox';
+import LasanMediaCard from '../components/LasanMediaCard';
 
 // Flash Shoot asks which kind of shoot; the choices (art, price) are the
 // same packages as on Hire a Freelancer
 const FLASH_SHOOT_ID = 'om11';
+const DIGITAL_MARKETING_ID = 'om1';
 const SHOOT_TYPES = freelancerServices.filter((s) =>
   ['fl6', 'fl2'].includes(s.id)
 );
@@ -248,6 +250,10 @@ export default function PostRequestScreen({ route, navigation }: any) {
               />
             </>
           )}
+
+          {/* Digital Marketing is done by our own agency — introduce it
+              before the questions */}
+          {service?.id === DIGITAL_MARKETING_ID && <LasanMediaCard />}
 
           {/* Flash Shoot only: which kind of shoot */}
           {isFlashShoot && (
