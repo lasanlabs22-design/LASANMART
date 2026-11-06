@@ -32,6 +32,7 @@ import {
 } from '../api/client';
 import { verifiedPhoneNumber } from '../lib/phoneAuth';
 import HeaderInset from '../components/HeaderInset';
+import { shareProfile } from '../lib/shareProfile';
 
 /* The system photo picker hands back only what the person chooses,
    so no photo library permission is asked for (Play policy, too) */
@@ -196,13 +197,27 @@ export default function MyAccountScreen() {
         <HeaderInset />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>My Account</Text>
-          <TouchableOpacity style={styles.iconButton} onPress={openSettings}>
-            <MaterialCommunityIcons
-              name="cog-outline"
-              size={21}
-              color={colors.white}
-            />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            {/* Shares the saved profile as a business card */}
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => shareProfile(profile)}
+              accessibilityLabel="Share profile"
+            >
+              <MaterialCommunityIcons
+                name="share-variant-outline"
+                size={20}
+                color={colors.white}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={openSettings}>
+              <MaterialCommunityIcons
+                name="cog-outline"
+                size={21}
+                color={colors.white}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView
@@ -909,6 +924,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerActions: { flexDirection: 'row', gap: 8 },
 
   content: { padding: 16, paddingBottom: 48 },
 
