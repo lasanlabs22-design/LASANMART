@@ -29,6 +29,8 @@ import PartnerStepScreen from '../screens/PartnerStepScreen';
 import InfluencerProfileScreen from '../screens/InfluencerProfileScreen';
 import CommunityGuidelinesScreen from '../screens/CommunityGuidelinesScreen';
 import AllServicesScreen from '../screens/AllServicesScreen';
+import HoardingsScreen from '../screens/HoardingsScreen';
+import HoardingDetailScreen from '../screens/HoardingDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -131,6 +133,8 @@ function RootStack({ initialRoute }: { initialRoute: string }) {
         options={{ presentation: 'modal' }}
       />
       <Stack.Screen name="AllServices" component={AllServicesScreen} />
+      <Stack.Screen name="Hoardings" component={HoardingsScreen} />
+      <Stack.Screen name="HoardingDetail" component={HoardingDetailScreen} />
       <Stack.Screen
         name="BusinessIdeas"
         component={BusinessIdeasScreen}

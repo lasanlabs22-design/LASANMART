@@ -12,8 +12,9 @@ export type CategoryItem = {
 
 /**
  * Where tapping a service goes. Influencer Marketing opens the creators
- * list (pick creators, then send the request from there); everything
- * else opens the Post a Request form with the service filled in.
+ * list and Hoardings opens the hoardings near you — both pick first,
+ * then send the request from there. Everything else opens the Post a
+ * Request form with the service filled in.
  * Shared by Home, All Services and Search so they always agree.
  */
 export function serviceRoute(
@@ -21,6 +22,7 @@ export function serviceRoute(
   category: 'online' | 'offline'
 ): [string, Record<string, unknown> | undefined] {
   if (service.id === 'om9') return ['InfluencerSelection', undefined];
+  if (service.id === 'ofm1') return ['Hoardings', undefined];
   return ['PostRequest', { service, category }];
 }
 
