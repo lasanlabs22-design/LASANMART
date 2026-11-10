@@ -112,7 +112,7 @@ const ICON_SIZE = 26;
 // Artwork cards: sized so 5 columns show on a ~400dp phone with the
 // 6th peeking; "Optimization" in Jakarta Bold 10.5 is ~67px, one line at 70
 const ART_CARD_WIDTH = 70;
-const ART_SIZE = 56;
+const ART_SIZE = 64;
 const ART_GAP = 6;
 
 const styles = StyleSheet.create({
