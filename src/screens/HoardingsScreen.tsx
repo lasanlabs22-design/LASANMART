@@ -34,6 +34,11 @@ import {
 
 const ALL = 'All';
 
+// Same violet-and-gold as the LaSän Media Works card
+const CARD_BG = '#22123F';
+const GOLD = '#FFC93C';
+const INK = '#2A1650';
+
 /**
  * Hoardings the team has listed from the admin console, by city and
  * area — the customer's own city first, and the nearest ones first
@@ -299,8 +304,18 @@ function HoardingCard({
   const price = rupees(h.price_per_month);
   const booked = h.availability === 'booked';
 
+  // Stats strip, like the agency card: only what the team filled in
+  const facts = [
+    size ? { label: 'Size', value: size } : null,
+    h.illumination ? { label: 'Lighting', value: h.illumination } : null,
+    h.media_type ? { label: 'Type', value: h.media_type } : null,
+  ].filter(Boolean) as { label: string; value: string }[];
+
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={onPress}>
+      {/* Soft white glow in the corner, behind the price */}
+      <View pointerEvents="none" style={styles.glow} />
+
       <View style={styles.cover}>
         {h.photos[0] ? (
           <Image source={{ uri: h.photos[0] }} style={StyleSheet.absoluteFill} />
@@ -309,12 +324,11 @@ function HoardingCard({
             <MaterialCommunityIcons name="billboard" size={44} color="rgba(255,255,255,0.5)" />
           </View>
         )}
-        {/* Darkens the bottom so the type tag reads over any photo */}
+        {/* Photo melts into the card, so the title sits on it like a poster */}
         <LinearGradient
           pointerEvents="none"
-          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.45)']}
-          start={{ x: 0, y: 0.55 }}
-          end={{ x: 0, y: 1 }}
+          colors={['rgba(34,18,63,0)', 'rgba(34,18,63,0.6)', CARD_BG]}
+          locations={[0.35, 0.7, 1]}
           style={StyleSheet.absoluteFill}
         />
 
@@ -329,62 +343,58 @@ function HoardingCard({
           </Text>
         </View>
 
-        <View style={styles.typeTag}>
-          <Text style={styles.typeText}>{h.media_type}</Text>
-        </View>
         {h.photos.length > 1 && (
           <View style={styles.photoCount}>
             <MaterialCommunityIcons name="image-multiple-outline" size={12} color={colors.white} />
             <Text style={styles.photoCountText}>{h.photos.length}</Text>
           </View>
         )}
+
+        <View style={styles.coverText}>
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {h.title}
+          </Text>
+          <View style={styles.locRow}>
+            <MaterialCommunityIcons name="map-marker" size={14} color={GOLD} />
+            <Text style={styles.locText} numberOfLines={1}>
+              {h.area}, {h.city}
+              {km != null ? `  ·  ${distanceLabel(km)}` : ''}
+            </Text>
+          </View>
+        </View>
       </View>
 
-      <View style={styles.cardBody}>
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {h.title}
-        </Text>
-
-        <View style={styles.locRow}>
-          <MaterialCommunityIcons name="map-marker" size={14} color={colors.primary} />
-          <Text style={styles.locText} numberOfLines={1}>
-            {h.area}, {h.city}
-            {km != null ? `  ·  ${distanceLabel(km)}` : ''}
-          </Text>
+      {facts.length > 0 && (
+        <View style={styles.facts}>
+          {facts.map((f, i) => (
+            <React.Fragment key={f.label}>
+              {i > 0 && <View style={styles.factDivider} />}
+              <View style={styles.fact}>
+                <Text style={styles.factValue} numberOfLines={1} adjustsFontSizeToFit>
+                  {f.value}
+                </Text>
+                <Text style={styles.factLabel}>{f.label}</Text>
+              </View>
+            </React.Fragment>
+          ))}
         </View>
+      )}
 
-        {(size || h.illumination) && (
-          <View style={styles.specRow}>
-            {size && <Spec icon="ruler-square" text={size} />}
-            {h.illumination && <Spec icon="lightbulb-on-outline" text={h.illumination} />}
-          </View>
+      <View style={styles.cardFoot}>
+        {price ? (
+          <Text style={styles.price}>
+            {price}
+            <Text style={styles.perMonth}> / month</Text>
+          </Text>
+        ) : (
+          <Text style={styles.onRequest}>Price on request</Text>
         )}
-
-        <View style={styles.cardFoot}>
-          {price ? (
-            <Text style={styles.price}>
-              {price}
-              <Text style={styles.perMonth}> / month</Text>
-            </Text>
-          ) : (
-            <Text style={styles.perMonth}>Price on request</Text>
-          )}
-          <View style={styles.viewBtn}>
-            <Text style={styles.viewText}>View details</Text>
-            <MaterialCommunityIcons name="chevron-right" size={16} color={colors.primary} />
-          </View>
+        <View style={styles.viewBtn}>
+          <Text style={styles.viewText}>View details</Text>
+          <MaterialCommunityIcons name="arrow-right" size={15} color={INK} />
         </View>
       </View>
     </TouchableOpacity>
-  );
-}
-
-function Spec({ icon, text }: { icon: string; text: string }) {
-  return (
-    <View style={styles.spec}>
-      <MaterialCommunityIcons name={icon as any} size={13} color={colors.textLight} />
-      <Text style={styles.specText}>{text}</Text>
-    </View>
   );
 }
 
@@ -444,19 +454,26 @@ const styles = StyleSheet.create({
 
   card: {
     marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
+    marginBottom: 18,
+    borderRadius: 22,
+    backgroundColor: CARD_BG,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowColor: '#3B1E6E',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    elevation: 6,
   },
-  cover: { height: 180, backgroundColor: '#1E1E24' },
+  glow: {
+    position: 'absolute',
+    right: -50,
+    bottom: -60,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  cover: { height: 220, backgroundColor: '#1E1E24' },
   noPhoto: { justifyContent: 'center', alignItems: 'center' },
 
   badge: {
@@ -475,22 +492,10 @@ const styles = StyleSheet.create({
   badgeDot: { width: 6, height: 6, borderRadius: 3 },
   badgeText: { fontFamily: fonts.bodyBold, fontSize: 11 },
 
-  typeTag: {
-    position: 'absolute',
-    left: 12,
-    bottom: 12,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-  },
-  typeText: { fontFamily: fonts.bodyBold, fontSize: 11, color: colors.white, letterSpacing: 0.3 },
   photoCount: {
     position: 'absolute',
     right: 12,
-    bottom: 12,
+    top: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -501,41 +506,59 @@ const styles = StyleSheet.create({
   },
   photoCountText: { fontFamily: fonts.bodyBold, fontSize: 11, color: colors.white },
 
-  cardBody: { padding: 14 },
+  coverText: { position: 'absolute', left: 16, right: 16, bottom: 12 },
   cardTitle: {
     fontFamily: fonts.display,
-    fontSize: 16,
-    lineHeight: 21,
-    color: colors.textDark,
+    fontSize: 18,
+    lineHeight: 23,
+    color: colors.white,
     letterSpacing: -0.3,
   },
-  locRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
-  locText: { flex: 1, fontFamily: fonts.body, fontSize: 12.5, color: colors.textLight },
-  specRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-  spec: {
+  locRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  locText: { flex: 1, fontFamily: fonts.body, fontSize: 12.5, color: 'rgba(255,255,255,0.78)' },
+
+  facts: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
+    marginHorizontal: 16,
+    marginTop: 4,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
-  specText: { fontFamily: fonts.body, fontSize: 12, color: colors.textDark },
+  fact: { flex: 1, alignItems: 'center', paddingHorizontal: 6 },
+  factDivider: { width: 1, height: 26, backgroundColor: 'rgba(255,255,255,0.14)' },
+  factValue: { fontFamily: fonts.bodyBold, fontSize: 13.5, color: colors.white },
+  factLabel: {
+    fontFamily: fonts.body,
+    fontSize: 10.5,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 1,
+  },
 
   cardFoot: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 16,
   },
-  price: { fontFamily: fonts.display, fontSize: 18, color: colors.primary, letterSpacing: -0.3 },
-  perMonth: { fontFamily: fonts.body, fontSize: 12, color: colors.textLight },
-  viewBtn: { flexDirection: 'row', alignItems: 'center' },
-  viewText: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.primary },
+  price: { fontFamily: fonts.display, fontSize: 21, color: GOLD, letterSpacing: -0.4 },
+  perMonth: { fontFamily: fonts.body, fontSize: 12, color: 'rgba(255,255,255,0.65)' },
+  onRequest: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.white },
+  viewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+    backgroundColor: GOLD,
+  },
+  viewText: { fontFamily: fonts.bodyBold, fontSize: 13, color: INK },
 
   empty: { alignItems: 'center', paddingHorizontal: 32, paddingTop: 48 },
   emptyTitle: {
