@@ -19,6 +19,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
@@ -29,7 +30,12 @@ import HeaderInset from '../components/HeaderInset';
 import { rupees, sizeLabel, dateLabel, distanceLabel } from '../lib/hoardings';
 
 const SCREEN_W = Dimensions.get('window').width;
-const GALLERY_H = Math.round(SCREEN_W * 0.66);
+const GALLERY_H = Math.round(SCREEN_W * 0.7);
+
+// Same violet-and-gold as the Hoardings list card
+const HERO_BG = '#22123F';
+const GOLD = '#FFC93C';
+const INK = '#2A1650';
 
 /**
  * One hoarding in full: photos, every detail the team filled in, where
@@ -51,6 +57,14 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
   const booked = h.availability === 'booked';
   const price = rupees(h.price_per_month);
   const size = sizeLabel(h);
+
+  // Booking length: starts at the team's minimum, then common lengths
+  const minMonths = h.min_months && h.min_months > 0 ? h.min_months : 1;
+  const monthOptions = [minMonths, ...[1, 3, 6, 9, 12].filter((m) => m > minMonths)];
+  const [months, setMonths] = useState(minMonths);
+  const monthsLabel = `${months} month${months > 1 ? 's' : ''}`;
+  const total =
+    h.price_per_month != null ? rupees(h.price_per_month * months) : null;
   const hasPin = h.latitude != null && h.longitude != null;
 
   const openMaps = () => {
@@ -75,6 +89,8 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
         type: h.media_type,
         size: size || undefined,
         pricePerMonth: price || undefined,
+        duration: monthsLabel,
+        estimatedTotal: total || undefined,
         availability: booked
           ? `Booked${h.available_from ? ` until ${dateLabel(h.available_from)}` : ''}`
           : 'Available',
@@ -115,7 +131,9 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ---------- Photos ---------- */}
+          {/* ---------- Hero: photos melting into the violet title block ---------- */}
+          <View style={styles.hero}>
+          <View pointerEvents="none" style={styles.glow} />
           <View style={styles.gallery}>
             {h.photos.length > 0 ? (
               <FlatList
@@ -137,6 +155,13 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
               </View>
             )}
 
+            <LinearGradient
+              pointerEvents="none"
+              colors={['rgba(34,18,63,0)', HERO_BG]}
+              locations={[0.6, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+
             {h.photos.length > 1 && (
               <View style={styles.dots}>
                 {h.photos.map((u, i) => (
@@ -146,7 +171,7 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
             )}
           </View>
 
-          <View style={styles.body}>
+          <View style={styles.heroBody}>
             {/* ---------- Title ---------- */}
             <View style={[styles.badge, booked ? styles.badgeBooked : styles.badgeFree]}>
               <View style={[styles.badgeDot, { backgroundColor: booked ? '#B45309' : '#0B8457' }]} />
@@ -162,7 +187,7 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
             <Text style={styles.title}>{h.title}</Text>
 
             <View style={styles.locRow}>
-              <MaterialCommunityIcons name="map-marker" size={16} color={colors.primary} />
+              <MaterialCommunityIcons name="map-marker" size={16} color={GOLD} />
               <Text style={styles.locText}>
                 {[h.address, h.area, h.city].filter(Boolean).join(', ')}
               </Text>
@@ -190,6 +215,41 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
                 </View>
               ) : null}
             </View>
+          </View>
+          </View>
+
+          <View style={styles.body}>
+            {/* ---------- Booking length ---------- */}
+            <Text style={[styles.section, { marginTop: 4 }]}>How long do you need it?</Text>
+            <View style={styles.durRow}>
+              {monthOptions.map((m, i) => {
+                const active = m === months;
+                return (
+                  <TouchableOpacity
+                    key={m}
+                    activeOpacity={0.85}
+                    onPress={() => setMonths(m)}
+                    style={[styles.durChip, i > 0 && { marginLeft: 8 }, active && styles.durChipActive]}
+                  >
+                    <Text style={[styles.durNum, active && styles.durNumActive]}>{m}</Text>
+                    <Text style={[styles.durUnit, active && styles.durUnitActive]}>
+                      {m > 1 ? 'months' : 'month'}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {total && (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>
+                  {price} × {monthsLabel}
+                </Text>
+                <Text style={styles.totalValue}>{total}</Text>
+              </View>
+            )}
+            <Text style={styles.durHint}>
+              Need a different length? Mention it in the note below.
+            </Text>
 
             {/* ---------- Specs ---------- */}
             {specs.length > 0 && (
@@ -199,7 +259,7 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
                   {specs.map((s) => (
                     <View key={s.label} style={styles.specCell}>
                       <View style={styles.specIcon}>
-                        <MaterialCommunityIcons name={s.icon as any} size={17} color={colors.primary} />
+                        <MaterialCommunityIcons name={s.icon as any} size={17} color={GOLD} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.specLabel}>{s.label}</Text>
@@ -279,8 +339,10 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
         {/* ---------- Sticky footer ---------- */}
         <View style={[styles.footer, { paddingBottom: 14 + insets.bottom }]}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.footPrice}>{price ?? 'Price on request'}</Text>
-            {price && <Text style={styles.footSub}>per month</Text>}
+            <Text style={styles.footPrice}>{total ?? 'Price on request'}</Text>
+            <Text style={styles.footSub}>
+              {total ? `est. for ${monthsLabel}` : `for ${monthsLabel}`}
+            </Text>
           </View>
           <TouchableOpacity
             style={styles.cta}
@@ -289,13 +351,13 @@ export default function HoardingDetailScreen({ route, navigation }: any) {
             disabled={busy}
           >
             {busy ? (
-              <ActivityIndicator color={colors.white} />
+              <ActivityIndicator color={INK} />
             ) : (
               <>
                 <Text style={styles.ctaText}>
                   {booked ? 'Enquire for later' : 'Request this hoarding'}
                 </Text>
-                <MaterialCommunityIcons name="arrow-right" size={17} color={colors.white} />
+                <MaterialCommunityIcons name="arrow-right" size={17} color={INK} />
               </>
             )}
           </TouchableOpacity>
@@ -333,12 +395,28 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
 
+  hero: {
+    backgroundColor: HERO_BG,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    overflow: 'hidden',
+  },
+  glow: {
+    position: 'absolute',
+    right: -70,
+    bottom: -70,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  heroBody: { paddingHorizontal: 16, paddingBottom: 20, marginTop: -6 },
   gallery: { height: GALLERY_H, backgroundColor: '#1E1E24' },
   galleryImage: { width: SCREEN_W, height: GALLERY_H },
   noPhoto: { justifyContent: 'center', alignItems: 'center' },
   dots: {
     position: 'absolute',
-    bottom: 12,
+    top: 12,
     alignSelf: 'center',
     flexDirection: 'row',
     gap: 6,
@@ -368,15 +446,15 @@ const styles = StyleSheet.create({
 
   title: {
     fontFamily: fonts.display,
-    fontSize: 22,
-    lineHeight: 28,
-    color: colors.textDark,
+    fontSize: 23,
+    lineHeight: 29,
+    color: colors.white,
     letterSpacing: -0.5,
     marginTop: 10,
   },
   locRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, marginTop: 8 },
-  locText: { flex: 1, fontFamily: fonts.body, fontSize: 13.5, lineHeight: 19, color: colors.textLight },
-  distance: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.primary, marginTop: 4, marginLeft: 21 },
+  locText: { flex: 1, fontFamily: fonts.body, fontSize: 13.5, lineHeight: 19, color: 'rgba(255,255,255,0.78)' },
+  distance: { fontFamily: fonts.bodyBold, fontSize: 12, color: GOLD, marginTop: 4, marginLeft: 21 },
 
   priceCard: {
     flexDirection: 'row',
@@ -385,24 +463,27 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 16,
     borderRadius: 18,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   priceLabel: {
     fontFamily: fonts.bodyBold,
     fontSize: 10.5,
     letterSpacing: 1.2,
-    color: colors.primary,
-    opacity: 0.75,
+    color: 'rgba(255,255,255,0.6)',
   },
-  price: { fontFamily: fonts.display, fontSize: 24, color: colors.primary, letterSpacing: -0.5, marginTop: 2 },
-  perMonth: { fontFamily: fonts.body, fontSize: 13, color: colors.textLight },
+  price: { fontFamily: fonts.display, fontSize: 26, color: GOLD, letterSpacing: -0.5, marginTop: 2 },
+  perMonth: { fontFamily: fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.65)' },
   minPill: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
-    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: 'rgba(255,201,60,0.55)',
+    backgroundColor: 'rgba(255,201,60,0.12)',
   },
-  minText: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.primary },
+  minText: { fontFamily: fonts.bodyBold, fontSize: 12, color: GOLD },
 
   section: {
     fontFamily: fonts.display,
@@ -413,6 +494,35 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   optional: { fontFamily: fonts.body, fontSize: 13, color: colors.textLight },
+
+  durRow: { flexDirection: 'row' },
+  durChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  durChipActive: { backgroundColor: HERO_BG, borderColor: HERO_BG },
+  durNum: { fontFamily: fonts.display, fontSize: 18, color: colors.textDark, letterSpacing: -0.3 },
+  durNumActive: { color: GOLD },
+  durUnit: { fontFamily: fonts.body, fontSize: 11, color: colors.textLight, marginTop: 1 },
+  durUnitActive: { color: 'rgba(255,255,255,0.75)' },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: colors.primarySoft,
+  },
+  totalLabel: { fontFamily: fonts.body, fontSize: 13, color: colors.textDark },
+  totalValue: { fontFamily: fonts.display, fontSize: 17, color: INK, letterSpacing: -0.3 },
+  durHint: { fontFamily: fonts.body, fontSize: 12, color: colors.textLight, marginTop: 8 },
 
   specGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
   specCell: {
@@ -430,7 +540,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: HERO_BG,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -475,22 +585,22 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.background,
   },
-  footPrice: { fontFamily: fonts.display, fontSize: 18, color: colors.textDark, letterSpacing: -0.3 },
+  footPrice: { fontFamily: fonts.display, fontSize: 18, color: INK, letterSpacing: -0.3 },
   footSub: { fontFamily: fonts.body, fontSize: 11.5, color: colors.textLight },
   cta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: GOLD,
     paddingHorizontal: 18,
     height: 52,
     borderRadius: 14,
-    shadowColor: colors.primary,
+    shadowColor: '#B8860B',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
   },
-  ctaText: { fontFamily: fonts.bodyBold, fontSize: 15, color: colors.white },
+  ctaText: { fontFamily: fonts.bodyBold, fontSize: 15, color: INK },
 });
