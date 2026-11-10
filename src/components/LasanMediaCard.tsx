@@ -47,7 +47,7 @@ export default function LasanMediaCard() {
       end={{ x: 1, y: 1 }}
       style={styles.card}
     >
-      {/* Soft gold glow behind the founders */}
+      {/* Soft white glow behind the founders */}
       <View pointerEvents="none" style={styles.glow} />
 
       {/* ---------- Hero: brand on the left, founders on the right ---------- */}
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(255,201,60,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.32)',
   },
 
   hero: {
